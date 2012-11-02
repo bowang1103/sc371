@@ -1,21 +1,63 @@
 #lang plai-typed
 
-;(define-type PyField
-;  [pyField (name : string) (value : PyExpr)])
-
-;(define-type LHS
-;  [BracketLHS (obj : PyExpr) (field : ExprP)]
-;  [DotLHS (class : PyExpr) (field :ExprP)]
-;  [IdLHS (id : symbol)])
-
 (define-type PyExpr
-;  (PyFunDef (name : symbol) (ids : listof symbol) (body : PyExpr))
-;  [PyRet (ret : PyExpr)]
-;  [PyIf (test : PyExpr) (then : PyExpr) (els : PyExpr)]  
   [PySeq (es : (listof PyExpr))]
-;  [PyPrim (op : symbol) (args : (listof PyExpr))]
-  [PyNum (n : number)]
-;  [PyEmp]
   [PyId (x : symbol)]
-  [PyApp (fun : PyExpr) (args : (listof PyExpr))])
+  
+  ;; added by hichuang
+  
+  ;;;;;; stmt ;;;;;;
+  [PyFuncDef (name : symbol) (args : (listof symbol)) (return : PyExpr)]
+  [PyDel (targets : (listof PyExpr))]
+  
+  
+  ; for num in range(2, 10): 
+  ;     body.... 
+  ;         break; 
+  ; else: ... 
+  ; ### if not terminate by break in body go to else
+  [PyFor (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)]
+  [PyWhile (test : PyExpr) (body : PyExpr) (orelse : PyExpr)]
+  [PyIf (test : PyExpr) (body : PyExpr) (orelse : PyExpr)]
+  
+  ;;;;;; exceptions ;;;;;;
+  [PyRaise (exc : PyExpr) (cause : PyExpr)]
+  [PyTryExcept (body : PyExpr) (handlers : PyExpr) (orelse : PyExpr)] ;;???
+  [PyTryFinally (body : PyExpr) (finalbody : PyExpr)]
+  
+  [PyGlobal (names : (listof symbol))]
+  [PyNonLocal (names : (listof symbol))]
+  
+  ;;;;;; expr ;;;;;;
+  ; boolop = {and, or}
+  [PyBoolOp (boolop : symbol) (values : (listof PyExpr))]
+  ; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
+  [PyBinOp (left : PyExpr) (op : symbol) (right : PyExpr)]
+  ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
+  [PyUnaryOp (unaryop : symbol) (operand : PyExpr)]
+  ; op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
+  [PyCompare (left : PyExpr) (ops : (listof symbol)) (comparators : (listof PyExpr))]
+  [PyApp (fun : PyExpr) (args : (listof PyExpr))]
+  [PySubscript (value : PyExpr) (slices : (listof PyExpr))]
+  
+  ;;;;;; ds ;;;;;;
+  [PyDict (keys : (listof PyExpr)) (values : (listof PyExpr))]
+  [PySet (elts : (listof PyExpr))]
+  ; mutable
+  [PyList (elts : (listof PyExpr))]
+  ; immutable
+  [PyTuple (elts : (listof PyExpr))]
+  [PyNum (n : number)]
+  [PyStr (s : string)]
+  
+  
+  
+;  (PyFunDef (name : symbol) (ids : listof symbol) (body : PyExpr))
+  [PyReturn (ret : PyExpr)]
+  [PyEmp]
+  [PyBreak]
+
+  ;;;; false value ;;;;
+  ; None False (zero of any number type) (empty sequence () [] "") (empty mapping {}) (obj ___bool___ or ___len___ return false or 0)
+  )
 
