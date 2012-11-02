@@ -60,4 +60,3 @@
   ;;;; false value ;;;;
   ; None False (zero of any number type) (empty sequence () [] "") (empty mapping {}) (obj ___bool___ or ___len___ return false or 0)
   )
-
