@@ -1,5 +1,6 @@
 #lang racket/base
 
+(require (planet dherman/json:4:0))
 (require racket/cmdline
          racket/pretty
          "parse-python.rkt"
@@ -19,9 +20,8 @@
     (python-lib
       (desugar
         (get-structured-python
-          (let ([jsexpr/output (parse-python/port port python-path)]) (begin (write-to-file jsexpr/output "./jsexpr.output" #:exists 'replace)
-                                                                          jsexpr/output)
-                 ))))))
+          (let ([jsexpr/output (parse-python/port port python-path)]) 
+	       (begin (write-to-file jsexpr/output "./jsexpr.output" #:exists 'replace) jsexpr/output)))))))
 
 (define python-path "/home/joe/bin/python")
 
@@ -47,4 +47,15 @@
   ("--python-path" path "Set the python path"
    (set! python-path path))
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  ("--progress-report" dirname "Generate a soft report"
+   (printf "~a\n"
+    (jsexpr->json
+     (json-summary
+      (run-tests (mk-proc-eval/silent python-test-runner) dirname)))))
+=======
+>>>>>>> cs173.10.27
+>>>>>>> fuck
 )
