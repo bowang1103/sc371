@@ -14,6 +14,7 @@ structure that you define in python-syntax.rkt
 
 (define (get-structured-python pyjson)
   (match pyjson
+<<<<<<< HEAD
     [(hash-table ('nodetype "Module") ('body expr-list))
      (PySeq (map get-structured-python expr-list))]
     [(hash-table ('nodetype "Expr") ('value expr))
@@ -35,3 +36,6 @@ structure that you define in python-syntax.rkt
      (PyNum n)]
     [_ (error 'parse "Haven't handled a case yet")]))
 
+=======
+    [_ (error 'parse "Haven't handled a case yet")]))
+>>>>>>> cs173.10.27

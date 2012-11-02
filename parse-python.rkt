@@ -2,6 +2,10 @@
 
 (require racket/system racket/list)
 (require (planet dherman/json:4:0))
+<<<<<<< HEAD
+=======
+(require racket/file)
+>>>>>>> cs173.10.27
 
 (define (get-parsed-json input-port python-path)
   (define stdout (open-output-string "stdout"))
@@ -12,6 +16,10 @@
   (when (not (equal? err-output ""))
     (error 'parse (format "Couldn't parse python file with python-parser.py.  Error was: \n ~a" err-output)))
   (define std-output (get-output-string stdout))
+<<<<<<< HEAD
+=======
+  (write-to-file std-output "./json.output" #:exists 'replace)
+>>>>>>> cs173.10.27
   (json->jsexpr std-output))
 
 (define (parse-python/string s python-path)

@@ -1,6 +1,9 @@
 #lang racket/base
 
+<<<<<<< HEAD
 (require (planet dherman/json:4:0))
+=======
+>>>>>>> cs173.10.27
 (require racket/cmdline
          racket/pretty
          "parse-python.rkt"
@@ -10,6 +13,10 @@
          "python-lib.rkt"
          "run-tests.rkt"
          "python-evaluator.rkt")
+<<<<<<< HEAD
+=======
+(require racket/file)
+>>>>>>> cs173.10.27
 
 (define (python-test-runner _ port)
   (run-python port))
@@ -19,7 +26,13 @@
     (python-lib
       (desugar
         (get-structured-python
+<<<<<<< HEAD
           (parse-python/port port python-path))))))
+=======
+          (let ([jsexpr/output (parse-python/port port python-path)]) (begin (write-to-file jsexpr/output "./jsexpr.output" #:exists 'replace)
+                                                                          jsexpr/output)
+                 ))))))
+>>>>>>> cs173.10.27
 
 (define python-path "/home/joe/bin/python")
 
@@ -45,9 +58,12 @@
   ("--python-path" path "Set the python path"
    (set! python-path path))
 
+<<<<<<< HEAD
   ("--progress-report" dirname "Generate a soft report"
    (printf "~a\n"
     (jsexpr->json
      (json-summary
       (run-tests (mk-proc-eval/silent python-test-runner) dirname)))))
+=======
+>>>>>>> cs173.10.27
 )
