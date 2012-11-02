@@ -146,12 +146,16 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Str") ('s s))
      (PyStr s)]
 ;    [(hash-table ('nodetype "Attribute"))]
+<<<<<<< HEAD
     [(hash-table ('nodetype "Subscript")
                  ('value value)
                  ('slice slice)
                  ('ctx ctx))
      (PySubscript (get-structured-python value)
                   (get-structured-python slice))]
+=======
+;    [(hash-table ('nodetype "Subscript"))]
+>>>>>>> fuck
     [(hash-table ('nodetype "Name")
                  ('ctx _)        ;; ignoring ctx for now
                  ('id id))
@@ -193,7 +197,11 @@ structure that you define in python-syntax.rkt
 ;    [(hash-table ('nodetype "Slice"))]
 ;    [(hash-table ('nodetype "ExtSlice"))]
 ;    [(hash-table ('nodetype "Index"))]
+<<<<<<< HEAD
 >>>>>>> cs173.10.27
+=======
+>>>>>>> fuck
+>>>>>>> master
     [(hash-table ('nodetype "And")) 'and]
     [(hash-table ('nodetype "Or")) 'or]
     [(hash-table ('nodetype "Add")) '+]
