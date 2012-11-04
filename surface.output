@@ -1,1 +1,1 @@
-#(struct:PySeq (#(struct:PyRaise #(struct:PyNum 1) #(struct:PyEmp))))
+#(struct:PySeq (#(struct:PyFuncDef test () #(struct:PyTryFinally #(struct:PySeq (#(struct:PyTryExcept #(struct:PySeq (#(struct:PyNum 1))) #(struct:PySeq (#(struct:PySeq (#(struct:PyNum 2) #(struct:PyRaise #(struct:PyApp #(struct:PyId TypeError) (#(struct:PyStr "foo"))) #(struct:PyEmp)))))) #(struct:PySeq (#(struct:PyNum 3)))))) #(struct:PySeq (#(struct:PyNum 4)))) #(struct:PyEmp))))
