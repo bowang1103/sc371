@@ -222,7 +222,11 @@ structure that you define in python-syntax.rkt
                  ('defaults default-list) ;; ignoring keywords for default-list 
                  ('kwargannotation kwar) ;; ignoring keywords for kwar
                  ('vararg var) ;; ignoring keywords for var
-                 ('args args-list))
+                 ('args args-list)
+		 ('kwonlyargs kwo)
+                 ('kwarg kwa)
+                 ('vargannotation vwar)
+		 ('kw_defaults kwd))
      (map get-structured-python args-list)]
     [(hash-table ('nodetype "arg")
                  ('arg arg)
