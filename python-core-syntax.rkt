@@ -20,6 +20,11 @@ ParselTongue.
   [CFunc (args : (listof symbol)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)])
 ;  [CPrim2 (prim : symbol) (args : (listof CExp))])
+  
+  ;;Exception ( combine Try Except else finally)
+  [CTryFinally (b : CExp) (fb : CExp) ]
+  [CTryExn (b : CExp) (hdlers : CExp) (else : CExp) ]
+  [Craise (exc : CExp) (cause : CExp) ]
 
 (define-type CVal
   [VNum (n : number)]

@@ -29,4 +29,10 @@
     [PyNum (n) (CNum n)]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
+
+    ;; Handling Try Exception
+    [PyTryExcept (b hdlers else) (CTryExn (desugar b) (desugar hdlers) (desugar else) )]
+    [PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
+    [PyRaise (exc) (cause)  (CRaise (desugar exc) (desugar cause))]
+
     [else (CNum 1)]))
