@@ -62,11 +62,11 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Raise") 
                  ('cause cause) ;; I don't know the meaning of it
                  ('exc exc))
-     (PyRaise (if (null? exc)
-                  PyEmp
+     (PyRaise (if (equal? exc '#\nul)
+                  (PyEmp)
                   (get-structured-python exc))
-              (if (null? cause)
-                  PyEmp
+              (if (equal? cause '#\nul)
+                  (PyEmp)
                   (get-structured-python cause)))]
     [(hash-table ('nodetype "TryExcept")
                  ('body body)
@@ -75,7 +75,7 @@ structure that you define in python-syntax.rkt
      (PyTryExcept (PySeq (map get-structured-python body)) 
                   (PySeq (map get-structured-python handlers))
                   (PySeq (map get-structured-python orelse)))]    
-    [(hash-table ('nodetype "TryFinally")
+    [(hash-table ('nodetype "Finally")
                  ('body body)
                  ('finalbody finalbody))
      (PyTryFinally (PySeq (map get-structured-python body)) 
@@ -222,15 +222,11 @@ structure that you define in python-syntax.rkt
                  ('defaults default-list) ;; ignoring keywords for default-list 
                  ('kwargannotation kwar) ;; ignoring keywords for kwar
                  ('vararg var) ;; ignoring keywords for var
-                 ('args args-list)
-		 ('varargannotation varn)
-		 ('kwonlyargs kwon)
-                 ('kwarg kw)
-                 ('kw_defaults kwd))
+                 ('args args-list))
      (map get-structured-python args-list)]
     [(hash-table ('nodetype "arg")
                  ('arg arg)
                  ('annotation annotation))
      (string->symbol arg)]
-;    [_ (error 'parse "Haven't handled a case yet")]))
-))
+    [_ (error 'parse "Haven't handled a case yet")]))
+
