@@ -26,10 +26,10 @@ structure that you define in python-syntax.rkt
      (PyFuncDef name 
                (get-structured-python args) 
                (get-structured-python body) 
-               (if (null? returns) PyEmp (get-structured-python returns)))]
+               (if (equal? returns '#\nul) PyEmp (get-structured-python returns)))]
 ;    [(hash-table ('nodetype "ClassDef"))]
     [(hash-table ('nodetype "Return") ('value value))
-     (if (null? value)
+     (if (equal? value '#\nul)
          (PyReturn PyEmp)
          (PyReturn (get-structured-python value)))]
     [(hash-table ('nodetype "Delete")
@@ -170,14 +170,14 @@ structure that you define in python-syntax.rkt
                  ('lower lower)
                  ('upper upper)
                  ('step step))
-     (list (if (null? lower) 
-               PyEmp
+     (list (if (equal? lower '#\nul) 
+               (PyEmp)
                (get-structured-python lower)) 
-           (if (null? upper)
-               PyEmp
+           (if (equal? upper '#\nul) 
+               (PyEmp)
                (get-structured-python upper)) 
-           (if (null? step)
-               PyEmp
+           (if (equal? step #\nul)
+               (PyEmp)
                (get-structured-python step)))]
 ;    [(hash-table ('nodetype "ExtSlice"))]
     [(hash-table ('nodetype "Index")
