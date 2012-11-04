@@ -7,7 +7,7 @@
   ;; added by hichuang
   
   ;;;;;; stmt ;;;;;;
-  [PyFuncDef (name : symbol) (args : (listof symbol)) (return : PyExpr)]
+  [PyFuncDef (name : symbol) (args : (listof symbol)) (body : PyExpr) (return : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
   
   

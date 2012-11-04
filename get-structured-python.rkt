@@ -23,14 +23,14 @@ structure that you define in python-syntax.rkt
                  ('decorator_list dl) ;; ignoring decorator_list for now
                  ('body body)
                  ('returns returns))
-     (PyFuncDef name 
-               (get-structured-python args) 
-               (get-structured-python body) 
-               (if (equal? returns '#\nul) PyEmp (get-structured-python returns)))]
+     (PyFuncDef (string->symbol name) 
+                (if (empty? args) (list) (get-structured-python args)) 
+                (get-structured-python (first body)) 
+                (if (equal? returns '#\nul) (PyEmp) (get-structured-python returns)))]
 ;    [(hash-table ('nodetype "ClassDef"))]
     [(hash-table ('nodetype "Return") ('value value))
      (if (equal? value '#\nul)
-         (PyReturn PyEmp)
+         (PyReturn (PyEmp))
          (PyReturn (get-structured-python value)))]
     [(hash-table ('nodetype "Delete")
                  ('targets targets))
@@ -75,11 +75,11 @@ structure that you define in python-syntax.rkt
      (PyTryExcept (PySeq (map get-structured-python body)) 
                   (PySeq (map get-structured-python handlers))
                   (PySeq (map get-structured-python orelse)))]    
-    [(hash-table ('nodetype "Finally")
+    [(hash-table ('nodetype "TryFinally")
                  ('body body)
-                 ('finalbody finalbody))
+                 ('finalbody fin))
      (PyTryFinally (PySeq (map get-structured-python body)) 
-                (PySeq (map get-structured-python finalbody)))]
+                (PySeq (map get-structured-python fin)))]
 ;    [(hash-table ('nodetype "Assert"))]
 ;    [(hash-table ('nodetype "Import"))]
 ;    [(hash-table ('nodetype "ImportFrom"))]
@@ -92,7 +92,7 @@ structure that you define in python-syntax.rkt
      (PyNonlocal (map string->symbol names))]
     [(hash-table ('nodetype "Expr") ('value expr))
      (get-structured-python expr)]
-    [(hash-table ('nodetype "Pass")) PyEmp]
+    [(hash-table ('nodetype "Pass")) (PyEmp)]
     [(hash-table ('nodetype "Break")) PyBreak]
 ;    [(hash-table ('nodetype "Continue"))]
     [(hash-table ('nodetype "BoolOp") ('value value) ('op op))
@@ -232,6 +232,7 @@ structure that you define in python-syntax.rkt
                  ('arg arg)
                  ('annotation annotation))
      (string->symbol arg)]
-	))
-    ;[_ (error 'parse "Haven't handled a case yet")]))
+))
+;    [_ (error 'parse "Haven't handled a case yet")]))
+
 
