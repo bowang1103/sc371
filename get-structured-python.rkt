@@ -228,5 +228,6 @@ structure that you define in python-syntax.rkt
                  ('arg arg)
                  ('annotation annotation))
      (string->symbol arg)]
-    [_ (error 'parse "Haven't handled a case yet")]))
+	))
+    ;[_ (error 'parse "Haven't handled a case yet")]))
 
