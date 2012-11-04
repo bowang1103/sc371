@@ -28,33 +28,6 @@ that calls the primitive `print`.
   (CFunc (list 'check-false)
     (CIf (CId 'check-false) (CError (CStr "Assert failed")) (CTrue))))
 
-;; ___assertIn
-(define assert-in-lambda)
-
-;; ___assertNotIn
-(define assert-notin-lambda)
-
-;; ___assertEqual
-(define assert-equal-lambda
-  (CFunc (args)
-    (Cif (CPrim2 '== args) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___assertNotEqual
-(define assert-notequal-lambda
-  (CFunc (args)
-    (Cif (CPrim2 '== args) (CError (CStr "Assert failed")) (CTrue))))
-
-;; ___assertRaises
-(define assert-raises-lambda)
-
-;; ___assertIs
-(define assert-is-lambda
-  (CFunc (args)
-    (Cif (CPrim2 'is args) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___fail
-(define fail-lambda)
-
 (define true-val
   (CTrue))
 

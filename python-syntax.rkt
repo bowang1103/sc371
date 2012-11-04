@@ -26,7 +26,7 @@
   [PyTryFinally (body : PyExpr) (finalbody : PyExpr)]
   
   [PyGlobal (names : (listof symbol))]
-  [PyNonLocal (names : (listof symbol))]
+  [PyNonlocal (names : (listof symbol))]
   
   ;;;;;; expr ;;;;;;
   ; boolop = {and, or}

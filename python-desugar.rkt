@@ -28,4 +28,5 @@
 ;              [(equal? 2 (length args)) (desugar/args2 op args)])]
     [PyNum (n) (CNum n)]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
-    [PyId (x) (CId x)]))
+    [PyId (x) (CId x)]
+    [else (CNum 1)]))
