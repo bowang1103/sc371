@@ -14,18 +14,18 @@ primitives here.
 
 (require (typed-in racket/base [display : (string -> void)]))
 
-(define (pretty arg)
+(define (pretty [arg : CVal]) : string
   (type-case CVal arg
     [VNum (n) (to-string n)]
     [VStr (s) s]
     [VTrue () "true"]
+    [VFalse () "false"]
     [VClosure (env args body) (error 'prim "Can't print closures yet")]))
-  
-
-(define (print arg)
+			
+(define (print [arg : CVal]) : void
   (display (pretty arg)))
 
-(define (python-prim1 op arg)
+(define (python-prim1 [op : symbol] [arg : CAns]) : CAns
   (case op
-    [(print) (begin (print arg) arg)]))
+    [(print) (begin (print (AVal-val arg)) arg)]))
 
