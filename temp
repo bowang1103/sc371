@@ -1,8 +1,3 @@
-match: no matching clause for '(#hasheq((body . (#hasheq((body . (#hasheq((value . #hasheq((n . 1) (nodetype . "Num"))) (nodetype . "Expr")))) (orelse . (#hasheq((value . #hasheq((n . 3) (nodetype . "Num"))) (nodetype . "Expr")))) (handlers . (#hasheq((body . (#hasheq((value . #hash...
-  context...:
-   /usr/racket/collects/racket/match/runtime.rkt:21:0: match:error
-   parse-loop2005
-   /usr/racket/collects/racket/private/map.rkt:26:19: loop
-   parse-loop2043
-   /usr/racket/collects/racket/cmdline.rkt:470:12: loop
-   /home/corleone/Git/sc371/python-main.rkt: [running body]
+class A :
+	x = 100
+	y = 200

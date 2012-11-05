@@ -39,8 +39,6 @@ ParselTongue.
 (define-type-alias Location number)
 (define-type-alias Env (hashof symbol Location))
 (define-type-alias Store (hashof Location CVal))
-(define-type-alias CValue (hashof VName ))
-(define-type-alias CMethod (hashof ))
 
 (define (interp-error str env store)
   (AExc (VStr str) env store))

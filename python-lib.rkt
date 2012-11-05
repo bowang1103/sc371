@@ -14,51 +14,6 @@ that calls the primitive `print`.
 
 (define-type-alias Lib (CExp -> CExp))
 
-(define print-lambda
-  (CFunc (list 'to-print)
-    (CPrim1 'print (CId 'to-print))))
-
-;; ___assertTure
-(define assert-true-lambda
-  (CFunc (list 'check-true)
-    (CIf (CId 'check-true) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___assertFalse
-(define assert-false-lambda
-  (CFunc (list 'check-false)
-    (CIf (CId 'check-false) (CError (CStr "Assert failed")) (CTrue))))
-
-;; ___assertIn
-(define assert-in-lambda
-  (CFunc (args)
-    (CIf (CPrim2 'in args) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___assertNotIn
-(define assert-notin-lambda
-  (CFunc (args)
-    (Cif (CPrim2 'in args) (CError (CStr "Assert failed")) (CTrue))))
-
-;; ___assertEqual
-(define assert-equal-lambda
-  (CFunc (args)
-    (CIf (CPrim2 '== args) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___assertNotEqual
-(define assert-notequal-lambda
-  (CFunc (args)
-    (CIf (CPrim2 '== args) (CError (CStr "Assert failed")) (CTrue))))
-
-;; ___assertRaises
-;(define assert-raises-lambda)
-
-;; ___assertIs
-(define assert-is-lambda
-  (CFunc (args)
-    (CIf (CPrim2 'is args) (CTrue) (CError (CStr "Assert failed")))))
-
-;; ___fail
-;(define fail-lambda)
-
 (define true-val
   (CTrue))
 
