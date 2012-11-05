@@ -61,29 +61,10 @@
                              (python-prim1 prim argAns)
                              argAns))]
     
-    ;[CPrim2 (prim arg1 arg2) (python-prim2 prim (interp-env arg env) (interp-env arg env))]
+    [CPrim2 (prim arg1 arg2) (python-prim2 prim (interp-env arg1 env store) (interp-env arg2 env store))]
     
-    ;[CPrim2Seq (left prims args) ]
     [else (error 'interp "no case")]
-    
     ))
-
-#|
-(define (make-ids (n : number)) : (listof symbol)
-  (build-list n (lambda (n) (string->symbol (string-append "var" (to-string n))))))
-
-;; cascade-lets will build up the nested lets, and use body as the
-;; eventual body, preserving order of evaluation of the expressions
-(define (cascade-lets (ids : (listof symbol))
-                      (exprs : (listof ExprC))
-                      (body : ExprC)) : ExprC
-  (cond [(empty? ids) body]
-        [(cons? ids)
-         (LetC (first ids) (first exprs) (cascade-lets (rest ids) (rest exprs) body))]))
-(local ([define ids (make-ids (length args))]
-          [define id-exps (map IdC ids)])
-    (cascade-lets ids (map desugar args)
-|#
 
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (env : Env) (sto : Store)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto)]
