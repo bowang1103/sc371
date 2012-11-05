@@ -47,15 +47,9 @@
   ("--python-path" path "Set the python path"
    (set! python-path path))
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
   ("--progress-report" dirname "Generate a soft report"
    (printf "~a\n"
     (jsexpr->json
      (json-summary
       (run-tests (mk-proc-eval/silent python-test-runner) dirname)))))
-=======
->>>>>>> cs173.10.27
->>>>>>> fuck
 )
