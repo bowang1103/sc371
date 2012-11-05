@@ -28,8 +28,6 @@ that calls the primitive `print`.
   (CFunc (list 'check-false)
     (CIf (CId 'check-false) (CError (CStr "Assert failed")) (CTrue))))
 
-<<<<<<< HEAD
-=======
 ;; ___assertIn
 (define assert-in-lambda
   (CFunc (args)
@@ -61,7 +59,6 @@ that calls the primitive `print`.
 ;; ___fail
 ;(define fail-lambda)
 
->>>>>>> 4c064df9949bf2fc8b98f8fbc53c32e25ec2f724
 (define true-val
   (CTrue))
 
