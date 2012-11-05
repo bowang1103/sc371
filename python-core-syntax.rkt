@@ -42,4 +42,5 @@ ParselTongue.
 
 (define (interp-error str env store)
   (AExc (VStr str) env store))
-
+(define (desugar-error str)
+  (CError (CStr str)))
