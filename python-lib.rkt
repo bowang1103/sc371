@@ -28,6 +28,40 @@ that calls the primitive `print`.
   (CFunc (list 'check-false)
     (CIf (CId 'check-false) (CError (CStr "Assert failed")) (CTrue))))
 
+<<<<<<< HEAD
+=======
+;; ___assertIn
+(define assert-in-lambda
+  (CFunc (args)
+    (CIf (CPrim2 'in args) (CTrue) (CError (CStr "Assert failed")))))
+
+;; ___assertNotIn
+(define assert-notin-lambda
+  (CFunc (args)
+    (Cif (CPrim2 'in args) (CError (CStr "Assert failed")) (CTrue))))
+
+;; ___assertEqual
+(define assert-equal-lambda
+  (CFunc (args)
+    (CIf (CPrim2 '== args) (CTrue) (CError (CStr "Assert failed")))))
+
+;; ___assertNotEqual
+(define assert-notequal-lambda
+  (CFunc (args)
+    (CIf (CPrim2 '== args) (CError (CStr "Assert failed")) (CTrue))))
+
+;; ___assertRaises
+;(define assert-raises-lambda)
+
+;; ___assertIs
+(define assert-is-lambda
+  (CFunc (args)
+    (CIf (CPrim2 'is args) (CTrue) (CError (CStr "Assert failed")))))
+
+;; ___fail
+;(define fail-lambda)
+
+>>>>>>> 4c064df9949bf2fc8b98f8fbc53c32e25ec2f724
 (define true-val
   (CTrue))
 
@@ -38,6 +72,14 @@ that calls the primitive `print`.
   (list (bind 'print print-lambda)
         (bind 'True true-val)
         (bind '___assertTrue assert-true-lambda)
+		(bind '___assertFalse assert-false-lambda)
+		(bind '___assertIn assert-in-lambda)
+		(bind '___assertNotIn assert-notin-lambda)
+		(bind '___assertEqual assert-equal-lambda)
+		(bind '___assertNotEqual assert-notequal-lambda)
+		;(bind '___assertRaises assert-raises-lambda)
+		(bind '___assertIs assert-is-lambda)
+		;(bind '___fail fail-lambda)
 
 ))
 
