@@ -223,10 +223,10 @@ structure that you define in python-syntax.rkt
                  ('kwargannotation kwar) ;; ignoring keywords for kwar
                  ('vararg var) ;; ignoring keywords for var
                  ('args args-list)
-		 ('kwonlyargs kwo)
+		         ('kwonlyargs kwo)
                  ('kwarg kwa)
                  ('varargannotation vwar)
-		 ('kw_defaults kwd))
+		         ('kw_defaults kwd))
      (map get-structured-python args-list)]
     [(hash-table ('nodetype "arg")
                  ('arg arg)
@@ -234,4 +234,5 @@ structure that you define in python-syntax.rkt
      (string->symbol arg)]
 ))
 ;    [_ (error 'parse "Haven't handled a case yet")]))
+
 

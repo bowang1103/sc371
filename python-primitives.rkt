@@ -20,6 +20,7 @@ primitives here.
     [VStr (s) s]
     [VTrue () "true"]
     [VFalse () "false"]
+    [VObject (type flds) (error 'prim "Cant print Object yet")]
     [VClosure (env args body) (error 'prim "Can't print closures yet")]))
 			
 (define (print [arg : CVal]) : void
