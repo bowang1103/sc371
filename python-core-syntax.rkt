@@ -62,7 +62,6 @@ ParselTongue.
 (define-type-alias LocalEnv (hashof symbol boolean))
 (define-type-alias ObjfieldV (hashof string CVal))
 
-
 (define (interp-error str env store lenv)
   (AExc (VStr str) env store lenv))
 
