@@ -14,8 +14,6 @@ that calls the primitive `print`.
 
 (define-type-alias Lib (CExp -> CExp))
 
-<<<<<<< HEAD
-=======
 (define print-lambda
   (CFunc (list 'to-print)
     (CPrim1 'print (CId 'to-print))))
@@ -61,7 +59,6 @@ that calls the primitive `print`.
 ;; ___fail
 ;(define fail-lambda)
 
->>>>>>> 1ec8b6a49abf61507e09017ba5875e977cd19b7e
 (define true-val
   (CTrue))
 
