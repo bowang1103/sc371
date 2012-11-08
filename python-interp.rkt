@@ -3,10 +3,12 @@
 (require "python-core-syntax.rkt"
          "python-primitives.rkt")
 
-(define (interp-env [expr : CExp] [env : Env] [store : Store] [lenv : LocalEnv] ) : CAns
-  (type-case CExp expr
-    ;[CNum (n) (AVal (VNum n) env store)]
-    ;[CNum (n) (begin )(AVal ())]
+(define (interp [expr : CExp]) : CAns
+  (interp-env expr (hash empty) (hash empty) (hash empty)))
+
+(define (interp-env [expr : CExp] [env : Env] [store : Store] [lenv : LocalEnv]) : CAns
+  (type-case CExp expr 
+    [CNum (s) (AVal (VNum s) env store lenv)]
     [CStr (s) (AVal (VStr s) env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
@@ -81,7 +83,6 @@
                                                                 val)])]
                                            [else val]))]
                                    [else objv]))]
-    
     ;;getfield for object
     [CGetfield (obj fld) (let ([objv (interp-env obj env store lenv)])
                            (type-case CAns objv
@@ -92,9 +93,6 @@
                                              (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
                                                    [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
                              [else objv]))]
-    
-    
-    
     [CObject (type exp)
              (let ([rs (interp-env exp env store (resetLocalEnv lenv))])
                (type-case CAns rs 
@@ -107,12 +105,8 @@
                              env store lenv)]
                  
                  [else rs]))]
-                  
-    
-    [else (error 'interp "no case")]
-    
-    ))
-
+    [else (begin (display expr)
+                 (error 'interp "no case"))]))
 
 (define (resetLocalEnv (oldEnv : LocalEnv)) :  LocalEnv
   (foldl (lambda (x result) (hash-set result x false)) (hash empty) (hash-keys oldEnv)))
@@ -149,9 +143,6 @@
                      (overrideStore locs anss (AVal-sto lastAns))
                      (AVal-lenv lastAns))
                lastAns))]))
-
-(define (interp expr)
-  (interp-env expr (hash (list)) (hash (list)) (hash (list))))
 
 (define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (type-case (optionof Location) (hash-ref env for)
@@ -200,4 +191,3 @@
      (overrideStore (rest locs) (rest anss) 
                     (hash-set sto (first locs) (AVal-val (first anss))))]
     [else sto]))
-

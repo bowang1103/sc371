@@ -26,17 +26,16 @@
 ;            (cond 
 ;              [(equal? 1 (length args)) (desugar/arg op args)]
 ;              [(equal? 2 (length args)) (desugar/args2 op args)])]
-    ;[PyNum (n) (map (lambda (x y) (CSetfield (CObject "Int" (CEmpty)))) (cons (value list)) (cons (n list)] 
-    
-    [PyNum (n) (let ([newObj (CObject "Int" (CEmpty))])
-                 (let ([newList (map2 (lambda (name value) (CSetfield newObj name value)) 
-                                      (list "value"  "method")
-                                      (list (CNum n)  (CFunc (list 'a) (CEmpty))))])
+    [PyNum (n) (CLet 'newObj (CObject "Int" (CEmpty))
+                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
+                                      (list "value")
+                                      (list (CNum n)))])
                    (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
-                 
-                 
-                 
-                       
+    [PyStr (s) (CLet 'newObj (CObject "Str" (CEmpty))
+                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
+                                      (list "value")
+                                      (list (CStr s)))])
+                   (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
     
@@ -44,5 +43,4 @@
     ;[PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
     ;[PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
     ;r[PyRaise (exc) (cause)  (CRaise (desugar exc) (desugar cause))]
-
     [else (CNum 1)]))

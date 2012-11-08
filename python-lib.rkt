@@ -67,20 +67,20 @@ that calls the primitive `print`.
 
 (define lib-functions
   (list (bind 'print print-lambda)
-        (bind 'True true-val)
-        (bind '___assertTrue assert-true-lambda)
-		(bind '___assertFalse assert-false-lambda)
-		(bind '___assertIn assert-in-lambda)
-		(bind '___assertNotIn assert-notin-lambda)
-		(bind '___assertEqual assert-equal-lambda)
-		(bind '___assertNotEqual assert-notequal-lambda)
-		;(bind '___assertRaises assert-raises-lambda)
-		(bind '___assertIs assert-is-lambda)
-		;(bind '___fail fail-lambda)
+        ;(bind 'True true-val)
+        ;(bind '___assertTrue assert-true-lambda)
+        ;(bind '___assertFalse assert-false-lambda)
+        ;(bind '___assertIn assert-in-lambda)
+        ;(bind '___assertNotIn assert-notin-lambda)
+        ;(bind '___assertEqual assert-equal-lambda)
+        ;(bind '___assertNotEqual assert-notequal-lambda)
+        ;(bind '___assertRaises assert-raises-lambda)
+        ;(bind '___assertIs assert-is-lambda)
+        ;(bind '___fail fail-lambda)
 
 ))
 
-(define (python-lib expr)
+(define (python-lib (expr : CExp)) : CExp
   (local [(define (python-lib/recur libs)
             (cond [(empty? libs) expr]
                   [(cons? libs)

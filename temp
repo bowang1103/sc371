@@ -1,5 +1,1 @@
-class A :
-	x = 100
-	y = 200
-
-z = A()
+print("hichuang")

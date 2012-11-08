@@ -1,1 +1,1 @@
-"{\"body\": [{\"nodetype\": \"Assign\", \"targets\": [{\"nodetype\": \"Name\", \"ctx\": {\"nodetype\": \"Store\"}, \"id\": \"x\"}], \"value\": {\"nodetype\": \"Num\", \"n\": 5}}], \"nodetype\": \"Module\"}\n"
+"{\"body\": [{\"nodetype\": \"Expr\", \"value\": {\"nodetype\": \"Call\", \"starargs\": null, \"args\": [{\"s\": \"hichuang\", \"nodetype\": \"Str\"}], \"func\": {\"nodetype\": \"Name\", \"ctx\": {\"nodetype\": \"Load\"}, \"id\": \"print\"}, \"kwargs\": null, \"keywords\": []}}], \"nodetype\": \"Module\"}\n"

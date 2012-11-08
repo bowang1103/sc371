@@ -34,9 +34,7 @@ ParselTongue.
   [CObject (type : string) (body : CExp)]  
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
-  [CEmpty]
-  
-  )
+  [CEmpty])
 
 (define-type CVal
   [VNum (n : number)]
