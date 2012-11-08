@@ -20,10 +20,13 @@ primitives here.
     [VStr (s) s]
     [VTrue () "true"]
     [VFalse () "false"]
+    [VEmpty () ""]
+    [VObject (type flds) (cond
+                           [(equal? type "Int") (to-string (some-v (hash-ref flds "value")))])]
     [VClosure (env args body) (error 'prim "Can't print closures yet")]))
 			
 (define (print [arg : CVal]) : void
-  (display (pretty arg)))
+  (display (string-append (pretty arg) "\n")))
 
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 
@@ -48,8 +51,8 @@ primitives here.
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CAns
   (case op
-    [(==) (AVal (if (equal? arg1 arg2) (VTrue) (VFalse)) (AVal-env arg2) (AVal-sto arg2))]
-    [(!=) (AVal (if (equal? arg1 arg2) (VFalse) (VTrue)) (AVal-env arg2) (AVal-sto arg2))]
+    [(==) (AVal (if (equal? arg1 arg2) (VTrue) (VFalse)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
+    [(!=) (AVal (if (equal? arg1 arg2) (VFalse) (VTrue)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
     ;; TODO: add all other cases
     ))
 

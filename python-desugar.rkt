@@ -26,7 +26,16 @@
 ;            (cond 
 ;              [(equal? 1 (length args)) (desugar/arg op args)]
 ;              [(equal? 2 (length args)) (desugar/args2 op args)])]
-    [PyNum (n) (CNum n)]
+    [PyNum (n) (CLet 'newObj (CObject "Int" (CEmpty))
+                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
+                                      (list "value")
+                                      (list (CNum n)))])
+                   (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
+    [PyStr (s) (CLet 'newObj (CObject "Str" (CEmpty))
+                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
+                                      (list "value")
+                                      (list (CStr s)))])
+                   (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
     
@@ -39,7 +48,11 @@
     ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
     [PyUnaryOp (unaryop operand) (CPrim1 unaryop (desugar operand))]
     
-    [else (CError (CStr "no case yet"))]))
+	;; Handling Try Exception
+    ;[PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
+    ;[PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
+    ;r[PyRaise (exc) (cause)  (CRaise (desugar exc) (desugar cause))]
+    [else (CNum 1)]))
 
 (define (make-ids (n : number)) : (listof symbol)
   (build-list n (lambda (n) (string->symbol (string-append "_tmpvar" (to-string n))))))
