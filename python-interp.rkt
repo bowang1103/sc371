@@ -66,7 +66,7 @@
                              (python-prim1 prim argAns)
                              argAns))]
     
-    [CPrim2 (prim arg1 arg2) (python-prim2 prim (interp-env arg1 env store) (interp-env arg2 env store))]
+    [CPrim2 (prim arg1 arg2) (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv))]
     
     ;[CPrim2Seq (left prims args) ]
      

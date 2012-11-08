@@ -51,8 +51,8 @@ primitives here.
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CAns
   (case op
-    [(==) (AVal (if (equal? arg1 arg2) (VTrue) (VFalse)) (AVal-env arg2) (AVal-sto arg2))]
-    [(!=) (AVal (if (equal? arg1 arg2) (VFalse) (VTrue)) (AVal-env arg2) (AVal-sto arg2))]
+    [(==) (AVal (if (equal? arg1 arg2) (VTrue) (VFalse)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
+    [(!=) (AVal (if (equal? arg1 arg2) (VFalse) (VTrue)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
     ;; TODO: add all other cases
     ))
 

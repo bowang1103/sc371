@@ -56,15 +56,12 @@ ParselTongue.
 (define-type-alias Env (hashof symbol Location))
 (define-type-alias Store (hashof Location CVal))
 
-(define (interp-error str env store)
-  (AExc (VStr str) env store))
-(define (desugar-error str)
-  (CError (CStr str)))
-
 ;; LocalEnv only works when interping the class, when Assigning the 
 ;; variable in Class definition, we'll set boolean to True; (defualt is False)
 (define-type-alias LocalEnv (hashof symbol boolean))
 (define-type-alias ObjfieldV (hashof string CVal))
 
+(define (desugar-error str)
+  (CError (CStr str)))
 (define (interp-error str env store lenv)
   (AExc (VStr str) env store lenv))
