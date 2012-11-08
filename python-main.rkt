@@ -17,11 +17,16 @@
 
 (define (run-python port)
   (interp
-    (python-lib
-      (desugar
-        (get-structured-python
-          (let ([jsexpr/output (parse-python/port port python-path)]) 
-	       (begin (write-to-file jsexpr/output "./jsexpr.output" #:exists 'replace) jsexpr/output)))))))
+    (let ([cexp/output (python-lib
+                        (desugar
+                         (let ([get-struct-result 
+                                (get-structured-python
+                                 (let ([jsexpr/output (parse-python/port port python-path)]) 
+                                   (begin (write-to-file jsexpr/output "./jsexpr.output" #:exists 'replace) jsexpr/output)))])
+                           (begin (write-to-file get-struct-result "surface.output" #:exists 'replace)
+                                  get-struct-result))))])
+      (begin (write-to-file cexp/output "cexp.output" #:exists 'replace)
+             cexp/output))))
 
 (define python-path "/home/joe/bin/python")
 
@@ -47,15 +52,9 @@
   ("--python-path" path "Set the python path"
    (set! python-path path))
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
   ("--progress-report" dirname "Generate a soft report"
    (printf "~a\n"
     (jsexpr->json
      (json-summary
       (run-tests (mk-proc-eval/silent python-test-runner) dirname)))))
-=======
->>>>>>> cs173.10.27
->>>>>>> fuck
 )

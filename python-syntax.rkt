@@ -7,7 +7,7 @@
   ;; added by hichuang
   
   ;;;;;; stmt ;;;;;;
-  [PyFuncDef (name : symbol) (args : (listof symbol)) (return : PyExpr)]
+  [PyFuncDef (name : symbol) (args : (listof symbol)) (body : PyExpr) (return : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
   
   
@@ -26,7 +26,7 @@
   [PyTryFinally (body : PyExpr) (finalbody : PyExpr)]
   
   [PyGlobal (names : (listof symbol))]
-  [PyNonLocal (names : (listof symbol))]
+  [PyNonlocal (names : (listof symbol))]
   
   ;;;;;; expr ;;;;;;
   ; boolop = {and, or}

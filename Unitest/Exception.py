@@ -8,4 +8,3 @@ def test():
          3
      finally:
          4
-

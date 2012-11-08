@@ -20,10 +20,13 @@ primitives here.
     [VStr (s) s]
     [VTrue () "true"]
     [VFalse () "false"]
+    [VEmpty () ""]
+    [VObject (type flds) (cond
+                           [(equal? type "Int") (to-string (some-v (hash-ref flds "value")))])]
     [VClosure (env args body) (error 'prim "Can't print closures yet")]))
 			
 (define (print [arg : CVal]) : void
-  (display (pretty arg)))
+  (display (string-append (pretty arg) "\n")))
 
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 

@@ -1,0 +1,1 @@
+"{\"body\": [{\"nodetype\": \"Expr\", \"value\": {\"nodetype\": \"Call\", \"starargs\": null, \"args\": [{\"s\": \"hichuang\", \"nodetype\": \"Str\"}], \"func\": {\"nodetype\": \"Name\", \"ctx\": {\"nodetype\": \"Load\"}, \"id\": \"print\"}, \"kwargs\": null, \"keywords\": []}}], \"nodetype\": \"Module\"}\n"

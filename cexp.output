@@ -1,0 +1,1 @@
+#(struct:CLet print #(struct:CFunc (to-print) #(struct:CPrim1 print #(struct:CId to-print))) #(struct:CApp #(struct:CId print) (#(struct:CLet newObj #(struct:CObject "Str" #(struct:CEmpty)) #(struct:CSetfield #(struct:CId newObj) "value" #(struct:CStr "hichuang"))))))

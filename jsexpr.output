@@ -1,0 +1,1 @@
+#hasheq((body . (#hasheq((value . #hasheq((args . (#hasheq((s . "hichuang") (nodetype . "Str")))) (nodetype . "Call") (keywords . ()) (kwargs . #\nul) (starargs . #\nul) (func . #hasheq((id . "print") (nodetype . "Name") (ctx . #hasheq((nodetype . "Load"))))))) (nodetype . "Expr")))) (nodetype . "Module"))
