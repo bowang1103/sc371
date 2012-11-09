@@ -31,7 +31,7 @@ ParselTongue.
   ;[CRaise (exc : CExp) (cause : CExp)]
     
   ;;Define Object ; CObject here is different from PT's ObjectC (lisfofField)
-  [CObject (type : string) (value : CVal) (body : CExp)]  
+  [CObject (type : string) (value : CExp) (body : CExp)]  
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
   [CEmpty])

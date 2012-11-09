@@ -56,17 +56,17 @@ primitives here.
         [val-r (getPrimVal (AVal-val arg2))])
     (case op
       [(==) (if (equal? val-l val-r) 
-                      ($to-object (VTrue))
-                      ($to-object (VFalse)))]
+                      ($to-object (CTrue))
+                      ($to-object (CFalse)))]
       [(!=) (if (equal? val-l val-r)
-                      ($to-object (VFalse)) 
-                      ($to-object (VTrue)))]
+                      ($to-object (CFalse)) 
+                      ($to-object (CTrue)))]
       ;; TODO: add all other cases
       [else (cond 
               ;; both arg2 are number
               [(and (VNum? val-l) (VNum? val-r))
                (case op
-                 [(+) ($to-object (VNum (+ (VNum-n val-l) (VNum-n val-r))))])]
+                 [(+) ($to-object (CNum (+ (VNum-n val-l) (VNum-n val-r))))])]
               [else (error 'prim2 "no case yet")])]
     )))
 

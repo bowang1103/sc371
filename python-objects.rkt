@@ -2,18 +2,19 @@
 
 (require "python-core-syntax.rkt")
 
-(define (to-str-obj [val : CVal]) : CExp
-  (CLet 'newObj (CObject "Str" val (CEmpty))
+(define (to-str-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Str" prim (CEmpty))
         (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref str-hash key))))
                                 (hash-keys str-hash))])
           (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
 
-(define (to-int-obj [val : CVal]) : CExp
-  (CLet 'newObj (CObject "Int" val (CEmpty))
+(define (to-int-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Int" prim (CEmpty))
         (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref int-hash key))))
                                 (hash-keys int-hash))])
           (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
 
+;; built-in methods for str
 (define str-hash 
          (hash 
           (list (values "%add"
@@ -23,6 +24,7 @@
                                        (CId 'right))))
                 )))
 
+;; bulit-in methods for int
 (define int-hash 
          (hash 
           (list (values "%add"
@@ -33,11 +35,11 @@
                 )))
 
 
-(define ($to-object (val : CVal)) : CExp
-  (type-case CVal val
-    [VNum (n) (to-int-obj val)]
+(define ($to-object (prim : CExp)) : CExp
+  (type-case CExp prim
+    [CNum (n) (to-int-obj prim)]
     ;[VTrue () (to-bool-obj (VNum 1))]
     ;[VFalse () (to-bool-obj (VNum 0))]
-    [VStr (s) (to-str-obj val)]
+    [CStr (s) (to-str-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))

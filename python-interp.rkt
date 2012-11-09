@@ -94,18 +94,22 @@
                                              (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
                                                    [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
                              [else objv]))]
-    [CObject (type value exp)
-             (let ([rs (interp-env exp env store (resetLocalEnv lenv))])
-               (type-case CAns rs 
-                 [AVal (v-rs e-rs s-rs le-rs)
-                       (AVal (VObject type value
-                                      (let ([rst (make-hash empty)]) 
-                                        (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
-                                                    (getModifiedVars le-rs)) 
-                                               rst)))
-                             env store lenv)]
-                 
-                 [else rs]))]
+    
+    [CObject (type prim exp)
+             (let ([primVal (interp-env prim env store lenv)]
+                   [rs (interp-env exp env store (resetLocalEnv lenv))])
+               (type-case CAns primVal
+                 [AVal (v-pv e-pv s-pv le-pv)
+                       (type-case CAns rs
+                         [AVal (v-rs e-rs s-rs le-rs)
+                               (AVal (VObject type v-pv
+                                       (let ([rst (make-hash empty)])
+                                         (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
+                                                     (getModifiedVars le-rs))
+                                                rst)))
+                                     env store lenv)]
+                         [else rs])]
+                 [else primVal]))]
 
     [else (begin (display expr)
                  (error 'interp "no case"))]))
