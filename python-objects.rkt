@@ -20,6 +20,12 @@
                                 (hash-keys bool-hash))])
           (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
 
+(define (to-list-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "List" prim (CEmpty))
+        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref list-hash key))))
+                                (hash-keys list-hash))])
+          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+
 ;; built-in methods for str
 (define str-hash 
          (hash 
@@ -49,6 +55,9 @@
                                        (CId 'self)
                                        (CId 'right))))
                 )))
+
+;; built-in methods for list
+(define list-hash (hash empty))
 
 
 (define ($to-object (prim : CExp)) : CExp
