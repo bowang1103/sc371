@@ -39,6 +39,17 @@
                                      (hash-set s-bind where v-bind)
                                      (hash-set le-bind id true))]
                              [else bindAns]))]
+    
+    [CSet (id value) (let ([vans (interp-env value env store lenv)])
+                       (type-case CAns vans
+                         [AVal (v-v e-v s-v le-v) 
+                               (if (or (isImmutable (VObject-type v-v)) (equal? (none) (hash-ref e-v id)))
+                                   (let ([where (newLoc)])
+                                     (AVal v-v (hash-set e-v id where)
+                                                (hash-set s-v where v-v)
+                                                (hash-set le-v id true)))
+                                   (Aval v-v e-v (hash-set s-v (some-v (hash-ref e-v id)) v-v) le-v))]
+                         [else vans]))]
 
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])
                     (type-case CAns e1Ans

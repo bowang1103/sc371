@@ -43,11 +43,9 @@ ParselTongue.
   [VFalse]
   [VEmpty]
   [VObject (type : string) (value : CVal) (field : ObjfieldV)]
+  [VPoint (name : symbol) (field : string)]
   [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
    
-
-
-
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]
   [AExc (exc : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)])
@@ -63,5 +61,14 @@ ParselTongue.
 
 (define (desugar-error str)
   (CError (CStr str)))
+
 (define (interp-error str env store lenv)
   (AExc (VStr str) env store lenv))
+
+(define isImmutableTable 
+  (make-hash (list (values "Int" true) (values "Str" true))))
+
+(define (isImmutable (type : string)) : boolean
+  (if (equal? (none) (hash-ref isImmutableTable type))
+      false
+      true))

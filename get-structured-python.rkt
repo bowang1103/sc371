@@ -35,7 +35,8 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Delete")
                  ('targets targets))
      (PyDel (map get-structured-python targets))]
-;    [(hash-table ('nodetype "Assign") ('targets expr-list) ('value expr))]
+    [(hash-table ('nodetype "Assign") ('targets targets) ('value value))
+     (PyAssign (map get-structured-python targets) (get-structured-python value))]
 ;    [(hash-table ('nodetype "AugAssign"))]
 ;    [(hash-table ('nodetype "Print"))]
     [(hash-table ('nodetype "For")

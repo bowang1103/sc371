@@ -9,7 +9,7 @@
   ;;;;;; stmt ;;;;;;
   [PyFuncDef (name : symbol) (args : (listof symbol)) (body : PyExpr) (return : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
-  
+  [PyAssign (targets : (listof PyExpr)) (value : PyExpr)]
   
   ; for num in range(2, 10): 
   ;     body.... 
