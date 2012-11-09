@@ -13,6 +13,7 @@
   (type-case CExp expr 
     [CNum (s) (AVal (VNum s) env store lenv)]
     [CStr (s) (AVal (VStr s) env store lenv)]
+    [CList (es) (AVal (VList (map (lambda(x) (AVal-val (interp-env x env store lenv))) es)))]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
     [CEmpty () (AVal (VEmpty) env store lenv)]
@@ -48,7 +49,7 @@
                                      (AVal v-v (hash-set e-v id where)
                                                 (hash-set s-v where v-v)
                                                 (hash-set le-v id true)))
-                                   (Aval v-v e-v (hash-set s-v (some-v (hash-ref e-v id)) v-v) le-v))]
+                                   (AVal v-v e-v (hash-set s-v (some-v (hash-ref e-v id)) v-v) le-v))]
                          [else vans]))]
 
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])
