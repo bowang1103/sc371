@@ -19,6 +19,7 @@ primitives here.
   (type-case CVal arg
     [VNum (n) (to-string n)]
     [VStr (s) s]
+    [VList (es) (to-string (map pretty es))]
     [VTrue () "true"]
     [VFalse () "false"]
     [VEmpty () ""]
@@ -26,7 +27,8 @@ primitives here.
                                  [(equal? type "Int") (pretty value)]
                                  [(equal? type "Str") (pretty value)]
                                  [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
-    [VClosure (args body env) (error 'prim "Can't print closures yet")]))
+    [VClosure (args body env) (error 'prim "Can't print closures yet")]
+    [VPoint (name field) (error 'prim "VPoint")]))
 			
 (define (print [arg : CVal]) : void
   (display (string-append (pretty arg) "\n")))

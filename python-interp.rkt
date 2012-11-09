@@ -29,7 +29,8 @@
                                (interp-env t e-i s-i le-i))]
                      [else ians]))]
 
-    [CId (id) (grabValue id env store lenv)]
+    [CId (id) (let [rst (grabValue id env store lenv)]
+                (VPoint? ))]
 
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)]
                                [where (newLoc)])

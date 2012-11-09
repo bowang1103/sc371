@@ -29,6 +29,7 @@
 ;              [(equal? 2 (length args)) (desugar/args2 op args)])]
     [PyNum (n) ($to-object (CNum n))]
     [PyStr (s) ($to-object (CStr s))]
+    [PyList (es) ($to-object (CList (map desugar es)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
     
