@@ -14,6 +14,12 @@
                                 (hash-keys int-hash))])
           (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
 
+(define (to-bool-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Bool" prim (CEmpty))
+        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref bool-hash key))))
+                                (hash-keys bool-hash))])
+          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+
 ;; built-in methods for str
 (define str-hash 
          (hash 
@@ -34,12 +40,22 @@
                                        (CId 'right))))
                 )))
 
+;; bulit-in methods for bool
+(define bool-hash 
+         (hash 
+          (list (values "%dummy"
+                        (CFunc (list 'self 'right)
+                               (CPrim2 'num+
+                                       (CId 'self)
+                                       (CId 'right))))
+                )))
+
 
 (define ($to-object (prim : CExp)) : CExp
   (type-case CExp prim
     [CNum (n) (to-int-obj prim)]
-    ;[VTrue () (to-bool-obj (VNum 1))]
-    ;[VFalse () (to-bool-obj (VNum 0))]
+    [CTrue () (to-bool-obj (CNum 1))]
+    [CFalse () (to-bool-obj (CNum 0))]
     [CStr (s) (to-str-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))

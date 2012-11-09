@@ -45,7 +45,7 @@
     ;[PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
     ;[PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
     ;r[PyRaise (exc) (cause)  (CRaise (desugar exc) (desugar cause))]
-    [else (CNum 1)]))
+    [else (CNum 10)]))
 
 (define (make-ids (n : number)) : (listof symbol)
   (build-list n (lambda (n) (string->symbol (string-append "_tmpvar" (to-string n))))))

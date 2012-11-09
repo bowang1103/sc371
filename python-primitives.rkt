@@ -24,7 +24,8 @@ primitives here.
     [VEmpty () ""]
     [VObject (type value flds) (cond
                                  [(equal? type "Int") (pretty value)]
-                                 [(equal? type "Str") (pretty value)])]
+                                 [(equal? type "Str") (pretty value)]
+                                 [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]))
 			
 (define (print [arg : CVal]) : void
@@ -63,10 +64,18 @@ primitives here.
                       ($to-object (CTrue)))]
       ;; TODO: add all other cases
       [else (cond 
-              ;; both arg2 are number
+              ;; NUMBER CASE (and BOOL)
               [(and (VNum? val-l) (VNum? val-r))
                (case op
-                 [(+) ($to-object (CNum (+ (VNum-n val-l) (VNum-n val-r))))])]
+                 [(+) ($to-object (CNum (+ (VNum-n val-l) (VNum-n val-r))))]
+                 [(-) ($to-object (CNum (- (VNum-n val-l) (VNum-n val-r))))]
+                 [(*) ($to-object (CNum (* (VNum-n val-l) (VNum-n val-r))))]
+                 [(/) ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r))))] ;; should take care /0 case
+                 )]
+              ;; STRING CASE
+              [(and (VStr? val-l) (VStr? val-r))
+               (case op
+                 [(+) ($to-object (CStr (string-append (VStr-s val-l) (VStr-s val-r))))])]
               [else (error 'prim2 "no case yet")])]
     )))
 
