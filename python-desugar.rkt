@@ -1,7 +1,8 @@
 #lang plai-typed
 
 (require "python-syntax.rkt"
-         "python-core-syntax.rkt")
+         "python-core-syntax.rkt"
+         "python-objects.rkt")
 
 ;; desugar/args2: listof PyExpr * symbol -> CExp
 ;; For the operator with two arguments I just put them into
@@ -26,16 +27,8 @@
 ;            (cond 
 ;              [(equal? 1 (length args)) (desugar/arg op args)]
 ;              [(equal? 2 (length args)) (desugar/args2 op args)])]
-    [PyNum (n) (CLet 'newObj (CObject "Int" (CEmpty))
-                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
-                                      (list "value")
-                                      (list (CNum n)))])
-                   (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
-    [PyStr (s) (CLet 'newObj (CObject "Str" (CEmpty))
-                 (let ([newList (map2 (lambda (name value) (CSetfield (CId 'newObj) name value)) 
-                                      (list "value")
-                                      (list (CStr s)))])
-                   (foldl (lambda (e1 e2) (CSeq e2 e1)) (first newList) (rest newList))))]
+    [PyNum (n) ($to-object (VNum n))]
+    [PyStr (s) ($to-object (VStr s))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
     

@@ -1,1 +1,1 @@
-#(struct:PySeq (#(struct:PyApp #(struct:PyId print) (#(struct:PyStr "hichuang")))))
+#(struct:PySeq (#(struct:PyApp #(struct:PyId print) (#(struct:PyStr "hichuang"))) #(struct:PyApp #(struct:PyId print) (#(struct:PyNum 5))) #(struct:PyApp #(struct:PyId print) (#(struct:PyBinOp #(struct:PyNum 1) + #(struct:PyNum 1))))))

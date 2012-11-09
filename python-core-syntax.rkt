@@ -31,7 +31,7 @@ ParselTongue.
   ;[CRaise (exc : CExp) (cause : CExp)]
     
   ;;Define Object ; CObject here is different from PT's ObjectC (lisfofField)
-  [CObject (type : string) (body : CExp)]  
+  [CObject (type : string) (value : CVal) (body : CExp)]  
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
   [CEmpty])
@@ -42,7 +42,7 @@ ParselTongue.
   [VTrue]
   [VFalse]
   [VEmpty]
-  [VObject (type : string) (field : ObjfieldV)]
+  [VObject (type : string) (value : CVal) (field : ObjfieldV)]
   [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
    
 

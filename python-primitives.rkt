@@ -1,6 +1,7 @@
 #lang plai-typed
 
-(require "python-core-syntax.rkt")
+(require "python-core-syntax.rkt"
+         "python-objects.rkt")
 
 #|
 
@@ -21,9 +22,10 @@ primitives here.
     [VTrue () "true"]
     [VFalse () "false"]
     [VEmpty () ""]
-    [VObject (type flds) (cond
-                           [(equal? type "Int") (to-string (some-v (hash-ref flds "value")))])]
-    [VClosure (env args body) (error 'prim "Can't print closures yet")]))
+    [VObject (type value flds) (cond
+                                 [(equal? type "Int") (pretty value)]
+                                 [(equal? type "Str") (pretty value)])]
+    [VClosure (args body env) (error 'prim "Can't print closures yet")]))
 			
 (define (print [arg : CVal]) : void
   (display (string-append (pretty arg) "\n")))
@@ -49,10 +51,27 @@ primitives here.
 ; boolop = {and, or}
 ; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
-(define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CAns
-  (case op
-    [(==) (AVal (if (equal? arg1 arg2) (VTrue) (VFalse)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
-    [(!=) (AVal (if (equal? arg1 arg2) (VFalse) (VTrue)) (AVal-env arg2) (AVal-sto arg2) (AVal-lenv arg2))]
-    ;; TODO: add all other cases
-    ))
+(define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
+  (let ([val-l (getPrimVal (AVal-val arg1))]
+        [val-r (getPrimVal (AVal-val arg2))])
+    (case op
+      [(==) (if (equal? val-l val-r) 
+                      ($to-object (VTrue))
+                      ($to-object (VFalse)))]
+      [(!=) (if (equal? val-l val-r)
+                      ($to-object (VFalse)) 
+                      ($to-object (VTrue)))]
+      ;; TODO: add all other cases
+      [else (cond 
+              ;; both arg2 are number
+              [(and (VNum? val-l) (VNum? val-r))
+               (case op
+                 [(+) ($to-object (VNum (+ (VNum-n val-l) (VNum-n val-r))))])]
+              [else (error 'prim2 "no case yet")])]
+    )))
 
+;; get object value from an Ans
+(define (getPrimVal (obj : CVal)) : CVal
+  (type-case CVal obj
+    [VObject (type value flds) value]
+    [else (error 'getPrimVal "input not an object")]))

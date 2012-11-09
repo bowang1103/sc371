@@ -1,7 +1,8 @@
 #lang plai-typed
 
 (require "python-core-syntax.rkt"
-         "python-primitives.rkt")
+         "python-primitives.rkt"
+         "python-objects.rkt")
 
 (define (interp [expr : CExp]) : CAns
   (interp-env expr (hash empty) (hash empty) (hash empty)))
@@ -66,7 +67,7 @@
                              (python-prim1 prim argAns)
                              argAns))]
     
-    [CPrim2 (prim arg1 arg2) (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv))]
+    [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
     
     ;[CPrim2Seq (left prims args) ]
      
@@ -93,15 +94,15 @@
                                              (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
                                                    [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
                              [else objv]))]
-    [CObject (type exp)
+    [CObject (type value exp)
              (let ([rs (interp-env exp env store (resetLocalEnv lenv))])
                (type-case CAns rs 
                  [AVal (v-rs e-rs s-rs le-rs)
-                       (AVal (VObject type 
+                       (AVal (VObject type value
                                       (let ([rst (make-hash empty)]) 
                                         (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
                                                     (getModifiedVars le-rs)) 
-                                               rst))) 
+                                               rst)))
                              env store lenv)]
                  
                  [else rs]))]
