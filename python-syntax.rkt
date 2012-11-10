@@ -1,6 +1,7 @@
 #lang plai-typed
 
 (define-type PyExpr
+  [PySubscript (obj : PyExpr) (indexs : (listof PyExpr))]
   [PySeq (es : (listof PyExpr))]
   [PyId (x : symbol)]
   
@@ -38,7 +39,6 @@
   ; op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
   [PyCompare (left : PyExpr) (ops : (listof symbol)) (comparators : (listof PyExpr))]
   [PyApp (fun : PyExpr) (args : (listof PyExpr))]
-  [PySubscript (value : PyExpr) (slices : (listof PyExpr))]
   
   ;;;;;; ds ;;;;;;
   [PyDict (keys : (listof PyExpr)) (values : (listof PyExpr))]

@@ -33,6 +33,7 @@ ParselTongue.
     
   ;;Define Object ; CObject here is different from PT's ObjectC (lisfofField)
   [CObject (type : string) (value : CExp) (body : CExp)]  
+  [CSetelement (obj : CExp) (index : CExp) (value : CExp)]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
   [CEmpty])

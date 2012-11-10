@@ -64,6 +64,39 @@
                                            (hash-set s-v where v-v)
                                            (hash-set le-v id true))])))]
                          [else vans]))]
+    
+    [CSetelement (obj index value) 
+                 (let ([oval (interp-env obj env store lenv)] 
+                       [ival (interp-env index env store lenv)]
+                       [vval (interp-env value env store lenv)])
+                   (if (and (AVal? oval) (and (AVal? ival) (AVal? vval)))
+                       (if (equal? (VObject-type (AVal-val ival)) "Int")
+                           (cond
+                             [(equal? (VObject-type (AVal-val oval)) "List") 
+                              (AVal (AVal-val vval)
+                                    env
+                                    (type-case CExp obj 
+                                      [CId (c-id) (hash-set store 
+                                                            (some-v (hash-ref env c-id)) 
+                                                            (VObject "List" 
+                                                                     (VList 
+                                                                      (map2 (lambda (x y) 
+                                                                              (if (equal? y (VNum-n (VObject-value (AVal-val ival))))
+                                                                                  (AVal-val vval)
+                                                                                  x)) 
+                                                                            (VList-es (VObject-value (AVal-val oval)))
+                                                                            (build-list (length (VList-es (VObject-value (AVal-val oval)))) (lambda(x) x))))
+                                                                     (VObject-field (AVal-val oval))))]
+                                      [else store])
+                                    lenv)]
+                             [else (interp-error "I don't address" env store lenv)])
+                           (interp-error "Index is not a number" env store lenv))
+                       (cond
+                         [(AExc? oval) oval]
+                         [(AExc? ival) ival]
+                         [(AExc? vval) vval]
+                         [else (interp-error "You should not been here" env store lenv)])))]
+    ;[CGetelement (id index)]
 
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])
                     (type-case CAns e1Ans
