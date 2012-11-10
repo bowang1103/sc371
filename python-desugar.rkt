@@ -36,7 +36,7 @@
     [PyBoolOp (boolop exprs) (desugar-boolop boolop exprs)]
     ; ==, !=, <, <=, >, >=, is, !is, in, !in : a < b < c => a < b and b < c
     [PyCompare (left ops comparators) (desugar-compare left ops comparators)]
-    ; +, -, *, /, %, **, <<, >>, bor, ^, band, //
+    ; +, -, *, /, %, **, <<, >>, bor, bxor, band, //
     [PyBinOp (left binop right) (CPrim2 binop (desugar left) (desugar right))]
     ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
     [PyUnaryOp (unaryop operand) (CPrim1 unaryop (desugar operand))]

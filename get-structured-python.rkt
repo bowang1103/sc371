@@ -196,7 +196,7 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Lshift")) '<<]
     [(hash-table ('nodetype "Rshift")) '>>]
     [(hash-table ('nodetype "BitOr")) 'bor]
-    [(hash-table ('nodetype "BitXor")) '^]
+    [(hash-table ('nodetype "BitXor")) 'bxor]
     [(hash-table ('nodetype "BitAnd")) 'band]
     [(hash-table ('nodetype "FloorDiv")) '//]
     [(hash-table ('nodetype "Invert")) '~]

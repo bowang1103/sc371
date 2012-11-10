@@ -4,8 +4,10 @@
          "python-primitives.rkt"
          "python-objects.rkt")
 
-(define (interp [expr : CExp]) : CAns
-  (interp-env expr (hash empty) (hash empty) (hash empty)))
+(define (interp [expr : CExp]) : CVal
+  (type-case CAns (interp-env expr (hash empty) (hash empty) (hash empty))
+    [AExc (excpt env sto lenv) (begin (print excpt) excpt)]
+    [AVal (value env sto lenv) value]))
 
 (define (interp-env [expr : CExp] [env : Env] [store : Store] [lenv : LocalEnv]) : CAns
   (type-case CExp expr 

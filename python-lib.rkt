@@ -22,32 +22,32 @@ that calls the primitive `print`.
 ;; ___assertTure
 (define assert-true-lambda
   (CFunc (list 'check-true)
-    (CIf (CId 'check-true) ($to-object (CTrue)) (CError (CStr "Assert failed")))))
+    (CIf (CId 'check-true) ($to-object (CTrue)) (CError (CStr "Assert True Failed")))))
 
 ;; ___assertFalse
 (define assert-false-lambda
   (CFunc (list 'check-false)
-    (CIf (CId 'check-false) (CError (CStr "Assert failed")) ($to-object (CTrue)))))
+    (CIf (CId 'check-false) (CError (CStr "Assert False Failed")) ($to-object (CTrue)))))
 
 ;; ___assertIn
 (define assert-in-lambda
   (CFunc (list 'arg1 'arg2)
-    (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert failed")))))
+    (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert In Failed")))))
 
 ;; ___assertNotIn
 (define assert-notin-lambda
   (CFunc (list 'arg1 'arg2)
-    (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert failed")) ($to-object (CTrue)))))
+    (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) ($to-object (CTrue)))))
 
 ;; ___assertEqual
 (define assert-equal-lambda
   (CFunc (list 'arg1 'arg2)
-    (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert failed")))))
+    (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert Equal Failed")))))
 
 ;; ___assertNotEqual
 (define assert-notequal-lambda
   (CFunc (list 'arg1 'arg2)
-    (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert failed")) ($to-object (CTrue)))))
+    (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) ($to-object (CTrue)))))
 
 ;; ___assertRaises
 ;(define assert-raises-lambda)
@@ -55,10 +55,12 @@ that calls the primitive `print`.
 ;; ___assertIs
 (define assert-is-lambda
   (CFunc (list 'arg1 'arg2)
-    (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert failed")))))
+    (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert Is Failed")))))
 
 ;; ___fail
-;(define fail-lambda)
+(define fail-lambda
+  (CFunc (list)
+    (CError (CStr "Fail"))))
 
 ;(define true-val
  ; (CTrue))
@@ -84,7 +86,7 @@ that calls the primitive `print`.
         (bind '___assertNotEqual assert-notequal-lambda)
         ;(bind '___assertRaises assert-raises-lambda)
         (bind '___assertIs assert-is-lambda)
-        ;(bind '___fail fail-lambda)
+        (bind '___fail fail-lambda)
 
 ))
 

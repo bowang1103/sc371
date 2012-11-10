@@ -43,6 +43,10 @@ primitives here.
     [else (VTrue)]
     ))
 
+(define (mod (l : number) (r : number)) : number
+    (if (< l 0) (mod (+ l r) r)
+        (if (>= l r) (mod (- l r) r) l))) 
+
 ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
 (define (python-prim1 [op : symbol] [arg : CAns]) : CAns
   (case op
@@ -71,6 +75,9 @@ primitives here.
                  [(-) ($to-object (CNum (- (VNum-n val-l) (VNum-n val-r))))]
                  [(*) ($to-object (CNum (* (VNum-n val-l) (VNum-n val-r))))]
                  [(/) ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r))))] ;; should take care /0 case
+                 [(//) ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r)))))]
+                 [(%) ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r))))]
+                 
                  )]
               ;; STRING CASE
               [(and (VStr? val-l) (VStr? val-r))
