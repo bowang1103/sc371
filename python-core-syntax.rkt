@@ -10,6 +10,7 @@ ParselTongue.
 (define-type CExp
   [CNum (n : number)]
   [CStr (s : string)]
+  [CList (es : (listof CExp))]
   [CTrue]
   [CFalse]
   [CSeq (e1 : CExp) (e2 : CExp)]
@@ -39,11 +40,12 @@ ParselTongue.
 (define-type CVal
   [VNum (n : number)]
   [VStr (s : string)]
+  [VList (es : (listof CVal))]
   [VTrue]
   [VFalse]
   [VEmpty]
   [VObject (type : string) (value : CVal) (field : ObjfieldV)]
-  [VPoint (name : symbol) (field : string)]
+  [VPoint (obj : CExp) (field : string)]
   [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
    
 (define-type CAns 

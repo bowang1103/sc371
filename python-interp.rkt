@@ -13,7 +13,7 @@
   (type-case CExp expr 
     [CNum (s) (AVal (VNum s) env store lenv)]
     [CStr (s) (AVal (VStr s) env store lenv)]
-    [CList (es) (AVal (VList (map (lambda(x) (AVal-val (interp-env x env store lenv))) es)))]
+    [CList (es) (AVal (VList (map (lambda(x) (AVal-val (interp-env x env store lenv))) es)) env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
     [CEmpty () (AVal (VEmpty) env store lenv)]
@@ -29,8 +29,13 @@
                                (interp-env t e-i s-i le-i))]
                      [else ians]))]
 
-    [CId (id) (let [rst (grabValue id env store lenv)]
-                (VPoint? ))]
+    [CId (id) (let ([rst (grabValue id env store lenv)])
+                (type-case CAns rst
+                  [AVal (v-v e-v s-v le-v) 
+                        (if (VPoint? v-v)
+                            (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
+                            rst)]
+                  [else rst]))]
 
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)]
                                [where (newLoc)])
@@ -45,12 +50,19 @@
     [CSet (id value) (let ([vans (interp-env value env store lenv)])
                        (type-case CAns vans
                          [AVal (v-v e-v s-v le-v) 
-                               (if (or (isImmutable (VObject-type v-v)) (equal? (none) (hash-ref e-v id)))
-                                   (let ([where (newLoc)])
+                               (let ([where (newLoc)])
+                                 (if (isImmutable (VObject-type v-v))
                                      (AVal v-v (hash-set e-v id where)
-                                                (hash-set s-v where v-v)
-                                                (hash-set le-v id true)))
-                                   (AVal v-v e-v (hash-set s-v (some-v (hash-ref e-v id)) v-v) le-v))]
+                                           (hash-set s-v where v-v)
+                                           (hash-set le-v id true))
+                                     (type-case CExp value
+                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
+                                       [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
+                                                                     (hash-set s-v where (VPoint c-obj c-fd))
+                                                                     (hash-set le-v id true))]
+                                       [else (AVal v-v (hash-set e-v id where)
+                                           (hash-set s-v where v-v)
+                                           (hash-set le-v id true))])))]
                          [else vans]))]
 
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])

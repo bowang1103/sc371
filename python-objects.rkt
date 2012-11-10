@@ -22,9 +22,7 @@
 
 (define (to-list-obj [prim : CExp]) : CExp
   (CLet 'newObj (CObject "List" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref list-hash key))))
-                                (hash-keys list-hash))])
-          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+        (CId 'newObj)))
 
 ;; built-in methods for str
 (define str-hash 
@@ -56,15 +54,12 @@
                                        (CId 'right))))
                 )))
 
-;; built-in methods for list
-(define list-hash (hash empty))
-
-
 (define ($to-object (prim : CExp)) : CExp
   (type-case CExp prim
     [CNum (n) (to-int-obj prim)]
     [CTrue () (to-bool-obj (CNum 1))]
     [CFalse () (to-bool-obj (CNum 0))]
     [CStr (s) (to-str-obj prim)]
+    [CList (es) (to-list-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))

@@ -26,6 +26,7 @@ primitives here.
     [VObject (type value flds) (cond
                                  [(equal? type "Int") (pretty value)]
                                  [(equal? type "Str") (pretty value)]
+                                 [(equal? type "List") (pretty value)]
                                  [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]))

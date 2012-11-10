@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 #(struct:PySeq (#(struct:PyApp #(struct:PyId print) (#(struct:PyStr "hichuang"))) #(struct:PyApp #(struct:PyId print) (#(struct:PyNum 5))) #(struct:PyApp #(struct:PyId print) (#(struct:PyBinOp #(struct:PyNum 1) + #(struct:PyNum 1)))) #(struct:PyApp #(struct:PyId print) (#(struct:PyBinOp #(struct:PyStr "1") + #(struct:PyStr "2")))) #(struct:PyApp #(struct:PyId print) (#(struct:PyBinOp #(struct:PyId True) + #(struct:PyNum 2)))) #(struct:PyApp #(struct:PyId print) (#(struct:PyBinOp #(struct:PyNum 2) + #(struct:PyId False)))) #(struct:PyApp #(struct:PyId print) (#(struct:PyApp #(struct:PyId ___assertTrue) (#(struct:PyId True))))) #(struct:PyApp #(struct:PyId print) (#(struct:PyApp #(struct:PyId ___assertFalse) (#(struct:PyId True))))) #(struct:PyApp #(struct:PyId print) (#(struct:PyStr "should not print")))))
+=======
+#(struct:PySeq (#(struct:PyAssign (#(struct:PyId x) #(struct:PyId y)) #(struct:PyList (#(struct:PyNum 1) #(struct:PyNum 2) #(struct:PyNum 3) #(struct:PyNum 4)))) #(struct:PyApp #(struct:PyId print) (#(struct:PyId x))) #(struct:PyApp #(struct:PyId print) (#(struct:PyId y)))))
+>>>>>>> write basic assign
