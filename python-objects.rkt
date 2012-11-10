@@ -29,7 +29,7 @@
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
-                               (CPrim2 'str+
+                               (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
                 )))
@@ -39,7 +39,7 @@
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
-                               (CPrim2 'num+
+                               (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
                 )))
@@ -49,7 +49,7 @@
          (hash 
           (list (values "%dummy"
                         (CFunc (list 'self 'right)
-                               (CPrim2 'num+
+                               (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
                 )))

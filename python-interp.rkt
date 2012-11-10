@@ -37,14 +37,14 @@
                             rst)]
                   [else rst]))]
 
-    [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)]
-                               [where (newLoc)])
+    [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)])
                            (type-case CAns bindAns
                              [AVal (v-bind e-bind s-bind le-bind)
-                                   (interp-env body
-                                     (hash-set e-bind id where)
-                                     (hash-set s-bind where v-bind)
-                                     (hash-set le-bind id true))]
+                                   (let ([where (VObject-loc v-bind)])
+                                     (interp-env body
+                                       (hash-set e-bind id where)
+                                       (hash-set s-bind where v-bind)
+                                       (hash-set le-bind id true)))]
                              [else bindAns]))]
     
     [CSet (id value) (let ([vans (interp-env value env store lenv)])
@@ -157,12 +157,13 @@
     
     [CObject (type prim exp)
              (let ([primVal (interp-env prim env store lenv)]
-                   [rs (interp-env exp env store (resetLocalEnv lenv))])
+                   [rs (interp-env exp env store (resetLocalEnv lenv))]
+                   [where (newLoc)])
                (type-case CAns primVal
                  [AVal (v-pv e-pv s-pv le-pv)
                        (type-case CAns rs
                          [AVal (v-rs e-rs s-rs le-rs)
-                               (AVal (VObject type v-pv
+                               (AVal (VObject type v-pv where
                                        (let ([rst (make-hash empty)])
                                          (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
                                                      (getModifiedVars le-rs))
