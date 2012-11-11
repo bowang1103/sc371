@@ -24,6 +24,14 @@
   (CLet 'newObj (CObject "List" prim (CEmpty))
         (CId 'newObj)))
 
+(define (to-tuple-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Tuple" prim (CEmpty))
+        (CId 'newObj)))
+
+(define (to-dict-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Dict" prim (CEmpty))
+        (CId 'newObj)))
+
 (define (to-func-obj [prim : CExp]) : CExp
   (CLet 'newObj (CObject "Func" prim (CEmpty))
         (CId 'newObj)))
@@ -51,7 +59,7 @@
 ;; bulit-in methods for bool
 (define bool-hash 
          (hash 
-          (list (values "%dummy"
+          (list (values "%add"
                         (CFunc (list 'self 'right)
                                (CPrim2 '+
                                        (CId 'self)
@@ -65,6 +73,8 @@
     [CFalse () (to-bool-obj (CNum 0))]
     [CStr (s) (to-str-obj prim)]
     [CList (es) (to-list-obj prim)]
+    [CTuple (es) (to-tuple-obj prim)]
+    [CDict (keys values) (to-dict-obj prim)]
     [CFunc (args body) (to-func-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))
