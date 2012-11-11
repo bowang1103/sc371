@@ -51,7 +51,7 @@
 ;; bulit-in methods for bool
 (define bool-hash 
          (hash 
-          (list (values "%fucky"
+          (list (values "%dummy"
                         (CFunc (list 'self 'right)
                                (CPrim2 '+
                                        (CId 'self)

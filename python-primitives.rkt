@@ -19,7 +19,16 @@ primitives here.
   (type-case CVal arg
     [VNum (n) (to-string n)]
     [VStr (s) s]
-    [VList (es) (to-string (map pretty es))]
+    [VList (elms) (foldr string-append  ""
+                    (list "[" 
+                          (let ([ptvals (map pretty elms)])
+                            (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
+                          "]"))]
+    #|[VTuple (elms) (foldr string-append  ""
+                    (list "(" 
+                          (let ([ptvals (map pretty elms)])
+                            (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
+                          ")"))]|#
     [VTrue () "true"]
     [VFalse () "false"]
     [VEmpty () ""]
@@ -39,7 +48,9 @@ primitives here.
 ; (obj ___bool___ or ___len___ return false or 0)
 (define (bool (arg : CVal)) : CVal
   (type-case CVal arg
-    [VNum (n) (if (= 0 n) (VTrue) (VFalse))]
+    [VNum (n) (if (= 0 n) (VFalse) (VTrue))]
+    [VStr (s) (if (equal? "" s) (VFalse) (VTrue))]
+    [VList (ls) (if (empty? ls) (VFalse) (VTrue))]
     [VTrue () (VTrue)]
     [VFalse () (VFalse)]
     ;; TODO: all other implicit false

@@ -55,16 +55,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for compare ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (desugar-compare (left : PyExpr) (ops : (listof symbol)) (comparators : (listof PyExpr))) : CExp
-  ;(CStr "dummy"))
-  (CPrim2 (first ops) (desugar left) (desugar (first comparators))))
+  (let ([ids (make-ids (add1 (length comparators)))]
+        [cexps (map desugar comparators)])
+    (CLet (first ids) (desugar left)
+          (desugar-compare-recur ops ids cexps))))
+
+(define (desugar-compare-recur (ops : (listof symbol)) (ids : (listof symbol)) (cexprs : (listof CExp))) : CExp
+  (cond [(empty? cexprs) (CId 'True)]
+        [else (CLet (second ids) (first cexprs)
+                    (CIf (CPrim2 (first ops) (CId (first ids)) (CId (second ids)))
+                         (desugar-compare-recur (rest ops) (rest ids) (rest cexprs))
+                         (CId 'False)))]))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for boolop ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (desugar-boolop (boolop : symbol) (exprs : (listof PyExpr))) : CExp
-  (letrec ([ids (make-ids (length exprs))]
-           [cexps (map desugar exprs)])
+  (let ([ids (make-ids (length exprs))]
+        [cexps (map desugar exprs)])
     (case boolop
       [(and) (desugar-and ids cexps (last ids))]
       [(or) (desugar-or ids cexps (last ids))])))
