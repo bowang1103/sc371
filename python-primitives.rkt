@@ -46,7 +46,7 @@ primitives here.
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 
 ; (obj ___bool___ or ___len___ return false or 0)
-(define (bool (arg : CVal)) : CVal
+(define (trueOrFalse (arg : CVal)) : CVal
   (type-case CVal arg
     [VNum (n) (if (= 0 n) (VFalse) (VTrue))]
     [VStr (s) (if (equal? "" s) (VFalse) (VTrue))]
@@ -77,17 +77,17 @@ primitives here.
         [loc-r (getObjLoc (AVal-val arg2))])
     (case op
       [(==) (if (equal? val-l val-r)
-                ($to-object (CTrue))
-                ($to-object (CFalse)))]
+                (CId 'True)
+                (CId 'False))]
       [(!=) (if (equal? val-l val-r)
-                ($to-object (CFalse))
-                ($to-object (CTrue)))]
+                (CId 'False)
+                (CId 'True))]
       [(is) (if (equal? loc-l loc-r)
-                ($to-object (CTrue))
-                ($to-object (CFalse)))]
+                (CId 'True)
+                (CId 'False))]
       [(!is) (if (equal? loc-l loc-r)
-                 ($to-object (CFalse))
-                 ($to-object (CTrue)))]
+                 (CId 'False)
+                 (CId 'True))]
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -99,7 +99,10 @@ primitives here.
                  [(/) ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r))))] ;; should take care /0 case
                  [(//) ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r)))))]
                  [(%) ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r))))]
-                 
+                 [(<) (if (< (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
+                 [(<=) (if (<= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
+                 [(>) (if (> (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
+                 [(>=) (if (>= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
                  )]
               ;; STRING CASE
               [(and (VStr? val-l) (VStr? val-r))

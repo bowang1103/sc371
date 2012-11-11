@@ -24,7 +24,7 @@
     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
-                           (if (VFalse? (getPrimVal v-i))  ;; this should modify to fit false condition
+                           (if (VFalse? (trueOrFalse (getPrimVal v-i)))  ;; this should modify to fit false condition
                                (interp-env e e-i s-i le-i)
                                (interp-env t e-i s-i le-i))]
                      [else ians]))]

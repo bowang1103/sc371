@@ -24,37 +24,37 @@ that calls the primitive `print`.
 (define assert-true-lambda
   ($to-object 
    (CFunc (list 'check-true)
-     (CIf (CId 'check-true) ($to-object (CTrue)) (CError (CStr "Assert True Failed"))))))
+     (CIf (CId 'check-true) (CId 'True) (CError (CStr "Assert True Failed"))))))
 
 ;; ___assertFalse
 (define assert-false-lambda
   ($to-object 
    (CFunc (list 'check-false)
-     (CIf (CId 'check-false) (CError (CStr "Assert False Failed")) ($to-object (CTrue))))))
+     (CIf (CId 'check-false) (CError (CStr "Assert False Failed")) (CId 'True)))))
 
 ;; ___assertIn
 (define assert-in-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert In Failed"))))))
+     (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert In Failed"))))))
 
 ;; ___assertNotIn
 (define assert-notin-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) ($to-object (CTrue))))))
+     (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) (CId 'True)))))
 
 ;; ___assertEqual
 (define assert-equal-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert Equal Failed"))))))
+     (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Equal Failed"))))))
 
 ;; ___assertNotEqual
 (define assert-notequal-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) ($to-object (CTrue))))))
+     (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) (CId 'True)))))
 
 ;; ___assertRaises
 ;(define assert-raises-lambda)
@@ -63,7 +63,7 @@ that calls the primitive `print`.
 (define assert-is-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) ($to-object (CTrue)) (CError (CStr "Assert Is Failed"))))))
+     (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Is Failed"))))))
 
 ;; ___fail
 (define fail-lambda
