@@ -46,15 +46,15 @@ primitives here.
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 
 ; (obj ___bool___ or ___len___ return false or 0)
-(define (trueOrFalse (arg : CVal)) : CVal
-  (type-case CVal arg
-    [VNum (n) (if (= 0 n) (VFalse) (VTrue))]
-    [VStr (s) (if (equal? "" s) (VFalse) (VTrue))]
-    [VList (ls) (if (empty? ls) (VFalse) (VTrue))]
-    [VTrue () (VTrue)]
-    [VFalse () (VFalse)]
+(define (isObjTrue (arg : CVal)) : boolean
+  (type-case CVal (getPrimVal arg)
+    [VNum (n) (not (= 0 n))]
+    [VStr (s) (not (equal? "" s))]
+    [VList (ls) (not (empty? ls))]
+    [VTrue () true]
+    [VFalse () false]
     ;; TODO: all other implicit false
-    [else (VTrue)]
+    [else true]
     ))
 
 (define (mod (l : number) (r : number)) : number
@@ -62,9 +62,11 @@ primitives here.
         (if (>= l r) (mod (- l r) r) l))) 
 
 ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
-(define (python-prim1 [op : symbol] [arg : CAns]) : CAns
+(define (python-prim1 [op : symbol] [arg : CVal]) : CExp
   (case op
-    [(print) (begin (print (AVal-val arg)) arg)]))
+    [(print) (begin (print arg) (CStr "Print Return Value"))]
+    [(callable) (if (equal? "Func" (VObject-type arg)) (CId 'True) (CId 'False))]
+    [(bool) (if (isObjTrue arg) (CId 'True) (CId 'False))]))
 
 ;;boolop may have to handle in other function
 ; boolop = {and, or}

@@ -20,6 +20,18 @@ that calls the primitive `print`.
    (CFunc (list 'to-print)
      (CPrim1 'print (CId 'to-print)))))
 
+;; callable
+(define callable-lambda
+  ($to-object
+   (CFunc (list 'check-callable)
+     (CPrim1 'callable (CId 'check-callable)))))
+
+;; bool
+(define bool-lambda
+  ($to-object
+   (CFunc (list 'check-bool)
+     (CPrim1 'bool (CId 'check-bool)))))
+
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -85,6 +97,8 @@ that calls the primitive `print`.
 
 (define lib-functions
   (list (bind 'print print-lambda)
+        (bind 'callable callable-lambda)
+        (bind 'bool bool-lambda)
         (bind 'True true-val)
         (bind 'False false-val)
         (bind '___assertTrue assert-true-lambda)

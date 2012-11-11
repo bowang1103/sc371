@@ -24,9 +24,9 @@
     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
-                           (if (VFalse? (trueOrFalse (getPrimVal v-i)))  ;; this should modify to fit false condition
-                               (interp-env e e-i s-i le-i)
-                               (interp-env t e-i s-i le-i))]
+                           (if (isObjTrue v-i)
+                               (interp-env t e-i s-i le-i)
+                               (interp-env e e-i s-i le-i))]
                      [else ians]))]
 
     [CId (id) (let ([rst (grabValue id env store lenv)])
@@ -125,9 +125,9 @@
     [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
-                         (if (AVal? argAns)
-                             (python-prim1 prim argAns)
-                             argAns))]
+                         (type-case CAns argAns
+                           [AVal (v-obj e-obj s-obj le-obj) (interp-env (python-prim1 prim v-obj) env store lenv)]
+                           [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
     
