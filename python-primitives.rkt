@@ -23,11 +23,11 @@ primitives here.
     [VTrue () "true"]
     [VFalse () "false"]
     [VEmpty () ""]
-    [VObject (type value flds) (cond
-                                 [(equal? type "Int") (pretty value)]
-                                 [(equal? type "Str") (pretty value)]
-                                 [(equal? type "List") (pretty value)]
-                                 [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
+    [VObject (type value loc flds) (cond
+                                     [(equal? type "Int") (pretty value)]
+                                     [(equal? type "Str") (pretty value)]
+                                     [(equal? type "List") (pretty value)]
+                                     [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]))
 			
@@ -92,5 +92,5 @@ primitives here.
 ;; get object value from an Ans
 (define (getPrimVal (obj : CVal)) : CVal
   (type-case CVal obj
-    [VObject (type value flds) value]
+    [VObject (type value loc flds) value]
     [else (error 'getPrimVal "input not an object")]))
