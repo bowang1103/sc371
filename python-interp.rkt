@@ -52,7 +52,8 @@
                          [AVal (v-v e-v s-v le-v) 
                                (let ([where (newLoc)])
                                  (if (isImmutable (VObject-type v-v))
-                                     (AVal v-v (hash-set e-v id where)
+                                     (AVal (VObject (VObject-type v-v) (VObject-value v-v) where (VObject-field v-v)) 
+                                           (hash-set e-v id where)
                                            (hash-set s-v where v-v)
                                            (hash-set le-v id true))
                                      (type-case CExp value
@@ -60,8 +61,8 @@
                                        [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
                                                                      (hash-set s-v where (VPoint c-obj c-fd))
                                                                      (hash-set le-v id true))]
-                                       [else (AVal v-v (hash-set e-v id where)
-                                           (hash-set s-v where v-v)
+                                       [else (AVal v-v (hash-set e-v id (VOject-loc v-v))
+                                           (hash-set s-v (VOject-loc v-v) v-v)
                                            (hash-set le-v id true))])))]
                          [else vans]))]
     
@@ -86,6 +87,7 @@
                                                                                   x)) 
                                                                             (VList-es (VObject-value (AVal-val oval)))
                                                                             (build-list (length (VList-es (VObject-value (AVal-val oval)))) (lambda(x) x))))
+                                                                     (VObject-loc (AVal-val oval))
                                                                      (VObject-field (AVal-val oval))))]
                                       [else store])
                                     lenv)]
