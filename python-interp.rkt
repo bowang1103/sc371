@@ -96,7 +96,7 @@
                          [(AExc? ival) ival]
                          [(AExc? vval) vval]
                          [else (interp-error "You should not been here" env store lenv)])))]
-    ;[CGetelement (id index)]
+    ;[CGetelement (id index)]|#
 
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])
                     (type-case CAns e1Ans

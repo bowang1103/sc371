@@ -61,14 +61,22 @@ primitives here.
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
   (let ([val-l (getPrimVal (AVal-val arg1))]
-        [val-r (getPrimVal (AVal-val arg2))])
+        [val-r (getPrimVal (AVal-val arg2))]
+        [loc-l (getObjLoc (AVal-val arg1))]
+        [loc-r (getObjLoc (AVal-val arg2))])
     (case op
-      [(==) (if (equal? val-l val-r) 
-                      ($to-object (CTrue))
-                      ($to-object (CFalse)))]
+      [(==) (if (equal? val-l val-r)
+                ($to-object (CTrue))
+                ($to-object (CFalse)))]
       [(!=) (if (equal? val-l val-r)
-                      ($to-object (CFalse)) 
-                      ($to-object (CTrue)))]
+                ($to-object (CFalse))
+                ($to-object (CTrue)))]
+      [(is) (if (equal? loc-l loc-r)
+                ($to-object (CTrue))
+                ($to-object (CFalse)))]
+      [(!is) (if (equal? loc-l loc-r)
+                 ($to-object (CTrue))
+                 ($to-object (CFalse)))]
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -93,4 +101,10 @@ primitives here.
 (define (getPrimVal (obj : CVal)) : CVal
   (type-case CVal obj
     [VObject (type value loc flds) value]
+    [else (error 'getPrimVal "input not an object")]))
+
+;; get object loc from an Ans
+(define (getObjLoc (obj : CVal)) : Location
+  (type-case CVal obj
+    [VObject (type value loc flds) loc]
     [else (error 'getPrimVal "input not an object")]))
