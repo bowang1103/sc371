@@ -75,8 +75,8 @@ primitives here.
                 ($to-object (CTrue))
                 ($to-object (CFalse)))]
       [(!is) (if (equal? loc-l loc-r)
-                 ($to-object (CTrue))
-                 ($to-object (CFalse)))]
+                 ($to-object (CFalse))
+                 ($to-object (CTrue)))]
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)

@@ -61,8 +61,8 @@
                                        [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
                                                                      (hash-set s-v where (VPoint c-obj c-fd))
                                                                      (hash-set le-v id true))]
-                                       [else (AVal v-v (hash-set e-v id (VOject-loc v-v))
-                                           (hash-set s-v (VOject-loc v-v) v-v)
+                                       [else (AVal v-v (hash-set e-v id (VObject-loc v-v))
+                                           (hash-set s-v (VObject-loc v-v) v-v)
                                            (hash-set le-v id true))])))]
                          [else vans]))]
     
@@ -108,18 +108,18 @@
     [CApp (fun args) (let ([funAns (interp-env fun env store lenv)])
                        ;; function answer
                        (type-case CAns funAns
-                         [AVal (v-f e-f s-f le-f)
+                         [AVal (v-fobj e-fobj s-fobj le-fobj)
                            ;; function value
-                           (type-case CVal v-f
+                           (type-case CVal (VObject-value v-fobj)
                              [VClosure (clargs clbody clenv)
                                (let ([bind-es (bind-args clargs 
-                                                         (allocLocList (length (VClosure-args v-f))) 
-                                                         (interpArgs args e-f s-f le-f) 
+                                                         (allocLocList (length clargs)) 
+                                                         (interpArgs args e-fobj s-fobj le-fobj) 
                                                          env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
                                    [else bind-es]))]
-                             [else (interp-error "Not a function" e-f s-f le-f)])]
+                             [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 
     [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
@@ -186,16 +186,15 @@
 
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
-        [(or (empty? args) (empty? anss))
-         (interp-error "Arity mismatch" env sto lenv)]
         [(= (length args) (length anss))
          (let ([lastAns (first (reverse anss))])
            (if (AVal? lastAns)
-               (AVal (VStr "dummy") 
+               (AVal (VStr "dummy")
                      (extendEnv args locs (AVal-env lastAns)) ;; use passin env instead of closure-env
                      (overrideStore locs anss (AVal-sto lastAns))
                      (AVal-lenv lastAns))
-               lastAns))]))
+               lastAns))]
+        [else (interp-error "Arity mismatch" env sto lenv)]))
 
 (define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (type-case (optionof Location) (hash-ref env for)

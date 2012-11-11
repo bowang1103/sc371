@@ -24,6 +24,10 @@
   (CLet 'newObj (CObject "List" prim (CEmpty))
         (CId 'newObj)))
 
+(define (to-func-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Func" prim (CEmpty))
+        (CId 'newObj)))
+
 ;; built-in methods for str
 (define str-hash 
          (hash 
@@ -47,7 +51,7 @@
 ;; bulit-in methods for bool
 (define bool-hash 
          (hash 
-          (list (values "%dummy"
+          (list (values "%fucky"
                         (CFunc (list 'self 'right)
                                (CPrim2 '+
                                        (CId 'self)
@@ -61,5 +65,6 @@
     [CFalse () (to-bool-obj (CNum 0))]
     [CStr (s) (to-str-obj prim)]
     [CList (es) (to-list-obj prim)]
+    [CFunc (args body) (to-func-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))
