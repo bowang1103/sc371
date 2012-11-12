@@ -182,9 +182,10 @@
     [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
-                         (if (AVal? argAns)
-                             (python-prim1 prim argAns)
-                             argAns))]
+                         (type-case CAns argAns
+                           [AVal (v-obj e-obj s-obj le-obj) 
+                                 (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj)]
+                           [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
     
