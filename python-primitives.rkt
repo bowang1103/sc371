@@ -84,7 +84,7 @@ primitives here.
 
 (define (floatNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)])
-    (if (VNum? pv) ($to-object (CNum (* 1.0 (VNum-n pv)))) (core-error "float input should be a numeric type"))))
+    (if (VNum? pv) ($to-object (CNum (* 1.0 (if (= 0 (VNum-n pv)) 0.0 (VNum-n pv))))) (core-error "float input should be a numeric type"))))
 
 (define (absNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)])
@@ -93,7 +93,7 @@ primitives here.
 (define (invertNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)]
         [type (getObjType obj)])
-    (if (or (equal? "Bool" type) (equal? "Int" type)) 
+    (if (or (equal? "Bool" type) (equal? "Int" type))
         ($to-object (CNum (sub1 (* -1 (VNum-n pv))))) (core-error "invert input should be a int type"))))
 
 (define (num-to-int (n : number) (rst : number)) : number

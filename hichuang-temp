@@ -20,6 +20,13 @@ ___assertEqual(int(True), 1)
 ___assertIsNot(int(True), True)
 print("---PASSED")
 
+print("BOOL-FLOAT")
+___assertEqual(float(False), 0.0)
+___assertIsNot(float(False), False)
+___assertEqual(float(True), 1.0)
+___assertIsNot(float(True), True)
+print("___PASSED")
+
 print("BOOL-STR")
 ___assertEqual(str(False), 'False')
 ___assertEqual(str(True), 'True')
@@ -85,3 +92,7 @@ ___assertIsNot(True/1, True)
 ___assertEqual(False/1, 0)
 ___assertIsNot(False/1, False)
 print("___PASSED")
+
+[]
+#___assertFalse([])
+#___assertFalse(not [42])
