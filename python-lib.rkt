@@ -42,7 +42,19 @@ that calls the primitive `print`.
 (define float-lambda
   ($to-object
    (CFunc (list 'to-float)
-     (CPrim1 'int (CId 'to-float)))))
+     (CPrim1 'float (CId 'to-float)))))
+
+;; str
+(define str-lambda
+  ($to-object
+   (CFunc (list 'to-str)
+     (CPrim1 'str (CId 'to-str)))))
+
+;; abs
+(define abs-lambda
+  ($to-object
+   (CFunc (list 'to-abs)
+     (CPrim1 'abs (CId 'to-abs)))))
 
 ;; ___assertTure
 (define assert-true-lambda
@@ -119,6 +131,8 @@ that calls the primitive `print`.
         (bind 'bool bool-lambda)
         (bind 'int int-lambda)
         (bind 'float float-lambda)
+        (bind 'str str-lambda)
+        (bind 'abs abs-lambda)
         (bind 'True true-val)
         (bind 'False false-val)
         (bind '___assertTrue assert-true-lambda)
