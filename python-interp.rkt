@@ -105,7 +105,7 @@
                       [AVal (v-e1 e-e1 s-e1 le-e1) (interp-env e2 e-e1 s-e1 le-e1)]
                       [else e1Ans]))]
     
-    [CApp (fun args) (let ([funAns (interp-env fun env store lenv)])
+    [CApp (fun args) (let ([funAns (interp-env fun env store lenv)])                       
                        ;; function answer
                        (type-case CAns funAns
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
@@ -118,7 +118,10 @@
                                                          env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                   [else bind-es]))]
+                                   [else 
+                                    ;; bool() no arg case, special handle for now, should have a more clever way
+                                    (if (and (equal? (CId 'bool) fun) (= 0 (length args)))
+                                        (interp-env (CId 'False) env store lenv) bind-es)]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 

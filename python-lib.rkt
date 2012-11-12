@@ -32,6 +32,18 @@ that calls the primitive `print`.
    (CFunc (list 'check-bool)
      (CPrim1 'bool (CId 'check-bool)))))
 
+;; int
+(define int-lambda
+  ($to-object
+   (CFunc (list 'to-int)
+     (CPrim1 'int (CId 'to-int)))))
+
+;; float
+(define float-lambda
+  ($to-object
+   (CFunc (list 'to-float)
+     (CPrim1 'int (CId 'to-float)))))
+
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -54,7 +66,7 @@ that calls the primitive `print`.
 (define assert-notin-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) (CId 'True)))))
+     (CIf (CPrim2 '!in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) (CId 'True)))))
 
 ;; ___assertEqual
 (define assert-equal-lambda
@@ -66,7 +78,7 @@ that calls the primitive `print`.
 (define assert-notequal-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2)
-     (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) (CId 'True)))))
+     (CIf (CPrim2 '!= (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) (CId 'True)))))
 
 ;; ___assertRaises
 ;(define assert-raises-lambda)
@@ -76,6 +88,12 @@ that calls the primitive `print`.
   ($to-object 
    (CFunc (list 'arg1 'arg2)
      (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Is Failed"))))))
+
+;; ___assertIsNot
+(define assert-isnot-lambda
+  ($to-object 
+   (CFunc (list 'arg1 'arg2)
+     (CIf (CPrim2 '!is (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Is Not Failed"))))))
 
 ;; ___fail
 (define fail-lambda
@@ -99,6 +117,8 @@ that calls the primitive `print`.
   (list (bind 'print print-lambda)
         (bind 'callable callable-lambda)
         (bind 'bool bool-lambda)
+        (bind 'int int-lambda)
+        (bind 'float float-lambda)
         (bind 'True true-val)
         (bind 'False false-val)
         (bind '___assertTrue assert-true-lambda)
@@ -109,6 +129,7 @@ that calls the primitive `print`.
         (bind '___assertNotEqual assert-notequal-lambda)
         ;(bind '___assertRaises assert-raises-lambda)
         (bind '___assertIs assert-is-lambda)
+        (bind '___assertIsNot assert-isnot-lambda)
         (bind '___fail fail-lambda)
 
 ))

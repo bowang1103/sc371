@@ -18,7 +18,7 @@ primitives here.
 (define (pretty [arg : CVal]) : string
   (type-case CVal arg
     [VNum (n) (to-string n)]
-    [VStr (s) s]
+    [VStr (s) (foldr string-append "" (list "'" s "'"))]
     [VList (elms) (foldr string-append  ""
                     (list "[" 
                           (let ([ptvals (map pretty elms)])
@@ -57,6 +57,27 @@ primitives here.
     [else true]
     ))
 
+(define (negNumeric (arg : CVal)) : CExp
+  (let ([pv (getPrimVal arg)])
+    (if (VNum? pv) ($to-object (CNum (* -1 (VNum-n pv)))) (core-error "Neg input should be a numeric type"))))
+
+(define (posNumeric (arg : CVal)) : CExp
+  (let ([pv (getPrimVal arg)])
+    (if (VNum? pv) ($to-object (CNum (VNum-n pv))) (core-error "Pos input should be a numeric type"))))
+
+(define (intNumeric (arg : CVal)) : CExp
+  (let ([pv (getPrimVal arg)])
+    (if (VNum? pv) ($to-object (CNum (num-to-int (VNum-n pv) 0))) (core-error "int input should be a numeric type"))))
+
+(define (floatNumeric (arg : CVal)) : CExp
+  (let ([pv (getPrimVal arg)])
+    (if (VNum? pv) ($to-object (CNum (* 1.0 (VNum-n pv)))) (core-error "float input should be a numeric type"))))
+
+(define (num-to-int (n : number) (rst : number)) : number
+  (if (>= n 0)
+      (if (> (add1 rst) n) rst (num-to-int n (add1 rst)))
+      (if (< (sub1 rst) n) rst (num-to-int n (sub1 rst)))))
+
 (define (mod (l : number) (r : number)) : number
     (if (< l 0) (mod (+ l r) r)
         (if (>= l r) (mod (- l r) r) l))) 
@@ -66,7 +87,11 @@ primitives here.
   (case op
     [(print) (begin (print arg) (CStr "Print Return Value"))]
     [(callable) (if (equal? "Func" (VObject-type arg)) (CId 'True) (CId 'False))]
-    [(bool) (if (isObjTrue arg) (CId 'True) (CId 'False))]))
+    [(bool) (if (isObjTrue arg) (CId 'True) (CId 'False))]
+    [(neg) (negNumeric arg)]
+    [(pos) (posNumeric arg)]
+    [(int) (intNumeric arg)]
+    [(float) (floatNumeric arg)]))
 
 ;;boolop may have to handle in other function
 ; boolop = {and, or}
