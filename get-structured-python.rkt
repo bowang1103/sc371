@@ -109,8 +109,8 @@ structure that you define in python-syntax.rkt
 ;    [(hash-table ('nodetype "Lam:qbda"))]
 ;    [(hash-table ('nodetype "IfExp"))]
     [(hash-table ('nodetype "Dict")
-                 ('key keys)
-                 ('value values))
+                 ('keys keys)
+                 ('values values))
      (PyDict (map get-structured-python keys) 
              (map get-structured-python values))]
     [(hash-table ('nodetype "Set")

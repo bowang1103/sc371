@@ -24,11 +24,21 @@ primitives here.
                           (let ([ptvals (map pretty elms)])
                             (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
                           "]"))]
-    #|[VTuple (elms) (foldr string-append  ""
+    [VTuple (elms) (foldr string-append  ""
                     (list "(" 
                           (let ([ptvals (map pretty elms)])
                             (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
-                          ")"))]|#
+                          ")"))]
+    [VDict (dict) (letrec ([keys (hash-keys dict)]
+                           [pair (map (lambda(x) 
+                                       (foldr string-append ""
+                                              (list (pretty x) 
+                                                    ": " 
+                                                    (pretty (some-v (hash-ref dict x)))))) keys)])
+                    (foldr string-append ""
+                           (list "{" 
+                                 (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first pair) (rest pair))
+                           "}")))]
     [VTrue () "true"]
     [VFalse () "false"]
     [VEmpty () ""]
@@ -36,6 +46,8 @@ primitives here.
                                      [(equal? type "Int") (pretty value)]
                                      [(equal? type "Str") (pretty value)]
                                      [(equal? type "List") (pretty value)]
+                                     [(equal? type "Tuple") (pretty value)]
+                                     [(equal? type "Dict") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]))
@@ -46,15 +58,15 @@ primitives here.
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 
 ; (obj ___bool___ or ___len___ return false or 0)
-(define (isObjTrue (arg : CVal)) : boolean
-  (type-case CVal (getPrimVal arg)
-    [VNum (n) (not (= 0 n))]
-    [VStr (s) (not (equal? "" s))]
-    [VList (ls) (not (empty? ls))]
-    [VTrue () true]
-    [VFalse () false]
+(define (bool (arg : CVal)) : CVal
+  (type-case CVal arg
+    [VNum (n) (if (= 0 n) (VFalse) (VTrue))]
+    [VStr (s) (if (equal? "" s) (VFalse) (VTrue))]
+    [VList (ls) (if (empty? ls) (VFalse) (VTrue))]
+    [VTrue () (VTrue)]
+    [VFalse () (VFalse)]
     ;; TODO: all other implicit false
-    [else true]
+    [else (VTrue)]
     ))
 
 (define (negNumeric (arg : CVal)) : CExp
@@ -83,7 +95,7 @@ primitives here.
         (if (>= l r) (mod (- l r) r) l))) 
 
 ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
-(define (python-prim1 [op : symbol] [arg : CVal]) : CExp
+(define (python-prim1 [op : symbol] [arg : CAns]) : CAns
   (case op
     [(print) (begin (print arg) (CStr "Print Return Value"))]
     [(callable) (if (equal? "Func" (VObject-type arg)) (CId 'True) (CId 'False))]
@@ -104,17 +116,17 @@ primitives here.
         [loc-r (getObjLoc (AVal-val arg2))])
     (case op
       [(==) (if (equal? val-l val-r)
-                (CId 'True)
-                (CId 'False))]
+                ($to-object (CTrue))
+                ($to-object (CFalse)))]
       [(!=) (if (equal? val-l val-r)
-                (CId 'False)
-                (CId 'True))]
+                ($to-object (CFalse))
+                ($to-object (CTrue)))]
       [(is) (if (equal? loc-l loc-r)
-                (CId 'True)
-                (CId 'False))]
+                ($to-object (CTrue))
+                ($to-object (CFalse)))]
       [(!is) (if (equal? loc-l loc-r)
-                 (CId 'False)
-                 (CId 'True))]
+                 ($to-object (CFalse))
+                 ($to-object (CTrue)))]
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -126,10 +138,7 @@ primitives here.
                  [(/) ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r))))] ;; should take care /0 case
                  [(//) ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r)))))]
                  [(%) ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r))))]
-                 [(<) (if (< (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(<=) (if (<= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(>) (if (> (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(>=) (if (>= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
+                 
                  )]
               ;; STRING CASE
               [(and (VStr? val-l) (VStr? val-r))

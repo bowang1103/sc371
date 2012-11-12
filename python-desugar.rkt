@@ -22,11 +22,17 @@
                                      [PyId (id) (CSet id (if (equal? newval (PyEmp)) (CId 'value) (desugar newval)))]
                                      [else (CEmpty)])) (reverse tgs) (cons (PyEmp) (reverse (rest tgs))))])
                       (foldl (lambda (e1 e2) (CSeq e2 e1)) (first rst) (rest rst))))]
+    [PySubscript (obj indexs) (cond 
+                                [(or (equal? (length indexs) 1) (equal? (length indexs) 3))
+                                 (CGetelement (desugar obj) (map desugar indexs))]
+                                [else (CEmpty)])]
     [PySeq (es) (foldl (lambda (e1 e2) (CSeq e2 (desugar e1))) (desugar (first es)) (rest es))]
     [PyIf (test then els) (CIf (desugar test) (desugar then) (desugar els))]
     [PyNum (n) ($to-object (CNum n))]
     [PyStr (s) ($to-object (CStr s))]
     [PyList (es) ($to-object (CList (map desugar es)))]
+    [PyTuple (es) ($to-object (CTuple (map desugar es)))]
+    [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
     

@@ -19,4 +19,3 @@ ___assertIsNot(int(False), False)
 ___assertEqual(int(True), 1)
 ___assertIsNot(int(True), True)
 print("---PASSED")
-

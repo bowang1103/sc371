@@ -11,6 +11,8 @@ ParselTongue.
   [CNum (n : number)]
   [CStr (s : string)]
   [CList (es : (listof CExp))]
+  [CTuple (es : (listof CExp))]
+  [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
   [CFalse]
   [CSeq (e1 : CExp) (e2 : CExp)]
@@ -34,6 +36,7 @@ ParselTongue.
   ;;Define Object ; CObject here is different from PT's ObjectC (lisfofField)
   [CObject (type : string) (value : CExp) (body : CExp)]  
   [CSetelement (obj : CExp) (index : CExp) (value : CExp)]
+  [CGetelement (obj : CExp) (indexs : (listof CExp))]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
   [CEmpty])
@@ -42,6 +45,8 @@ ParselTongue.
   [VNum (n : number)]
   [VStr (s : string)]
   [VList (es : (listof CVal))]
+  [VTuple (es : (listof CVal))]
+  [VDict (dict : (hashof CVal CVal))]
   [VTrue]
   [VFalse]
   [VEmpty]
