@@ -17,6 +17,7 @@ ParselTongue.
   [CFalse]
   [CSeq (e1 : CExp) (e2 : CExp)]
   [CError (e1 : CExp)]
+  [CException (type : string) (message : CExp)]
   [CIf (test : CExp) (then : CExp) (else : CExp)]
   [CId (id : symbol)]
   [CLet (id : symbol) (bind : CExp) (body : CExp)]
@@ -53,7 +54,9 @@ ParselTongue.
   [VEmpty]
   [VObject (type : string) (value : CVal) (loc : Location) (field : ObjfieldV)]
   [VPoint (obj : CExp) (field : string)]
-  [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
+  [VClosure (args : (listof symbol)) (body : CExp) (env : Env)]
+  [VException (type : string) (message : CVal)]
+)
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]

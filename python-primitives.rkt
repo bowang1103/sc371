@@ -50,7 +50,10 @@ primitives here.
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
-    [VPoint (name field) (error 'prim "VPoint")]))
+    [VPoint (name field) (error 'prim "VPoint")]
+    [VException (type message) (error 'prim "do nothing yet")]
+    
+    ))
 			
 (define (print [arg : CVal]) : void
   (display (string-append (pretty arg) "\n")))

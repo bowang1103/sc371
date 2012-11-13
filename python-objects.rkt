@@ -42,6 +42,11 @@
   (CLet 'newObj (CObject "Func" prim (CEmpty))
         (CId 'newObj)))
 
+(define (to-exc-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Exception" prim (CEmpty))
+	    (CId 'newObj)))
+
+
 ;; built-in methods for str
 (define str-hash 
          (hash 
@@ -87,5 +92,6 @@
     [CTuple (es) (to-tuple-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
     [CFunc (args body) (to-func-obj prim)]
+    [CException (type message) (to-exc-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))

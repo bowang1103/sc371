@@ -122,15 +122,13 @@ that calls the primitive `print`.
 (define false-val
   ($to-object (CFalse)))
 
-#|
-Exception Built in function
-|#
+#| Exception Built in function |#
 
-(define typeerror 
+;; TypeError
+(define (exception-lambda (type : string)) : CExp
   ($to-object 
-   (CFunc (list 'arg1) 
-	;(CPrim1 'print (CId 'arg1)))))
-      (CObject "TypeError" (CId 'arg1) (CEmpty)))))
+   (CFunc (list 'arg1)
+          ($to-object (CException type (CId 'arg1))))))
 
 (define-type LibBinding
   [bind (left : symbol) (right : CExp)])
@@ -157,7 +155,7 @@ Exception Built in function
         (bind '___fail fail-lambda)
 
         ;;Exception built in 
-        (bind 'TypeError typeerror)
+        (bind 'TypeError (exception-lambda "TypeError"))
 
 ))
 
