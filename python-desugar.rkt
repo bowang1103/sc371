@@ -46,9 +46,10 @@
     [PyUnaryOp (unaryop operand) (CPrim1 unaryop (desugar operand))]
     
 	;; Handling Try Exception
-    ;[PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
-    ;[PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
-    ;r[PyRaise (exc) (cause)  (CRaise (desugar exc) (desugar cause))]
+    [PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
+    [PyExceptHandler (name body type) (CExceptHandler (desugar name) (desugar body) (desugar type))]   
+    [PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
+    [PyRaise (cause exc) (CRaise (desugar cause) (desugar exc))]
     [else (CNum 10)]))
 
 (define (make-ids (n : number)) : (listof symbol)

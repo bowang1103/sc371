@@ -92,6 +92,16 @@ that calls the primitive `print`.
 (define false-val
   ($to-object (CFalse)))
 
+#|
+Exception Built in function
+|#
+
+(define typeerror 
+  ($to-object 
+   (CFunc (list 'arg1) 
+	;(CPrim1 'print (CId 'arg1)))))
+      (CObject "TypeError" (CId 'arg1) (CEmpty)))))
+
 (define-type LibBinding
   [bind (left : symbol) (right : CExp)])
 
@@ -110,6 +120,9 @@ that calls the primitive `print`.
         ;(bind '___assertRaises assert-raises-lambda)
         (bind '___assertIs assert-is-lambda)
         (bind '___fail fail-lambda)
+
+        ;;Exception built in 
+        (bind 'TypeError typeerror)
 
 ))
 

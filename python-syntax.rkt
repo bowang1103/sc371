@@ -22,9 +22,10 @@
   [PyIf (test : PyExpr) (body : PyExpr) (orelse : PyExpr)]
   
   ;;;;;; exceptions ;;;;;;
-  [PyRaise (exc : PyExpr) (cause : PyExpr)]
+  [PyRaise (cause : PyExpr) (exc : PyExpr)]
   [PyTryExcept (body : PyExpr) (handlers : PyExpr) (orelse : PyExpr)] ;;???
   [PyTryFinally (body : PyExpr) (finalbody : PyExpr)]
+  [PyExceptHandler (name : PyExpr) (body : PyExpr) (type : PyExpr)]
   
   [PyGlobal (names : (listof symbol))]
   [PyNonlocal (names : (listof symbol))]

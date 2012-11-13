@@ -228,6 +228,35 @@
                          [else rs])]
                  [else primVal]))]
 
+    [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
+                                 (type-case CAns bodyv
+                                   ;; if no exception, interp "else" part
+                                   [AVal (v-bv e-bv s-bv le-bv) (interp-env els e-bv s-bv le-bv)]
+                                   ;; Exception, interp "Exception Handler" pary
+                                   [AExc (v-bv e-bv s-bv le-bv) (interp-env hdlers e-bv s-bv le-bv)])
+                                 
+                                 )] 
+    
+                                   
+                                   
+                                     
+    [CTryFinally (b fb) (let ([bv (interp-env b env store lenv)])
+                          ;;A finally clause is always executed before leaving the try statement, 
+                          ;;whether an exception has occurred or not
+                          (type-case CAns bv
+                            [AVal (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]
+                            [AExc (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]))]
+                                   
+    ;[CExceptHandler (name body type) ]
+                                   
+                                                                    
+    ;;Haven't handle "cause" yet ;
+    [CRaise (cause exc) (let ([excv (interp-env exc env store lenv)])
+                          (type-case CAns excv
+                            [AVal (v-excv e-excv s-excv le-excv) (begin (display (getPrimVal v-excv)) (AVal (VObject-value v-excv) e-excv s-excv le-excv))]
+                            [else excv]))]
+                          
+    
     [else (begin (display expr)
                  (error 'interp "no case"))]))
 

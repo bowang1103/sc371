@@ -63,24 +63,26 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Raise") 
                  ('cause cause) ;; I don't know the meaning of it
                  ('exc exc))
-     (PyRaise (if (equal? exc '#\nul)
+     (PyRaise (if (equal? cause '#\nul)
                   (PyEmp)
-                  (get-structured-python exc))
-              (if (equal? cause '#\nul)
+                  (get-structured-python cause))
+              (if (equal? exc '#\nul)
                   (PyEmp)
-                  (get-structured-python cause)))]
+                  (get-structured-python exc)))]
     [(hash-table ('nodetype "TryExcept")
                  ('body body)
                  ('handlers handlers)
                  ('orelse orelse))
      (PyTryExcept (PySeq (map get-structured-python body)) 
                   (PySeq (map get-structured-python handlers))
-                  (PySeq (map get-structured-python orelse)))]    
+                  (if (equal? orelse '())
+                  (PyEmp)
+                  (PySeq (map get-structured-python orelse))))]    
     [(hash-table ('nodetype "TryFinally")
                  ('body body)
                  ('finalbody fin))
      (PyTryFinally (PySeq (map get-structured-python body)) 
-                (PySeq (map get-structured-python fin)))]
+                   (PySeq (map get-structured-python fin)))]
 ;    [(hash-table ('nodetype "Assert"))]
 ;    [(hash-table ('nodetype "Import"))]
 ;    [(hash-table ('nodetype "ImportFrom"))]
@@ -177,7 +179,7 @@ structure that you define in python-syntax.rkt
            (if (equal? upper '#\nul) 
                (PyEmp)
                (get-structured-python upper)) 
-           (if (equal? step #\nul)
+           (if (equal? step '#\nul)
                (PyEmp)
                (get-structured-python step)))]
 ;    [(hash-table ('nodetype "ExtSlice"))]
@@ -215,10 +217,16 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "In")) 'in]
     [(hash-table ('nodetype "NotIn")) '!in]
     [(hash-table ('nodetype "ExceptHandler")
-                 ('name name) ;; ignoring keywords for name 
+                 ('name name)  
                  ('body body)
-                 ('type type)) ;; ignoring keywords for type
-     (PySeq (map get-structured-python body))]
+                 ('type type))
+     (PyExceptHandler (if (equal? name '#\nul)
+	                      (PyEmp) 
+ 				  		  (PyStr (symbol->string name)))
+	        		  (PySeq (map get-structured-python body))
+	                  (if (equal? type '#\nul)
+		                  (PyEmp)
+	                      (get-structured-python type)))]
     [(hash-table ('nodetype "arguments")
                  ('defaults default-list) ;; ignoring keywords for default-list 
                  ('kwargannotation kwar) ;; ignoring keywords for kwar

@@ -29,9 +29,10 @@ ParselTongue.
 ;  [CPrim2 (prim : symbol) (args : (listof CExp))])
   
   ;;Exception ( combine Try Except else finally)
-  ;[CTryFinally (b : CExp) (fb : CExp)]
-  ;[CTryExn (b : CExp) (hdlers : CExp) (else : CExp)]
-  ;[CRaise (exc : CExp) (cause : CExp)]
+  [CTryFinally (b : CExp) (fb : CExp)]
+  [CTryExn (b : CExp) (hdlers : CExp) (else : CExp)]
+  [CExceptHandler (name : CExp) (body : CExp) (type : CExp)]
+  [CRaise (cause : CExp) (exc : CExp)]
     
   ;;Define Object ; CObject here is different from PT's ObjectC (lisfofField)
   [CObject (type : string) (value : CExp) (body : CExp)]  
