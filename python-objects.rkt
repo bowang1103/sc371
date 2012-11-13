@@ -10,8 +10,14 @@
 
 (define (to-int-obj [prim : CExp]) : CExp
   (CLet 'newObj (CObject "Int" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref int-hash key))))
-                                (hash-keys int-hash))])
+        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref num-hash key))))
+                                (hash-keys num-hash))])
+          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+
+(define (to-float-obj [prim : CExp]) : CExp
+  (CLet 'newObj (CObject "Float" prim (CEmpty))
+        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref num-hash key))))
+                                (hash-keys num-hash))])
           (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
 
 (define (to-bool-obj [prim : CExp]) : CExp
@@ -46,8 +52,8 @@
                                        (CId 'right))))
                 )))
 
-;; bulit-in methods for int
-(define int-hash 
+;; bulit-in methods for number
+(define num-hash 
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
@@ -66,9 +72,14 @@
                                        (CId 'right))))
                 )))
 
+(define (isInteger (n : number)) : boolean
+  (if (= 0 n)
+      (equal? (to-string 0) (to-string n))
+      (equal? (to-string 1) (to-string (/ n n)))))
+
 (define ($to-object (prim : CExp)) : CExp
   (type-case CExp prim
-    [CNum (n) (to-int-obj prim)]
+    [CNum (n) (if (isInteger n) (to-int-obj prim) (to-float-obj prim))]
     [CTrue () (to-bool-obj (CNum 1))]
     [CFalse () (to-bool-obj (CNum 0))]
     [CStr (s) (to-str-obj prim)]

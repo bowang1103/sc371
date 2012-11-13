@@ -45,9 +45,9 @@
     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
-                           (if (VFalse? (getPrimVal v-i))  ;; this should modify to fit false condition
-                               (interp-env e e-i s-i le-i)
-                               (interp-env t e-i s-i le-i))]
+                           (if (isObjTrue v-i)
+                               (interp-env t e-i s-i le-i)
+                               (interp-env e e-i s-i le-i))]
                      [else ians]))]
 
     [CId (id) (let ([rst (grabValue id env store lenv)])
@@ -159,7 +159,7 @@
                       [AVal (v-e1 e-e1 s-e1 le-e1) (interp-env e2 e-e1 s-e1 le-e1)]
                       [else e1Ans]))]
     
-    [CApp (fun args) (let ([funAns (interp-env fun env store lenv)])
+    [CApp (fun args) (let ([funAns (interp-env fun env store lenv)])                       
                        ;; function answer
                        (type-case CAns funAns
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
@@ -172,16 +172,20 @@
                                                          env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                   [else bind-es]))]
+                                   [else 
+                                    ;; bool() no arg case, special handle for now, should have a more clever way
+                                    (if (and (equal? (CId 'bool) fun) (= 0 (length args)))
+                                        (interp-env (CId 'False) env store lenv) bind-es)]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 
     [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
-                         (if (AVal? argAns)
-                             (python-prim1 prim argAns)
-                             argAns))]
+                         (type-case CAns argAns
+                           [AVal (v-obj e-obj s-obj le-obj) 
+                                 (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj)]
+                           [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
     
