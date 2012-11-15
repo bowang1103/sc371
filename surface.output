@@ -1,1 +1,0 @@
-#(struct:PySeq (#(struct:PyAssign (#(struct:PyId hit_finally)) #(struct:PyId False)) #(struct:PyTryFinally #(struct:PySeq (#(struct:PyEmp))) #(struct:PySeq (#(struct:PyAssign (#(struct:PyId hit_finally)) #(struct:PyId True))))) #(struct:PyApp #(struct:PyId ___assertTrue) (#(struct:PyId hit_finally)))))
