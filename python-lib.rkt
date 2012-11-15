@@ -124,11 +124,17 @@ that calls the primitive `print`.
 
 #| Exception Built in function |#
 
-;; TypeError
 (define (exception-lambda (type : string)) : CExp
   ($to-object 
    (CFunc (list 'arg1)
           ($to-object (CException type (CId 'arg1))))))
+
+(define (ContructExc (excpt : CExp) (message : string)) : CExp
+  (CApp excpt (list ($to-object (CStr message)))))
+  
+	
+
+
 
 (define-type LibBinding
   [bind (left : symbol) (right : CExp)])
@@ -155,7 +161,12 @@ that calls the primitive `print`.
         (bind '___fail fail-lambda)
 
         ;;Exception built in 
+        (bind 'Exception (exception-lambda "Exception"))
         (bind 'TypeError (exception-lambda "TypeError"))
+        (bind 'ZeroDivisionError (exception-lambda "ZeroDivisionError"))
+        (bind 'KeyError (exception-lambda "KeyError"))
+        (bind 'IndexError (exception-lambda "IndexError"))
+        (bind 'RuntimeError (exception-lambda "RuntimeError"))
 
 ))
 

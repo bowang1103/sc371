@@ -222,7 +222,7 @@ structure that you define in python-syntax.rkt
                  ('type type))
      (PyExceptHandler (if (equal? name '#\nul)
 	                      (PyEmp) 
- 				  		  (PyStr (symbol->string name)))
+ 				  		  (PyStr name))
 	        		  (PySeq (map get-structured-python body))
 	                  (if (equal? type '#\nul)
 		                  (PyEmp)

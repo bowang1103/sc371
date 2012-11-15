@@ -2,17 +2,21 @@
 
 (require "python-core-syntax.rkt"
          "python-primitives.rkt"
-         "python-objects.rkt")
+         "python-objects.rkt"
+         "python-lib.rkt")
 
 (define (interp [expr : CExp]) : CVal
   (type-case CAns (interp-env expr (hash empty) (hash empty) (hash empty))
-    [AExc (excpt env sto lenv) (begin (print excpt) excpt)]
+    [AExc (excpt env sto lenv) (begin (print excpt) excpt)]  
     [AVal (value env sto lenv) value]))
 
 (define (interp-env [expr : CExp] [env : Env] [store : Store] [lenv : LocalEnv]) : CAns
   (type-case CExp expr 
     [CNum (s) (AVal (VNum s) env store lenv)]
     [CStr (s) (AVal (VStr s) env store lenv)]
+    [CException (type ms) (let ([msv (interp-env ms env store lenv)])
+                            (let ([msv-str (VObject-value (AVal-val msv))])
+                              (AVal (VException type msv-str) env store lenv)))]
     [CList (es) (letrec ([rst (interpList es env store lenv)]
                          [last (first (reverse rst))])
                   (if (AExc? last)
@@ -42,12 +46,12 @@
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
 
-    [CIf (i t e) (let ([ians (interp-env i env store lenv)])
+     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
-                           (if (VFalse? (getPrimVal v-i))  ;; this should modify to fit false condition
-                               (interp-env e e-i s-i le-i)
-                               (interp-env t e-i s-i le-i))]
+                           (if (isObjTrue v-i)
+                               (interp-env t e-i s-i le-i)
+                               (interp-env e e-i s-i le-i))]
                      [else ians]))]
 
     [CId (id) (let ([rst (grabValue id env store lenv)])
@@ -179,9 +183,10 @@
     [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
-                         (if (AVal? argAns)
-                             (python-prim1 prim argAns)
-                             argAns))]
+                         (type-case CAns argAns
+                           [AVal (v-obj e-obj s-obj le-obj) 
+                                 (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj)]
+                           [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
     
@@ -233,32 +238,70 @@
                                    ;; if no exception, interp "else" part
                                    [AVal (v-bv e-bv s-bv le-bv) (interp-env els e-bv s-bv le-bv)]
                                    ;; Exception, interp "Exception Handler" pary
-                                   [AExc (v-bv e-bv s-bv le-bv) (interp-env hdlers e-bv s-bv le-bv)])
-                                 
-                                 )] 
-    
-                                   
-                                   
-                                     
+                                   ;; bind exception object to Env & Store
+                                   [AExc (v-bv e-bv s-bv le-bv) 
+                                         (let ([where (newLoc)])
+                                           (type-case CAns (interp-env hdlers (hash-set e-bv 'exception_symbol where) (hash-set s-bv where v-bv) le-bv)
+                                             ;; leave the Except body ; remove 'exception_symbol in environment
+                                             ;; "return" previous env,store,lenv
+                                             [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]
+                                             [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]))]))]
+                                                        
+                                                                     
     [CTryFinally (b fb) (let ([bv (interp-env b env store lenv)])
                           ;;A finally clause is always executed before leaving the try statement, 
                           ;;whether an exception has occurred or not
                           (type-case CAns bv
                             [AVal (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]
                             [AExc (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]))]
-                                   
-    ;[CExceptHandler (name body type) ]
-                                   
+    
+    [CExceptHandler (name body type) (let ([value (grabValue 'exception_symbol env store lenv)])
+                                       (let ([ErrorType (VException-type (getObjVal (AVal-val value)))]
+                                             [typev (if (CEmpty? type)
+                                                        (interp-env type env store lenv)
+                                                        (interp-env (ContructExc type "") env store lenv))]
+                                             [namev (interp-env name env store lenv)])
+                                         ;(begin ;(display ErrorType)
+                                                ;(display (VException-type (getObjVal (AVal-val typev))))
+                                                ;(display namev)
+                                                ;(display (VStr-s (getObjVal (AVal-val namev))))
+                                           ;; Two condition for entering the Except body 
+                                           ;; (a) except "nothing" : (b) except "certain Exception"
+                                           (if (or (VEmpty? (AVal-val typev))       
+                                                   (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                               (if (VEmpty? (AVal-val namev))
+                                                   (interp-env body env store lenv)
+                                                   (let ([where (newLoc)])
+                                                     (interp-env body 
+                                                                 (hash-set env (string->symbol (VStr-s (getObjVal (AVal-val namev)))) where)
+                                                                 (hash-set store where (AVal-val value))
+                                                                 lenv)))
+                                               ;;Didn't go inside the Except body
+                                               (AVal (VEmpty) env store lenv))))]  
+                                                                                
                                                                     
     ;;Haven't handle "cause" yet ;
-    [CRaise (cause exc) (let ([excv (interp-env exc env store lenv)])
-                          (type-case CAns excv
-                            [AVal (v-excv e-excv s-excv le-excv) (begin (display v-excv) (AVal (VObject-value v-excv) e-excv s-excv le-excv))]
-                            [else excv]))]
-                          
+    [CRaise (cause exc) 
+            (if (CEmpty? exc)
+                ;; handle case : raise with no argument 
+                (let ([value (grabValue 'exception_symbol env store lenv)])
+                  (type-case CAns value
+                    ;; take 'exception that sit on the enviroment
+                    [AVal (v-v e-v s-v le-v) (AExc v-v e-v s-v le-v)]
+                    ;; There's no 'exception sit on the env, raise runtimeError
+                    [AExc (v-v e-v s-v le-v) 
+                          (let ([runTimeError (interp-env (ContructExc (CId 'RuntimeError) "No active exception to reraise") e-v s-v le-v)])
+                            (let ([where (newLoc)])
+                              (AExc (AVal-val runTimeError) e-v s-v le-v)))]))
+                ;; hande case : raie with argument (i.e. raise TypeError("foo")
+                (let ([excv (interp-env exc env store lenv)])
+                  (AExc (AVal-val excv) (AVal-env excv) (AVal-sto excv) (AVal-lenv excv))))]
+  
     
     [else (begin (display expr)
                  (error 'interp "no case"))]))
+                                                 
+
 
 (define (resetLocalEnv (oldEnv : LocalEnv)) :  LocalEnv
   (foldl (lambda (x result) (hash-set result x false)) (hash empty) (hash-keys oldEnv)))

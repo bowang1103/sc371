@@ -48,11 +48,18 @@ primitives here.
                                      [(equal? type "List") (pretty value)]
                                      [(equal? type "Tuple") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
-                                     [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")])]
+                                     [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
+                                     [(equal? type "Exception") (pretty value)])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
-    [VException (type message) (error 'prim "do nothing yet")]
+    [VException (type message) (string-append (string-append type ": ") (pretty message))]
     
+    
+    #|(cond [(VObject? excpt)
+                 (let ([excv (getObjVal excpt)])
+                   (begin (display (string-append (VException-type excv) ": "))
+                          (display (string-append (VStr-s (VException-message excv)) "\n"))
+                          excpt))]|#
     ))
 			
 (define (print [arg : CVal]) : void

@@ -1,5 +1,5 @@
 hit_except = False
-hit_finally = False
+hit_finally = True
 
 try:
     raise Exception('yarr!')
