@@ -54,9 +54,9 @@ ParselTongue.
   [VEmpty]
   [VObject (type : string) (value : CVal) (loc : Location) (field : ObjfieldV)]
   [VPoint (obj : CExp) (field : string)]
-  [VClosure (args : (listof symbol)) (body : CExp) (env : Env)]
   [VException (type : string) (message : CVal)]
-)
+  [VMPoint (loc : Location)]
+  [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]

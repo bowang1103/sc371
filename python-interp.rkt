@@ -18,12 +18,20 @@
                             (let ([msv-str (VObject-value (AVal-val msv))])
                               (AVal (VException type msv-str) env store lenv)))]
     [CList (es) (letrec ([rst (interpList es env store lenv)]
-                         [last (first (reverse rst))])
+                         [last (if (empty? rst)
+                                   (AVal (VEmpty) env store lenv)
+                                   (first (reverse rst)))])
                   (if (AExc? last)
                       last
-                      (AVal (VList (map (lambda (x) (AVal-val x)) rst)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
+                      (AVal (VList (map (lambda (x) (if (isImmutable (VObject-type (AVal-val x)))
+                                                        (AVal-val x)
+                                                        (VObject "MPoint" (VMPoint (VObject-loc (AVal-val x))) -1 (hash empty))))
+                                        rst)) 
+                            (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CTuple (es) (letrec ([rst (interpList es env store lenv)]
-                         [last (first (reverse rst))])
+                          [last (if (empty? rst)
+                                    (AVal (VEmpty) env store lenv)
+                                    (first (reverse rst)))])
                   (if (AExc? last)
                       last
                       (AVal (VTuple (map (lambda (x) (AVal-val x)) rst)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
@@ -57,9 +65,12 @@
     [CId (id) (let ([rst (grabValue id env store lenv)])
                 (type-case CAns rst
                   [AVal (v-v e-v s-v le-v) 
-                        (if (VPoint? v-v)
-                            (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
-                            rst)]
+                        (let ([val (VObject-value v-v)])
+                          (if (VPoint? val)
+                              (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
+                              (if (VMPoint? val)
+                                  (AVal (some-v (hash-ref store (VMPoint-loc val))) e-v s-v le-v)
+                                  rst)))]
                   [else rst]))]
 
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)])
@@ -81,15 +92,16 @@
                                            (hash-set e-v id where)
                                            (hash-set s-v where v-v)
                                            (hash-set le-v id true))
-                                     (type-case CExp value
-                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
-                                       ;[CGetelement (obj indexs) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v ))))]
-                                       [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
-                                                                     (hash-set s-v where (VPoint c-obj c-fd))
-                                                                     (hash-set le-v id true))]
-                                       [else (AVal v-v (hash-set e-v id (VObject-loc v-v))
-                                           (hash-set s-v (VObject-loc v-v) v-v)
-                                           (hash-set le-v id true))])))]
+                                     (AVal v-v (hash-set e-v id (VObject-loc v-v)) s-v le-v)))]
+;                                     (type-case CExp value
+;                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
+;                                       ;[CGetelement (obj indexs) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v ))))]
+;                                       [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
+;                                                                     (hash-set s-v where (VPoint c-obj c-fd))
+;                                                                     (hash-set le-v id true))]
+;                                       [else (AVal v-v (hash-set e-v id (VObject-loc v-v))
+;                                           (hash-set s-v (VObject-loc v-v) v-v)
+;                                           (hash-set le-v id true))])))]
                          [else vans]))]
     
     [CSetelement (obj index value) 
@@ -135,7 +147,7 @@
                          [else (interp-error "You should not been here" env store lenv)])))]
     [CGetelement (obj indexs) (let ([oval (interp-env obj env store lenv)])
                                 (if (AVal? oval)
-                                    (letrec ([ival (interpList indexs env store lenv)]
+                                    (letrec ([ival (interpList indexs (AVal-env oval) (AVal-sto oval) (AVal-lenv oval))]
                                              [last (first (reverse ival))])
                                       (if (AVal? last)
                                           (if (equal? (length ival) 1)
@@ -144,8 +156,12 @@
                                                     (case (string->symbol (VObject-type (AVal-val oval)))
                                                       [(List) (if (>= i (length (VList-es (VObject-value (AVal-val oval)))))
                                                                   (interp-error "Index is out" env store lenv)
-                                                                  (AVal (getElement (VList-es (VObject-value (AVal-val oval)))
-                                                                                    (reverse (build-list (+ i 1) (lambda(x) x)))) env store lenv))]))
+                                                                  (AVal (let ([getrst (getElement (VList-es (VObject-value (AVal-val oval)))
+                                                                                                 (reverse (build-list (+ i 1) (lambda(x) x))))])
+                                                                          (if (equal? (VObject-type getrst) "MPoint")
+                                                                              (some-v (hash-ref (AVal-sto (first ival)) (VMPoint-loc (VObject-value getrst))))
+                                                                              getrst)) 
+                                                                        (AVal-env (first ival)) (AVal-sto (first ival)) (AVal-lenv (first ival))))]))
                                                   (interp-error "Index is not a number" env store lenv))
                                               (if (and (or (equal? (VObject-type (AVal-val (first ival))) "Int")
                                                             (equal? (VObject-type (AVal-val (first ival))) "Empty"))
@@ -221,22 +237,20 @@
                                              (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
                                                    [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
                              [else objv]))]
-    
+    ;; initialize the object
     [CObject (type prim exp)
-             (let ([primVal (interp-env prim env store lenv)]
-                   [rs (interp-env exp env store (resetLocalEnv lenv))]
-                   [where (newLoc)])
+             (let ([primVal (interp-env prim env store lenv)])
                (type-case CAns primVal
                  [AVal (v-pv e-pv s-pv le-pv)
-                       (type-case CAns rs
-                         [AVal (v-rs e-rs s-rs le-rs)
-                               (AVal (VObject type v-pv where
-                                       (let ([rst (make-hash empty)])
-                                         (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
-                                                     (getModifiedVars le-rs))
-                                                rst)))
-                                     env store lenv)]
-                         [else rs])]
+                       (let ([rs (interp-env exp e-pv s-pv (resetLocalEnv le-pv))]
+                             [where (newLoc)])
+                         (type-case CAns rs
+                           [AVal (v-rs e-rs s-rs le-rs) 
+                                 (AVal (VObject type v-pv where
+                                                (let ([rst (make-hash empty)])
+                                                  (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
+                                                              (getModifiedVars le-rs)) rst))) e-rs s-rs le-pv)]
+                           [else rs]))]
                  [else primVal]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
