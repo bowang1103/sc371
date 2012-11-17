@@ -15,6 +15,8 @@ primitives here.
 
 (require (typed-in racket/base [display : (string -> void)]))
 
+(define curstore (hash empty))
+
 (define (pretty [arg : CVal]) : string
   (type-case CVal arg
     [VNum (n) (to-string n)]
@@ -48,10 +50,13 @@ primitives here.
                                      [(equal? type "List") (pretty value)]
                                      [(equal? type "Tuple") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
+                                     [(equal? type "MPoint") (pretty value)]
+                                     [(equal? type "Empty") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
                                      [(equal? type "Exception") (pretty value)])]
     [VClosure (args body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
+    [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
     
     
@@ -122,7 +127,7 @@ primitives here.
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
     (case op
-      [(print) (begin (print obj) (CStr "Print Return Value"))]
+      [(print) (begin (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]

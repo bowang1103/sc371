@@ -18,27 +18,46 @@
                             (let ([msv-str (VObject-value (AVal-val msv))])
                               (AVal (VException type msv-str) env store lenv)))]
     [CList (es) (letrec ([rst (interpList es env store lenv)]
-                         [last (first (reverse rst))])
+                         [last (if (empty? rst)
+                                   (AVal (VEmpty) env store lenv)
+                                   (first (reverse rst)))])
                   (if (AExc? last)
                       last
-                      (AVal (VList (map (lambda (x) (AVal-val x)) rst)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
+                      (AVal (VList (map (lambda (x) (if (isImmutable (VObject-type (AVal-val x)))
+                                                        (AVal-val x)
+                                                        (VObject "MPoint" (VMPoint (VObject-loc (AVal-val x))) -1 (hash empty))))
+                                        rst)) 
+                            (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CTuple (es) (letrec ([rst (interpList es env store lenv)]
-                         [last (first (reverse rst))])
-                  (if (AExc? last)
-                      last
-                      (AVal (VTuple (map (lambda (x) (AVal-val x)) rst)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
+                          [last (if (empty? rst)
+                                    (AVal (VEmpty) env store lenv)
+                                    (first (reverse rst)))])
+                   (if (AExc? last)
+                       last
+                       (AVal (VTuple (map (lambda (x) (if (isImmutable (VObject-type (AVal-val x)))
+                                                          (AVal-val x)
+                                                          (VObject "MPoint" (VMPoint (VObject-loc (AVal-val x))) -1 (hash empty))))
+                                         rst)) 
+                             (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CDict (keys values) (if (equal? (length keys) (length values))
                              (letrec ([keyrst (interpList keys env store lenv)]
-                                      [keylast (first (reverse keyrst))])
+                                      [keylast (if (empty? keyrst)
+                                                   (AVal (VEmpty) env store lenv)
+                                                   (first (reverse keyrst)))])
                                (if (AExc? keylast)
                                    keylast
-                                   (letrec ([valuesrst (interpList values (AVal-env keylast) (AVal-sto keylast) (AVal-lenv keylast))]
-                                            [valueslast (first (reverse valuesrst))])
-                                     (if (AExc? valueslast)
-                                         valueslast
-                                         (AVal (VDict (valfoldl2 keyrst valuesrst (hash empty)))
-                                               (AVal-env valueslast) (AVal-sto valueslast) (AVal-lenv valueslast))))))
-                             (interp-error "You should not been here" env store lenv))]
+                                   (if (not (equal? (length (filter isImmutable (map (lambda (x) (VObject-type (AVal-val x))) keyrst)) )
+                                                    (length keyrst)))
+                                       (interp-error "key should be immutable" env store lenv)
+                                       (letrec ([valuesrst (interpList values (AVal-env keylast) (AVal-sto keylast) (AVal-lenv keylast))]
+                                                [valueslast (if (empty? valuesrst)
+                                                                (AVal (VEmpty) env store lenv)
+                                                                (first (reverse valuesrst)))])
+                                         (if (AExc? valueslast)
+                                             valueslast
+                                             (AVal (VDict (valfoldl2 keyrst valuesrst (hash empty)))
+                                               (AVal-env valueslast) (AVal-sto valueslast) (AVal-lenv valueslast)))))))
+                             (interp-error "length is not same" env store lenv))]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
     [CEmpty () (AVal (VEmpty) env store lenv)]
@@ -57,9 +76,12 @@
     [CId (id) (let ([rst (grabValue id env store lenv)])
                 (type-case CAns rst
                   [AVal (v-v e-v s-v le-v) 
-                        (if (VPoint? v-v)
-                            (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
-                            rst)]
+                        (let ([val (VObject-value v-v)])
+                          (if (VPoint? val)
+                              (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
+                              (if (VMPoint? val)
+                                  (AVal (some-v (hash-ref store (VMPoint-loc val))) e-v s-v le-v)
+                                  rst)))]
                   [else rst]))]
 
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)])
@@ -81,15 +103,16 @@
                                            (hash-set e-v id where)
                                            (hash-set s-v where v-v)
                                            (hash-set le-v id true))
-                                     (type-case CExp value
-                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
-                                       ;[CGetelement (obj indexs) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v ))))]
-                                       [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
-                                                                     (hash-set s-v where (VPoint c-obj c-fd))
-                                                                     (hash-set le-v id true))]
-                                       [else (AVal v-v (hash-set e-v id (VObject-loc v-v))
-                                           (hash-set s-v (VObject-loc v-v) v-v)
-                                           (hash-set le-v id true))])))]
+                                     (AVal v-v (hash-set e-v id (VObject-loc v-v)) s-v le-v)))]
+;                                     (type-case CExp value
+;                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
+;                                       ;[CGetelement (obj indexs) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v ))))]
+;                                       [CGetfield (c-obj c-fd) (AVal v-v (hash-set e-v id where)
+;                                                                     (hash-set s-v where (VPoint c-obj c-fd))
+;                                                                     (hash-set le-v id true))]
+;                                       [else (AVal v-v (hash-set e-v id (VObject-loc v-v))
+;                                           (hash-set s-v (VObject-loc v-v) v-v)
+;                                           (hash-set le-v id true))])))]
                          [else vans]))]
     
     [CSetelement (obj index value) 
@@ -127,7 +150,9 @@
                                                                (VObject-loc (AVal-val oval))
                                                                (VObject-field (AVal-val oval)))]))]
                                    [else store]) lenv)
-                           (interp-error "Index is not a number" env store lenv))
+                           (if (equal? (VObject-type (AVal-val oval)) "Tuple") 
+                               (interp-error "Tuple cannot be changed" env store lenv)
+                               (interp-error "Index is not a number" env store lenv)))
                        (cond
                          [(AExc? oval) oval]
                          [(AExc? ival) ival]
@@ -135,25 +160,92 @@
                          [else (interp-error "You should not been here" env store lenv)])))]
     [CGetelement (obj indexs) (let ([oval (interp-env obj env store lenv)])
                                 (if (AVal? oval)
-                                    (letrec ([ival (interpList indexs env store lenv)]
+                                    (letrec ([ival (interpList indexs (AVal-env oval) (AVal-sto oval) (AVal-lenv oval))]
                                              [last (first (reverse ival))])
                                       (if (AVal? last)
                                           (if (equal? (length ival) 1)
-                                              (if (equal? (VObject-type (AVal-val last)) "Int")
-                                                  (let ([i (VNum-n (VObject-value (AVal-val (first ival))))])
+                                              (if (and (equal? (VObject-type (AVal-val last)) "Int")
+                                                       (not (equal? (VObject-type (AVal-val oval)) "Dict")) )
+                                                  (let ([i (VNum-n (VObject-value (AVal-val last)))])
                                                     (case (string->symbol (VObject-type (AVal-val oval)))
-                                                      [(List) (if (>= i (length (VList-es (VObject-value (AVal-val oval)))))
+                                                      [(Str) (let ([lst (string->list (VStr-s (VObject-value (AVal-val oval))))])
+                                                               (if (or (>= i (length lst))
+                                                                       (> (- 0 i) (length lst)))
+                                                                   (interp-error "Index is out" env store lenv)
+                                                                   (let ([rst (interp-env ($to-object (CStr "")) 
+                                                                                          (AVal-env last) (AVal-sto last) (AVal-lenv last))])
+                                                                     (AVal (VObject "Str" (VStr (list->string (list (if (>= i 0)
+                                                                                                                        (list-ref lst i)
+                                                                                                                        (list-ref lst (+ (length lst) i))))))
+                                                                                    (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst)))
+                                                                           (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))))]
+                                                      [(List) (if (or (>= i (length (VList-es (VObject-value (AVal-val oval)))))
+                                                                      (> (- 0 i) (length (VList-es (VObject-value (AVal-val oval))))))
                                                                   (interp-error "Index is out" env store lenv)
-                                                                  (AVal (getElement (VList-es (VObject-value (AVal-val oval)))
-                                                                                    (reverse (build-list (+ i 1) (lambda(x) x)))) env store lenv))]))
-                                                  (interp-error "Index is not a number" env store lenv))
+                                                                  (AVal (let ([getrst (getElement (VList-es (VObject-value (AVal-val oval)))
+                                                                                                 (reverse (build-list (if (< i 0)
+                                                                                                                          (+ (+ (length (VList-es (VObject-value (AVal-val oval)))) i) 1)
+                                                                                                                          (+ i 1)) (lambda(x) x))))])
+                                                                          (if (equal? (VObject-type getrst) "MPoint")
+                                                                              (some-v (hash-ref (AVal-sto last) (VMPoint-loc (VObject-value getrst))))
+                                                                              getrst)) 
+                                                                        (AVal-env last) (AVal-sto last) (AVal-lenv last)))]
+                                                      [(Tuple) (if (>= i (length (VTuple-es (VObject-value (AVal-val oval)))))
+                                                                   (interp-error "Index is out" env store lenv)
+                                                                   (AVal (let ([getrst (getElement (VTuple-es (VObject-value (AVal-val oval)))
+                                                                                                 (reverse (build-list (if (< i 0)
+                                                                                                                          (+ (+ (length (VList-es (VObject-value (AVal-val oval)))) i) 1)
+                                                                                                                          (+ i 1)) (lambda(x) x))))])
+                                                                          (if (equal? (VObject-type getrst) "MPoint")
+                                                                              (some-v (hash-ref (AVal-sto last) (VMPoint-loc (VObject-value getrst))))
+                                                                              getrst)) 
+                                                                        (AVal-env last) (AVal-sto last) (AVal-lenv last)))]))
+                                                  (if (and (equal? (VObject-type (AVal-val oval)) "Dict") 
+                                                           (isImmutable (VObject-type (AVal-val last))))
+                                                      (let ([valuerst (hash-ref (VDict-dict (VObject-value (AVal-val oval))) (getclearlist last))])
+                                                        (if (none? valuerst)
+                                                            (interp-error "The key is not existed" env store lenv)
+                                                            (AVal (some-v valuerst) (AVal-env last) (AVal-sto last) (AVal-lenv last))))
+                                                      (interp-error "Index type is wrong" env store lenv)))
                                               (if (and (or (equal? (VObject-type (AVal-val (first ival))) "Int")
                                                             (equal? (VObject-type (AVal-val (first ival))) "Empty"))
                                                         (or (equal? (VObject-type (AVal-val (second ival))) "Int")
                                                             (equal? (VObject-type (AVal-val (second ival))) "Empty"))
                                                         (or (equal? (VObject-type (AVal-val (third ival))) "Int")
-                                                            (equal? (VObject-type (AVal-val (third ival))) "Empty")))
-                                                   (interp-error "I don't address" env store lenv)
+                                                            (equal? (VObject-type (AVal-val (third ival))) "Empty"))
+                                                        (or (equal? (VObject-type (AVal-val oval)) "List")
+                                                            (equal? (VObject-type (AVal-val oval)) "Tuple")
+                                                            (equal? (VObject-type (AVal-val oval)) "Str")))
+                                                   (let ([f-i (if (equal? (VObject-type (AVal-val (first ival))) "Int")
+                                                                  (appindex (VObject-value (AVal-val (first ival))) (AVal-val oval))
+                                                                  (if (equal? (VObject-type (AVal-val (third ival))) "Int")
+                                                                      (if (> (VNum-n (VObject-value (AVal-val (third ival)))) 0)
+                                                                          (VNum 0)
+                                                                          (VNum (type-case CVal (VObject-value (AVal-val oval))
+                                                                                  [VList (es) (- (length es) 1)]
+                                                                                  [VTuple (es) (- (length es) 1)]
+                                                                                  [VStr (s) (- (length (string->list s)) 1)]
+                                                                                  [else -1])))
+                                                                      (VNum 0)))]
+                                                         [m-i (if (equal? (VObject-type (AVal-val (second ival))) "Int")
+                                                                  (appindexm (VObject-value (AVal-val (second ival))) (AVal-val oval))
+                                                                  (if (equal? (VObject-type (AVal-val (third ival))) "Int")
+                                                                      (if (> (VNum-n (VObject-value (AVal-val (third ival)))) 0)
+                                                                          (VNum (type-case CVal (VObject-value (AVal-val oval))
+                                                                                  [VList (es) (length es)]
+                                                                                  [VTuple (es) (length es)]
+                                                                                  [VStr (s) (length (string->list s))]
+                                                                                  [else -1]))
+                                                                          (VNum -1))
+                                                                      (VNum (type-case CVal (VObject-value (AVal-val oval))
+                                                                              [VList (es) (length es)]
+                                                                              [VTuple (es) (length es)]
+                                                                              [VStr (s) (length (string->list s))]
+                                                                              [else -1]))))]
+                                                         [s-i (if (equal? (VObject-type (AVal-val (third ival))) "Int")
+                                                                  (VObject-value (AVal-val (third ival)))
+                                                                  (VNum 1))])
+                                                     (getallelements oval f-i m-i s-i))
                                                    (interp-error "Index with wrong type" env store lenv)))
                                           last))
                                     oval))]
@@ -222,22 +314,20 @@
                                              (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
                                                    [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
                              [else objv]))]
-    
+    ;; initialize the object
     [CObject (type prim exp)
-             (let ([primVal (interp-env prim env store lenv)]
-                   [rs (interp-env exp env store (resetLocalEnv lenv))]
-                   [where (newLoc)])
+             (let ([primVal (interp-env prim env store lenv)])
                (type-case CAns primVal
                  [AVal (v-pv e-pv s-pv le-pv)
-                       (type-case CAns rs
-                         [AVal (v-rs e-rs s-rs le-rs)
-                               (AVal (VObject type v-pv where
-                                       (let ([rst (make-hash empty)])
-                                         (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
-                                                     (getModifiedVars le-rs))
-                                                rst)))
-                                     env store lenv)]
-                         [else rs])]
+                       (let ([rs (interp-env exp e-pv s-pv (resetLocalEnv le-pv))]
+                             [where (newLoc)])
+                         (type-case CAns rs
+                           [AVal (v-rs e-rs s-rs le-rs) 
+                                 (AVal (VObject type v-pv where
+                                                (let ([rst (make-hash empty)])
+                                                  (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
+                                                              (getModifiedVars le-rs)) rst))) e-rs s-rs le-pv)]
+                           [else rs]))]
                  [else primVal]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
@@ -316,7 +406,6 @@
 (define (getModifiedVars (oldEnv : LocalEnv)) : (listof symbol)
   (filter (lambda (x) (some-v (hash-ref oldEnv x))) (hash-keys oldEnv)))
 
-
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
         [(= (length args) (length anss))
@@ -390,10 +479,110 @@
 (define (valfoldl2 (keys : (listof CAns)) (values : (listof CAns)) (h : (hashof CVal CVal))) : (hashof CVal CVal)
   (if (empty? keys)
       h            
-      (valfoldl2 (rest keys) (rest values) (hash-set h (VObject-value (AVal-val (first keys))) (AVal-val (first values))))))
+      (valfoldl2 (rest keys) (rest values) (hash-set h (getclearlist (first keys)) 
+                                                     (if (isImmutable (VObject-type (AVal-val (first values))))
+                                                         (AVal-val (first values))
+                                                         (VObject "MPoint" (VMPoint (VObject-loc (AVal-val (first values)))) -1 (hash empty)))))))
 
+(define (getclearlist (value : CAns)) : CVal
+  (let ([rst (AVal-val value)])
+    (if (equal? (VObject-type rst) "Tuple")
+        (VTuple (map VObject-value (VTuple-es (VObject-value rst))))
+        (VObject-value rst))))
 
 (define (getElement (values : (listof CVal)) (n : (listof number))) : CVal
   (if (equal? (first n) 0)
       (first values)
       (getElement (rest values) (rest n))))
+
+(define (appindex (index : CVal) (x : CVal)) : CVal
+  (let ([n (if (VList? (VObject-value x))
+               (length (VList-es (VObject-value x)))
+               (if (VTuple? (VObject-value x)) 
+                   (length (VTuple-es (VObject-value x)))
+                   (length (string->list (VStr-s (VObject-value x))))))]
+        [i (VNum-n index)])
+      (cond
+    [(< i 0) (if (> 0 (+ n i))
+                 (VNum 0)
+                 (VNum (+ n i)))]
+    [(>= i 0) (if (< n i)
+                  (VNum n)
+                  (VNum i))])))
+
+(define (appindexm (index : CVal) (x : CVal)) : CVal
+  (let ([n (if (VList? (VObject-value x))
+               (length (VList-es (VObject-value x)))
+               (if (VTuple? (VObject-value x)) 
+                   (length (VTuple-es (VObject-value x)))
+                   (length (string->list (VStr-s (VObject-value x))))))]
+        [i (VNum-n index)])
+      (cond
+    [(< i 0) (if (> 0 (+ n i))
+                 (VNum -1)
+                 (VNum (+ n i)))]
+    [(>= i 0) (if (< n i)
+                  (VNum n)
+                  (VNum i))])))
+
+(define (getallelements (o : CAns) (f-i : CVal) (m-i : CVal) (s-i : CVal)) : CAns
+  (let ([type (VObject-type (AVal-val o))]
+        [where (newLoc)])
+    (let ([target (case (string->symbol type)
+                    [(Str) (VObject type 
+                                    (VStr (let ([rst (getcharelements (makeflaglist (VNum-n f-i) (VNum-n m-i) (VNum-n s-i) 
+                                                                                    (length (string->list (VStr-s (VObject-value (AVal-val o))))))
+                                                                  (string->list (VStr-s (VObject-value (AVal-val o)))))])
+                                        (if (>= (VNum-n s-i) 0)
+                                            (list->string rst)
+                                            (list->string (reverse rst)))))  where (VObject-field (AVal-val o)))]
+                    [(List) (VObject type 
+                                     (VList 
+                                      (let ([rst (getspecelements (makeflaglist (VNum-n f-i) (VNum-n m-i) (VNum-n s-i) 
+                                                                                (length (VList-es (VObject-value (AVal-val o)))))
+                                                                  (VList-es (VObject-value (AVal-val o))))])
+                                        (if (>= (VNum-n s-i) 0)
+                                            rst
+                                            (reverse rst)))) where (VObject-field (AVal-val o)))]
+                    [(Tuple) (VObject type 
+                                      (VTuple 
+                                       (let ([rst (getspecelements (makeflaglist (VNum-n f-i) (VNum-n m-i) (VNum-n s-i) 
+                                                                                 (length (VList-es (VObject-value (AVal-val o)))))
+                                                                   (VList-es (VObject-value (AVal-val o))))])
+                                         (if (>= (VNum-n s-i) 0)
+                                             rst
+                                             (reverse rst)))) where (VObject-field (AVal-val o)))])])
+      (AVal target (AVal-env o) (hash-set (AVal-sto o) where target) (AVal-lenv o)))))
+
+(define (getcharelements (flag : (listof boolean)) (vals : (listof char))) : (listof char)
+  (if (empty? flag)
+      empty
+      (if (first flag)
+          (cons (first vals) (getcharelements (rest flag) (rest vals)))
+          (getcharelements (rest flag) (rest vals)))))
+
+
+(define (getspecelements (flag : (listof boolean)) (vals : (listof CVal))) : (listof CVal)
+  (if (empty? flag)
+      empty
+      (if (first flag)
+          (cons (first vals) (getspecelements (rest flag) (rest vals)))
+          (getspecelements (rest flag) (rest vals)))))
+
+(define (makeflaglist (f-i : number) (m-i : number) (s-i : number) (l : number)) : (listof boolean)
+  (build-list l (lambda(x) (if (> s-i 0)
+                               (cond 
+                                 [(equal? x f-i) true]
+                                 [(and (equal? 0 (pmod (- x f-i) s-i))
+                                       (< x m-i)) true]
+                                 [else false])
+                               (cond
+                                 [(equal? x f-i) true]
+                                 [(and (equal? 0 (pmod (- f-i x) (- 0 s-i)))
+                                       (> x m-i)) true]
+                                 [else false])))))
+
+(define (pmod (val : number) (div : number)) : number
+  (if (< val div)
+      val
+      (mod (- val div) div)))
