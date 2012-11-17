@@ -28,6 +28,7 @@
                                 [else (CEmpty)])]
     [PySeq (es) (foldl (lambda (e1 e2) (CSeq e2 (desugar e1))) (desugar (first es)) (rest es))]
     [PyIf (test then els) (CIf (desugar test) (desugar then) (desugar els))]
+    [PyEmp () ($to-object (CEmpty))]
     [PyNum (n) ($to-object (CNum n))]
     [PyStr (s) ($to-object (CStr s))]
     [PyList (es) ($to-object (CList (map desugar es)))]
