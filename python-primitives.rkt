@@ -23,13 +23,15 @@ primitives here.
     [VStr (s) (foldr string-append "" (list "'" s "'"))]
     [VList (elms) (foldr string-append  ""
                     (list "[" 
-                          (let ([ptvals (map pretty elms)])
-                            (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
+                          (if (empty? elms) ""
+                              (let ([ptvals (map pretty elms)])
+                                (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
                           "]"))]
     [VTuple (elms) (foldr string-append  ""
-                    (list "(" 
-                          (let ([ptvals (map pretty elms)])
-                            (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
+                    (list "("
+                          (if (empty? elms) ""
+                              (let ([ptvals (map pretty elms)])
+                                (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
                           ")"))]
     [VDict (dict) (letrec ([keys (hash-keys dict)]
                            [pair (map (lambda(x) 
@@ -37,12 +39,12 @@ primitives here.
                                               (list (pretty x) 
                                                     ": " 
                                                     (pretty (some-v (hash-ref dict x)))))) keys)])
-                    (foldr string-append ""
+                    (foldr string-append "" 
                            (list "{" 
-                                 (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first pair) (rest pair))
-                           "}")))]
-    [VTrue () "true"]
-    [VFalse () "false"]
+                                 (if (empty? pair) "" (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first pair) (rest pair)))
+                                 "}")))]
+    [VTrue () "True"]
+    [VFalse () "False"]
     [VEmpty () ""]
     [VObject (type value loc flds) (cond
                                      [(equal? type "Int") (pretty value)]
