@@ -57,8 +57,10 @@ structure that you define in python-syntax.rkt
               (PySeq (map get-structured-python orelse)))]
     [(hash-table ('nodetype "If") ('test test) ('body body) ('orelse orelse))
      (PyIf (get-structured-python test) 
-           (PySeq (map get-structured-python body)) 
-           (PySeq (map get-structured-python orelse)))]
+           (PySeq (map get-structured-python body))
+           (if (empty? orelse)
+	       (PyEmp) 
+	       (PySeq (map get-structured-python orelse))))]
 ;    [(hash-table ('nodetype "With"))]
     [(hash-table ('nodetype "Raise") 
                  ('cause cause) ;; I don't know the meaning of it

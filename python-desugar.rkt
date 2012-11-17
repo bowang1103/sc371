@@ -36,7 +36,6 @@
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
-    [PyEmp () (CEmpty)] 
     
     ; and or
     [PyBoolOp (boolop exprs) (desugar-boolop boolop exprs)]
