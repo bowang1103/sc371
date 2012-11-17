@@ -262,7 +262,6 @@
                            ;; function value
                            (type-case CVal (VObject-value v-fobj)
                              [VClosure (clargs clbody clenv)
-                                       (begin (display (to-string clbody)) (display "\n")
                                (let ([bind-es (bind-args clargs 
                                                          (allocLocList (length clargs)) 
                                                          (interpArgs args e-fobj s-fobj le-fobj) 
@@ -275,7 +274,7 @@
                                              (type-case (optionof CExp) (hash-ref class-default fun)
                                                [some (v) (interp-env v e-es s-es le-es)]
                                                [none () bind-es])
-                                             bind-es)])))]
+                                             bind-es)]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 
