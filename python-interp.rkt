@@ -353,7 +353,7 @@
     
     [CExceptHandler (name body type) (let ([value (grabValue 'exception_symbol env store lenv)])
                                        (let ([ErrorType (VException-type (getObjVal (AVal-val value)))]
-                                             [typev (if (CEmpty? type)
+                                             [typev (if (not (CId? type))
                                                         (interp-env type env store lenv)
                                                         (interp-env (ContructExc type "") env store lenv))]
                                              [namev (interp-env name env store lenv)])
@@ -363,9 +363,9 @@
                                                 ;(display (VStr-s (getObjVal (AVal-val namev))))
                                            ;; Two condition for entering the Except body 
                                            ;; (a) except "nothing" : (b) except "certain Exception"
-                                           (if (or (VEmpty? (AVal-val typev))       
+                                           (if (or (VEmpty? (getObjVal (AVal-val typev)))       
                                                    (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
-                                               (if (VEmpty? (AVal-val namev))
+                                               (if (VEmpty? (getObjVal (AVal-val namev)))
                                                    (interp-env body env store lenv)
                                                    (let ([where (newLoc)])
                                                      (interp-env body 
@@ -377,7 +377,7 @@
                                                                                 
                                                                     
     ;;Haven't handle "cause" yet ;
-    [CRaise (cause exc) 
+   #| [CRaise (cause exc) 
             (if (CEmpty? exc)
                 ;; handle case : raise with no argument 
                 (let ([value (grabValue 'exception_symbol env store lenv)])
@@ -391,8 +391,27 @@
                               (AExc (AVal-val runTimeError) e-v s-v le-v)))]))
                 ;; hande case : raie with argument (i.e. raise TypeError("foo")
                 (let ([excv (interp-env exc env store lenv)])
-                  (AExc (AVal-val excv) (AVal-env excv) (AVal-sto excv) (AVal-lenv excv))))]
+                  (AExc (AVal-val excv) (AVal-env excv) (AVal-sto excv) (AVal-lenv excv))))]|#
   
+    
+       ;;Haven't handle "cause" yet ;
+    [CRaise (cause exc) 
+            (let ([excv (interp-env exc env store lenv)])
+              (if (VEmpty? (getObjVal (AVal-val excv)))
+                  ;; handle case : raise with no argument 
+                  (let ([value (grabValue 'exception_symbol env store lenv)])
+                    (type-case CAns value
+                      ;; take 'exception that sit on the enviroment
+                      [AVal (v-v e-v s-v le-v) (AExc v-v e-v s-v le-v)]
+                      ;; There's no 'exception sit on the env, raise runtimeError
+                      [AExc (v-v e-v s-v le-v) 
+                            (let ([runTimeError (interp-env (ContructExc (CId 'RuntimeError) "No active exception to reraise") e-v s-v le-v)])
+                              (let ([where (newLoc)])
+                                (AExc (AVal-val runTimeError) e-v s-v le-v)))]))
+                  ;; hande case : raie with argument (i.e. raise TypeError("foo")
+                  (AExc (AVal-val excv) (AVal-env excv) (AVal-sto excv) (AVal-lenv excv))))]
+    
+    
     
     [else (begin (display expr)
                  (error 'interp "no case"))]))
