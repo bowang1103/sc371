@@ -76,7 +76,7 @@
                                        (CId 'self)
                                        (CId 'right))))
                 )))
-
+                                                  
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)
       (equal? (to-string 0) (to-string n))

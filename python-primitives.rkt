@@ -132,7 +132,12 @@ primitives here.
       [(int) (intNumeric obj)]
       [(float) (floatNumeric obj)]
       [(str) (toString obj)]
-      [(abs) (absNumeric obj)])))
+      [(abs) (absNumeric obj)]
+      ;[(list)]
+      ;[(tuple)]
+      ;[(dict)]
+      
+      [(tagof) ($to-object (CStr (getObjType obj)))])))
 
 ;;boolop may have to handle in other function
 ; boolop = {and, or}
@@ -142,7 +147,9 @@ primitives here.
   (let ([val-l (getObjVal (AVal-val arg1))]
         [val-r (getObjVal (AVal-val arg2))]
         [loc-l (getObjLoc (AVal-val arg1))]
-        [loc-r (getObjLoc (AVal-val arg2))])
+        [loc-r (getObjLoc (AVal-val arg2))]
+        [type-l (getObjType (AVal-val arg1))]
+        [type-r (getObjType (AVal-val arg2))])
     (case op
       [(==) (if (equal? val-l val-r)
                 ($to-object (CTrue))
@@ -175,7 +182,10 @@ primitives here.
               ;; STRING CASE
               [(and (VStr? val-l) (VStr? val-r))
                (case op
-                 [(+) ($to-object (CStr (string-append (VStr-s val-l) (VStr-s val-r))))])]
+                 [(+) ($to-object (CStr (string-append (VStr-s val-l) (VStr-s val-r))))]
+                 [(instanceof) (if (equal? type-l type-r)
+                                   (CId 'True)
+                                   (if (and (equal? type-l "Bool") (equal? type-r "Int")) (CId 'True) (CId 'False)))])]
               [else (error 'prim2 "no case yet")])]
     )))
 

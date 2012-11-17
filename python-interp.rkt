@@ -46,7 +46,7 @@
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
 
-     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
+    [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
                            (if (isObjTrue v-i)
@@ -176,7 +176,13 @@
                                                          env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                   [else bind-es]))]
+                                   ;; TODO: bool() no arg case, special handle for now, should have a more clever way
+                                   [AExc (v-es e-es s-es le-es) 
+                                         (if (= 0 (length args))
+                                             (type-case (optionof CExp) (hash-ref class-default fun)
+                                               [some (v) (interp-env v e-es s-es le-es)]
+                                               [none () bind-es])
+                                             bind-es)]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 

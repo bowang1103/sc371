@@ -50,11 +50,41 @@ that calls the primitive `print`.
    (CFunc (list 'to-str)
      (CPrim1 'str (CId 'to-str)))))
 
+;; len
+(define len-lambda
+  ($to-object
+   (CFunc (list 'to-len)
+     (CPrim1 'len (CId 'to-len)))))
+
+;; list
+(define list-lambda
+  ($to-object
+   (CFunc (list 'to-list)
+     (CPrim1 'list (CId 'to-list)))))
+
+;; tuple
+(define tuple-lambda
+  ($to-object
+   (CFunc (list 'to-tuple)
+     (CPrim1 'tuple (CId 'to-tuple)))))
+
+;; dict
+(define dict-lambda
+  ($to-object
+   (CFunc (list 'to-dict)
+     (CPrim1 'dict (CId 'to-dict)))))
+
 ;; abs
 (define abs-lambda
   ($to-object
    (CFunc (list 'to-abs)
      (CPrim1 'abs (CId 'to-abs)))))
+
+;; isinstance
+(define isinstance-lambda
+  ($to-object
+   (CFunc (list 'instance 'class)
+     (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list)))))))
 
 ;; ___assertTure
 (define assert-true-lambda
@@ -131,8 +161,16 @@ that calls the primitive `print`.
 
 (define (ContructExc (excpt : CExp) (message : string)) : CExp
   (CApp excpt (list ($to-object (CStr message)))))
-  
-	
+
+;; A hash table of type-constructor and their default value object
+(define class-default
+  (make-hash (list (values (CId 'int) (CApp (CId 'int) (list ($to-object (CNum 0)))))
+                   (values (CId 'float) (CApp (CId 'float) (list ($to-object (CNum 0.0)))))
+                   (values (CId 'bool) (CApp (CId 'bool) (list (CId 'False))))
+                   (values (CId 'str) (CApp (CId 'str) (list ($to-object (CStr "")))))
+                   (values (CId 'list) (CApp (CId 'list) (list ($to-object (CList (list))))))
+                   (values (CId 'tuple) (CApp (CId 'tuple) (list ($to-object (CTuple (list))))))
+                   (values (CId 'dict) (CApp (CId 'dict) (list ($to-object (CDict (list) (list)))))))))
 
 
 
@@ -146,9 +184,14 @@ that calls the primitive `print`.
         (bind 'int int-lambda)
         (bind 'float float-lambda)
         (bind 'str str-lambda)
+        (bind 'len len-lambda)
+        (bind 'list list-lambda)
+        (bind 'tuple tuple-lambda)
+        (bind 'dict dict-lambda)
         (bind 'abs abs-lambda)
         (bind 'True true-val)
         (bind 'False false-val)
+        (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)
         (bind '___assertIn assert-in-lambda)
