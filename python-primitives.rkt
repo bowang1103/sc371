@@ -149,7 +149,7 @@ primitives here.
       [(float) (floatNumeric obj)]
       [(str) (toString obj)]
       [(abs) (absNumeric obj)]
-      ;[(list)]
+      [(list) (CWrap "List" obj)]
       ;[(tuple)]
       ;[(dict)]
       
@@ -188,9 +188,20 @@ primitives here.
                  [(+) ($to-object (CNum (+ (VNum-n val-l) (VNum-n val-r))))]
                  [(-) ($to-object (CNum (- (VNum-n val-l) (VNum-n val-r))))]
                  [(*) ($to-object (CNum (* (VNum-n val-l) (VNum-n val-r))))]
-                 [(/) ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r))))] ;; should take care /0 case
-                 [(//) ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r)))))]
-                 [(%) ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r))))]
+                 [(/) (if (or (equal? (VNum-n val-r) 0)
+                              (equal? (VNum-n val-r) 0.0))
+                          ;;Two way of raising exception
+                          (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                          ;(CRaise ($to-object (CEmpty)) (CApp (CId 'ZeroDivisionError) (list ($to-object (CStr "divison by zero")))))
+                          ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r)))))]
+                 [(//) (if (or (equal? (VNum-n val-r) 0)
+                               (equal? (VNum-n val-r) 0.0))
+                           (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                           ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r))))))]
+                 [(%) (if (or (equal? (VNum-n val-r) 0)
+                              (equal? (VNum-n val-r) 0.0))
+                          (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                          ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r)))))]
                  [(<) (if (< (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
                  [(>) (if (> (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
                  [(<=) (if (<= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]

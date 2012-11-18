@@ -27,7 +27,17 @@ structure that you define in python-syntax.rkt
                 (if (empty? args) (list) (get-structured-python args)) 
                 (get-structured-python (first body)) 
                 (if (equal? returns '#\nul) (PyEmp) (get-structured-python returns)))]
-;    [(hash-table ('nodetype "ClassDef"))]
+    [(hash-table ('nodetype "ClassDef")
+                 ('name name)
+                 ('keywords kws)
+                 ('kwargs kgs)
+                 ('decorator_list drl)
+                 ('bases bases)
+                 ('body body))
+     (PyClassDef (string->symbol name)
+                 (if (empty? body)
+                     (PyEmp)
+                     (PySeq (map get-structured-python body))))]
     [(hash-table ('nodetype "Return") ('value value))
      (if (equal? value '#\nul)
          (PyReturn (PyEmp))

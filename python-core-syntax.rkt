@@ -27,6 +27,7 @@ ParselTongue.
   [CPrim1 (prim : symbol) (arg : CExp)]
   [CPrim2 (prim : symbol) (arg1 : CExp) (arg2 : CExp)] ;; arg1 and arg2 should be IdC
   [CPrim2Seq (left : CExp) (prims : (listof symbol)) (args : (listof CExp))]
+  [CWrap (type : string) (obj : CVal)]
 ;  [CPrim2 (prim : symbol) (args : (listof CExp))])
   
   ;;Exception ( combine Try Except else finally)
