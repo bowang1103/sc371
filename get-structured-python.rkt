@@ -34,8 +34,8 @@ structure that you define in python-syntax.rkt
                  ('decorator_list drl)
                  ('bases bases)
                  ('body body))
-     (PyclassDef (string->symbol name)
-                 (if (emptty? body)
+     (PyClassDef (string->symbol name)
+                 (if (empty? body)
                      (PyEmp)
                      (PySeq (map get-structured-python body))))]
     [(hash-table ('nodetype "Return") ('value value))

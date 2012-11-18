@@ -148,7 +148,7 @@ primitives here.
       [(float) (floatNumeric obj)]
       [(str) (toString obj)]
       [(abs) (absNumeric obj)]
-      ;[(list)]
+      [(list) (CWrap "List" obj)]
       ;[(tuple)]
       ;[(dict)]
       

@@ -55,12 +55,22 @@
                                                                 (first (reverse valuesrst)))])
                                          (if (AExc? valueslast)
                                              valueslast
-                                             (AVal (VDict (valfoldl2 keyrst valuesrst (hash empty)))
+                                             (AVal (VDict (valfoldl2 keyrst valuesrst (hash empty) store))
                                                (AVal-env valueslast) (AVal-sto valueslast) (AVal-lenv valueslast)))))))
                              (interp-error "length is not same" env store lenv))]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
     [CEmpty () (AVal (VEmpty) env store lenv)]
+    
+    [CWrap (type obj) (case (string->symbol type)
+                        [(List) (let ([rst (AVal-val (interp-env ($to-object (CList (list))) env store lenv))])
+                                  (AVal (VObject type (type-case CVal (VObject-value obj)
+                                                        [VStr (s) (VList (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
+                                                                              (string->list s)))]
+                                                        [VList (es) (VList es)]
+                                                        [VTuple (es) (VList es)]
+                                                        [VDict (dict) (VList (hash-keys dict))]
+                                                        [else (VList (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
     
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
@@ -125,31 +135,28 @@
                                (equal? (VObject-type (AVal-val oval)) "Dict"))
                            (AVal (AVal-val vval)
                                  env
-                                 (type-case CExp obj 
-                                   [CId (c-id) 
-                                        (hash-set store 
-                                                  (some-v (hash-ref env c-id)) 
-                                                  (cond
-                                                    [(equal? (VObject-type (AVal-val oval)) "List") 
-                                                     (VObject "List" 
-                                                              (VList 
-                                                               (map2 (lambda (x y) 
-                                                                       (if (equal? y (VNum-n (VObject-value (AVal-val ival))))
-                                                                           (AVal-val vval)
-                                                                           x)) 
-                                                                     (VList-es (VObject-value (AVal-val oval)))
-                                                                     (build-list (length (VList-es (VObject-value (AVal-val oval)))) (lambda(x) x))))
-                                                              (VObject-loc (AVal-val oval))
-                                                              (VObject-field (AVal-val oval)))]
-                                                    [(equal? (VObject-type (AVal-val oval)) "Dict")
-                                                     (VObject "Dict"
-                                                              (VDict
-                                                               (hash-set (VDict-dict (VObject-value (AVal-val oval))) 
-                                                                                     (VObject-value (AVal-val ival))
-                                                                                     (VObject-value (AVal-val vval))))
-                                                               (VObject-loc (AVal-val oval))
-                                                               (VObject-field (AVal-val oval)))]))]
-                                   [else store]) lenv)
+                                 (hash-set store 
+                                           (VObject-loc (AVal-val oval))
+                                           (cond
+                                             [(equal? (VObject-type (AVal-val oval)) "List") 
+                                              (VObject "List" 
+                                                       (VList 
+                                                        (map2 (lambda (x y) 
+                                                                (if (equal? y (VNum-n (VObject-value (AVal-val ival))))
+                                                                    (AVal-val vval)
+                                                                    x)) 
+                                                              (VList-es (VObject-value (AVal-val oval)))
+                                                              (build-list (length (VList-es (VObject-value (AVal-val oval)))) (lambda(x) x))))
+                                                       (VObject-loc (AVal-val oval))
+                                                       (VObject-field (AVal-val oval)))]
+                                             [(equal? (VObject-type (AVal-val oval)) "Dict")
+                                              (VObject "Dict"
+                                                       (VDict
+                                                        (hash-set (VDict-dict (VObject-value (AVal-val oval))) 
+                                                                  (VObject-value (AVal-val ival))
+                                                                  (VObject-value (AVal-val vval))))
+                                                       (VObject-loc (AVal-val oval))
+                                                       (VObject-field (AVal-val oval)))])) lenv)
                            (if (equal? (VObject-type (AVal-val oval)) "Tuple") 
                                (interp-error "Tuple cannot be changed" env store lenv)
                                (interp-error "Index is not a number" env store lenv)))
@@ -202,7 +209,7 @@
                                                                         (AVal-env last) (AVal-sto last) (AVal-lenv last)))]))
                                                   (if (and (equal? (VObject-type (AVal-val oval)) "Dict") 
                                                            (isImmutable (VObject-type (AVal-val last))))
-                                                      (let ([valuerst (hash-ref (VDict-dict (VObject-value (AVal-val oval))) (getclearlist last))])
+                                                      (let ([valuerst (hash-ref (VDict-dict (VObject-value (AVal-val oval))) (getNoneObjectVal (AVal-val last) (AVal-sto last)))])
                                                         (if (none? valuerst)
                                                             (interp-error "The key is not existed" env store lenv)
                                                             (AVal (some-v valuerst) (AVal-env last) (AVal-sto last) (AVal-lenv last))))
@@ -472,19 +479,28 @@
             (cons rst (interpList (rest expr) (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))))))
 
 ;; specific function to app values into hash table
-(define (valfoldl2 (keys : (listof CAns)) (values : (listof CAns)) (h : (hashof CVal CVal))) : (hashof CVal CVal)
+(define (valfoldl2 (keys : (listof CAns)) (values : (listof CAns)) (h : (hashof CVal CVal)) (store : Store)) : (hashof CVal CVal)
   (if (empty? keys)
       h            
-      (valfoldl2 (rest keys) (rest values) (hash-set h (getclearlist (first keys)) 
+      (valfoldl2 (rest keys) (rest values) (hash-set h (getNoneObjectVal (AVal-val (first keys)) store) 
                                                      (if (isImmutable (VObject-type (AVal-val (first values))))
                                                          (AVal-val (first values))
-                                                         (VObject "MPoint" (VMPoint (VObject-loc (AVal-val (first values)))) -1 (hash empty)))))))
+                                                         (VObject "MPoint" (VMPoint (VObject-loc (AVal-val (first values)))) -1 (hash empty)))) store)))
 
-(define (getclearlist (value : CAns)) : CVal
-  (let ([rst (AVal-val value)])
-    (if (equal? (VObject-type rst) "Tuple")
-        (VTuple (map VObject-value (VTuple-es (VObject-value rst))))
-        (VObject-value rst))))
+(define (getNoneObjectVal (value : CVal) (store : Store)) : CVal
+  (case (string->symbol (VObject-type value))
+    [(Int) (VObject-value value)]
+    [(Str) (VObject-value value)]
+    [(List) (VList 
+             (map2 getNoneObjectVal 
+                   (VList-es (VObject-value value)) 
+                   (build-list (length (VList-es (VObject-value value))) (lambda(x) store))))]
+    [(Tuple) (VTuple (map2 getNoneObjectVal 
+                           (VTuple-es (VObject-value value)) 
+                           (build-list (length (VTuple-es (VObject-value value))) (lambda(x) store))))]
+    [(True) (VTrue)]
+    [(False) (VFalse)]
+    [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value value)))) store)]))
 
 (define (getElement (values : (listof CVal)) (n : (listof number))) : CVal
   (if (equal? (first n) 0)
