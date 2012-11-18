@@ -70,8 +70,16 @@
                                                         [VList (es) (VList es)]
                                                         [VTuple (es) (VList es)]
                                                         [VDict (dict) (VList (hash-keys dict))]
-                                                        [else (VList (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
-    
+                                                        [else (VList (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
+                        [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
+                                   (AVal (VObject type (type-case CVal (VObject-value obj)
+                                                         [VStr (s) (VTuple (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
+                                                                                (string->list s)))]
+                                                         [VList (es) (VTuple es)]
+                                                         [VTuple (es) (VTuple es)]
+                                                         [VDict (dict) (VTuple (hash-keys dict))]
+                                                         [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])])]
+
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
 
