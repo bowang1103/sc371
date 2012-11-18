@@ -1,1 +1,0 @@
-"{\"body\": [{\"body\": [{\"nodetype\": \"Assign\", \"targets\": [{\"nodetype\": \"Name\", \"ctx\": {\"nodetype\": \"Store\"}, \"id\": \"x\"}], \"value\": {\"nodetype\": \"Num\", \"n\": 10}}], \"decorator_list\": [], \"nodetype\": \"ClassDef\", \"name\": \"A\", \"starargs\": null, \"bases\": [], \"kwargs\": null, \"keywords\": []}], \"nodetype\": \"Module\"}\n"

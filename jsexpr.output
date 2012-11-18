@@ -1,1 +1,0 @@
-#hasheq((body . (#hasheq((body . (#hasheq((targets . (#hasheq((id . "x") (nodetype . "Name") (ctx . #hasheq((nodetype . "Store")))))) (value . #hasheq((n . 10) (nodetype . "Num"))) (nodetype . "Assign")))) (name . "A") (nodetype . "ClassDef") (keywords . ()) (kwargs . #\nul) (starargs . #\nul) (decorator_list . ()) (bases . ())))) (nodetype . "Module"))
