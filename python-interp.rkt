@@ -17,7 +17,7 @@
     [CException (type ms) (let ([msv (interp-env ms env store lenv)])
                             (let ([msv-str (VObject-value (AVal-val msv))])
                               (AVal (VException type msv-str) env store lenv)))]
-    [CList (es) (letrec ([rst (interpList es env store lenv)]
+    [CList (es) (letrec ([rst (interpArgs es env store lenv)]
                          [last (if (empty? rst)
                                    (AVal (VEmpty) env store lenv)
                                    (first (reverse rst)))])
@@ -28,7 +28,7 @@
                                                         (VObject "MPoint" (VMPoint (VObject-loc (AVal-val x))) -1 (hash empty))))
                                         rst)) 
                             (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
-    [CTuple (es) (letrec ([rst (interpList es env store lenv)]
+    [CTuple (es) (letrec ([rst (interpArgs es env store lenv)]
                           [last (if (empty? rst)
                                     (AVal (VEmpty) env store lenv)
                                     (first (reverse rst)))])
@@ -40,7 +40,7 @@
                                          rst)) 
                              (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CDict (keys values) (if (equal? (length keys) (length values))
-                             (letrec ([keyrst (interpList keys env store lenv)]
+                             (letrec ([keyrst (interpArgs keys env store lenv)]
                                       [keylast (if (empty? keyrst)
                                                    (AVal (VEmpty) env store lenv)
                                                    (first (reverse keyrst)))])
@@ -49,7 +49,7 @@
                                    (if (not (equal? (length (filter isImmutable (map (lambda (x) (VObject-type (AVal-val x))) keyrst)) )
                                                     (length keyrst)))
                                        (interp-error "key should be immutable" env store lenv)
-                                       (letrec ([valuesrst (interpList values (AVal-env keylast) (AVal-sto keylast) (AVal-lenv keylast))]
+                                       (letrec ([valuesrst (interpArgs values (AVal-env keylast) (AVal-sto keylast) (AVal-lenv keylast))]
                                                 [valueslast (if (empty? valuesrst)
                                                                 (AVal (VEmpty) env store lenv)
                                                                 (first (reverse valuesrst)))])
@@ -160,7 +160,7 @@
                          [else (interp-error "You should not been here" env store lenv)])))]
     [CGetelement (obj indexs) (let ([oval (interp-env obj env store lenv)])
                                 (if (AVal? oval)
-                                    (letrec ([ival (interpList indexs (AVal-env oval) (AVal-sto oval) (AVal-lenv oval))]
+                                    (letrec ([ival (interpArgs indexs (AVal-env oval) (AVal-sto oval) (AVal-lenv oval))]
                                              [last (first (reverse ival))])
                                       (if (AVal? last)
                                           (if (equal? (length ival) 1)
@@ -261,24 +261,24 @@
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
                            ;; function value
                            (type-case CVal (VObject-value v-fobj)
-                             [VClosure (clargs clbody clenv)
+                             [VClosure (clargs cldfts clbody)
                                (let ([bind-es (bind-args clargs 
                                                          (allocLocList (length clargs)) 
-                                                         (interpArgs args e-fobj s-fobj le-fobj) 
+                                                         (interpArgs args e-fobj s-fobj le-fobj)
+                                                         cldfts
                                                          env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                   ;; TODO: bool() no arg case, special handle for now, should have a more clever way
-                                   [AExc (v-es e-es s-es le-es)
-                                         (if (= 0 (length args))
-                                             (type-case (optionof CExp) (hash-ref class-default fun)
-                                               [some (v) (interp-env v e-es s-es le-es)]
-                                               [none () bind-es])
-                                             bind-es)]))]
+                                   [else bind-es]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 
-    [CFunc (args body) (AVal (VClosure args body env) env store lenv)]
+    [CFunc (args defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
+                                  (cond [(empty? dftAns) (AVal (VClosure args (list) body) env store lenv)]
+                                        [else (let ([lastAns (first (reverse dftAns))])
+                                                (type-case CAns (first (reverse dftAns))
+                                                  [AVal (v e s le) (AVal (VClosure args (map AVal-val dftAns) body) e s le)]
+                                                  [else lastAns]))]))]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
                          (type-case CAns argAns
@@ -287,8 +287,6 @@
                            [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
-    
-    ;[CPrim2Seq (left prims args) ]
      
     ;;setfield for object 
     [CSetfield (obj fld value) (let ([objv (interp-env obj env store lenv)])
@@ -424,17 +422,26 @@
 (define (getModifiedVars (oldEnv : LocalEnv)) : (listof symbol)
   (filter (lambda (x) (some-v (hash-ref oldEnv x))) (hash-keys oldEnv)))
 
-(define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
+(define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
-        [(= (length args) (length anss))
-         (let ([lastAns (first (reverse anss))])
-           (if (AVal? lastAns)
+        [(<= (length args) (+ (length anss) (length dfts)))
+         (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
+           (if (AVal? latest)
                (AVal (VStr "dummy")
-                     (extendEnv args locs (AVal-env lastAns)) ;; use passin env instead of closure-env
-                     (overrideStore locs anss (AVal-sto lastAns))
-                     (AVal-lenv lastAns))
-               lastAns))]
+                     (extendEnv args locs (AVal-env latest))
+                     (overrideStore locs
+                                    (append (map AVal-val anss)
+                                            (lastNVals (- (length args) (length anss)) dfts (list)))
+                                    (AVal-sto latest))
+                     (AVal-lenv latest))
+               latest))]
         [else (interp-error "Arity mismatch" env sto lenv)]))
+
+(define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
+  (let ([revs (reverse input)])
+    (if (= 0 n)
+        output
+        (lastNVals (- n 1) (rest input) (cons (first revs) output)))))
 
 (define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (type-case (optionof Location) (hash-ref env for)
@@ -477,11 +484,11 @@
     [else env]))
 
 ;; extend store with list of locations and answers
-(define (overrideStore (locs : (listof Location)) (anss : (listof CAns)) (sto : Store)) : Store
+(define (overrideStore (locs : (listof Location)) (vals : (listof CVal)) (sto : Store)) : Store
   (cond 
-    [(and (not (empty? locs)) (not (empty? anss)))
-     (overrideStore (rest locs) (rest anss) 
-                    (hash-set sto (first locs) (AVal-val (first anss))))]
+    [(and (not (empty? locs)) (not (empty? vals)))
+     (overrideStore (rest locs) (rest vals) 
+                    (hash-set sto (first locs) (first vals)))]
     [else sto]))
 
 ;; interp a list and return the result, if there is exception in the list it will be on the last element

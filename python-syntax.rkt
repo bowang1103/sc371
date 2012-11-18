@@ -8,7 +8,7 @@
   ;; added by hichuang
   
   ;;;;;; stmt ;;;;;;
-  [PyFuncDef (name : symbol) (args : (listof symbol)) (body : PyExpr) (return : PyExpr)]
+  [PyFuncDef (name : symbol) (args : PyExpr) (body : PyExpr) (return : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
   [PyAssign (targets : (listof PyExpr)) (value : PyExpr)]
   
@@ -50,6 +50,8 @@
   [PyTuple (elts : (listof PyExpr))]
   [PyNum (n : number)]
   [PyStr (s : string)]
+  
+  [PyArgs (args : (listof symbol)) (defaults : (listof PyExpr))]
   
   
   

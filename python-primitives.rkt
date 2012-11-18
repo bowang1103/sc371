@@ -56,7 +56,7 @@ primitives here.
                                      [(equal? type "Empty") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
                                      [(equal? type "Exception") (pretty value)])]
-    [VClosure (args body env) (error 'prim "Can't print closures yet")]
+    [VClosure (args defaults body) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
     [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
@@ -84,6 +84,7 @@ primitives here.
                [VTrue () true]
                [VFalse () false]
                ;; TODO: all other implicit false
+               [VEmpty () false]
                [else true]
                )))
 
@@ -168,17 +169,17 @@ primitives here.
         [type-r (getObjType (AVal-val arg2))])
     (case op
       [(==) (if (equal? val-l val-r)
-                ($to-object (CTrue))
-                ($to-object (CFalse)))]
+                (CId 'True)
+                (CId 'False))]
       [(!=) (if (equal? val-l val-r)
-                ($to-object (CFalse))
-                ($to-object (CTrue)))]
+                (CId 'False)
+                (CId 'True))]
       [(is) (if (equal? loc-l loc-r)
-                ($to-object (CTrue))
-                ($to-object (CFalse)))]
+                (CId 'True)
+                (CId 'False))]
       [(!is) (if (equal? loc-l loc-r)
-                 ($to-object (CFalse))
-                 ($to-object (CTrue)))]
+                 (CId 'False)
+                 (CId 'True))]
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -199,9 +200,9 @@ primitives here.
               [(and (VStr? val-l) (VStr? val-r))
                (case op
                  [(+) ($to-object (CStr (string-append (VStr-s val-l) (VStr-s val-r))))]
-                 [(instanceof) (if (equal? type-l type-r)
+                 [(instanceof) (if (equal? val-l val-r)
                                    (CId 'True)
-                                   (if (and (equal? type-l "Bool") (equal? type-r "Int")) (CId 'True) (CId 'False)))])]
+                                   (if (and (equal? (VStr-s val-l) "Bool") (equal? (VStr-s val-r) "Int")) (CId 'True) (CId 'False)))])]
               [else (error 'prim2 "no case yet")])]
     )))
 

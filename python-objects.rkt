@@ -55,6 +55,7 @@
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
+                               (list)
                                (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
@@ -65,6 +66,7 @@
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
+                               (list)
                                (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
@@ -75,6 +77,7 @@
          (hash 
           (list (values "%add"
                         (CFunc (list 'self 'right)
+                               (list)
                                (CPrim2 '+
                                        (CId 'self)
                                        (CId 'right))))
@@ -94,7 +97,7 @@
     [CList (es) (to-list-obj prim)]
     [CTuple (es) (to-tuple-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
-    [CFunc (args body) (to-func-obj prim)]
+    [CFunc (args defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
     ;;[VError (exn) (exn-type exn)]

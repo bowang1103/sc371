@@ -238,7 +238,7 @@ structure that you define in python-syntax.rkt
                  ('kwarg kwa)
                  ('varargannotation vwar)
 		         ('kw_defaults kwd))
-     (map get-structured-python args-list)]
+     (PyArgs (map get-structured-python args-list) (map get-structured-python default-list))]
     [(hash-table ('nodetype "arg")
                  ('arg arg)
                  ('annotation annotation))

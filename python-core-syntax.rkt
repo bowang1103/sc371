@@ -23,7 +23,7 @@ ParselTongue.
   [CLet (id : symbol) (bind : CExp) (body : CExp)]
   [CSet (id : symbol) (value : CExp)]
   [CApp (fun : CExp) (args : (listof CExp))]
-  [CFunc (args : (listof symbol)) (body : CExp)]
+  [CFunc (args : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)]
   [CPrim2 (prim : symbol) (arg1 : CExp) (arg2 : CExp)] ;; arg1 and arg2 should be IdC
   [CPrim2Seq (left : CExp) (prims : (listof symbol)) (args : (listof CExp))]
@@ -56,7 +56,7 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
-  [VClosure (args : (listof symbol)) (body : CExp) (env : Env)])
+  [VClosure (args : (listof symbol)) (defaults : (listof CVal)) (body : CExp)])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]

@@ -17,109 +17,117 @@ that calls the primitive `print`.
 
 (define print-lambda
   ($to-object 
-   (CFunc (list 'to-print)
+   (CFunc (list 'to-print) 
+          (list ($to-object (CStr ""))) ;; default ''
      (CPrim1 'print (CId 'to-print)))))
 
 ;; callable
 (define callable-lambda
   ($to-object
-   (CFunc (list 'check-callable)
+   (CFunc (list 'check-callable) (list)
      (CPrim1 'callable (CId 'check-callable)))))
 
 ;; bool
 (define bool-lambda
   ($to-object
-   (CFunc (list 'check-bool)
+   (CFunc (list 'check-bool) 
+          (list ($to-object (CFalse))) ;; default false
      (CPrim1 'bool (CId 'check-bool)))))
 
 ;; int
 (define int-lambda
   ($to-object
-   (CFunc (list 'to-int)
+   (CFunc (list 'to-int) 
+          (list ($to-object (CNum 0))) ;; default 0
      (CPrim1 'int (CId 'to-int)))))
 
 ;; float
 (define float-lambda
   ($to-object
-   (CFunc (list 'to-float)
+   (CFunc (list 'to-float) 
+          (list ($to-object (CNum 0.0))) ;; default 0.0
      (CPrim1 'float (CId 'to-float)))))
 
 ;; str
 (define str-lambda
   ($to-object
    (CFunc (list 'to-str)
+          (list ($to-object (CStr ""))) ;; default ''
      (CPrim1 'str (CId 'to-str)))))
 
 ;; len
 (define len-lambda
   ($to-object
-   (CFunc (list 'to-len)
+   (CFunc (list 'to-len) (list)
      (CPrim1 'len (CId 'to-len)))))
 
 ;; list
 (define list-lambda
   ($to-object
-   (CFunc (list 'to-list)
+   (CFunc (list 'to-list) 
+          (list ($to-object (CList (list)))) ;; default []
      (CPrim1 'list (CId 'to-list)))))
 
 ;; tuple
 (define tuple-lambda
   ($to-object
    (CFunc (list 'to-tuple)
+          (list ($to-object (CTuple (list)))) ;; default ()
      (CPrim1 'tuple (CId 'to-tuple)))))
 
 ;; dict
 (define dict-lambda
   ($to-object
    (CFunc (list 'to-dict)
+          (list ($to-object (CDict (list) (list)))) ;; default {}
      (CPrim1 'dict (CId 'to-dict)))))
 
 ;; abs
 (define abs-lambda
   ($to-object
-   (CFunc (list 'to-abs)
+   (CFunc (list 'to-abs) (list)
      (CPrim1 'abs (CId 'to-abs)))))
 
 ;; isinstance
 (define isinstance-lambda
   ($to-object
-   (CFunc (list 'instance 'class)
+   (CFunc (list 'instance 'class) (list)
      (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list)))))))
 
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
-   (CFunc (list 'check-true)
+   (CFunc (list 'check-true) (list)
      (CIf (CId 'check-true) (CId 'True) (CError (CStr "Assert True Failed"))))))
 
 ;; ___assertFalse
 (define assert-false-lambda
   ($to-object 
-   (CFunc (list 'check-false)
+   (CFunc (list 'check-false) (list)
      (CIf (CId 'check-false) (CError (CStr "Assert False Failed")) (CId 'True)))))
 
 ;; ___assertIn
 (define assert-in-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 'in (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert In Failed"))))))
 
 ;; ___assertNotIn
 (define assert-notin-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 '!in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) (CId 'True)))))
 
 ;; ___assertEqual
 (define assert-equal-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 '== (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Equal Failed"))))))
 
 ;; ___assertNotEqual
 (define assert-notequal-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 '!= (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) (CId 'True)))))
 
 ;; ___assertRaises
@@ -128,19 +136,19 @@ that calls the primitive `print`.
 ;; ___assertIs
 (define assert-is-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 'is (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Is Failed"))))))
 
 ;; ___assertIsNot
 (define assert-isnot-lambda
   ($to-object 
-   (CFunc (list 'arg1 'arg2)
+   (CFunc (list 'arg1 'arg2) (list)
      (CIf (CPrim2 '!is (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Is Not Failed"))))))
 
 ;; ___fail
 (define fail-lambda
   ($to-object 
-   (CFunc (list)
+   (CFunc (list) (list)
     (CError (CStr "Fail")))))
 
 ;(define true-val
@@ -156,22 +164,11 @@ that calls the primitive `print`.
 
 (define (exception-lambda (type : string)) : CExp
   ($to-object 
-   (CFunc (list 'arg1)
+   (CFunc (list 'arg1) (list)
           ($to-object (CException type (CId 'arg1))))))
 
 (define (ContructExc (excpt : CExp) (message : string)) : CExp
   (CApp excpt (list ($to-object (CStr message)))))
-
-;; A hash table of type-constructor and their default value object
-(define class-default
-  (make-hash (list (values (CId 'int) (CApp (CId 'int) (list ($to-object (CNum 0)))))
-                   (values (CId 'float) (CApp (CId 'float) (list ($to-object (CNum 0.0)))))
-                   (values (CId 'bool) (CApp (CId 'bool) (list (CId 'False))))
-                   (values (CId 'str) (CApp (CId 'str) (list ($to-object (CStr "")))))
-                   (values (CId 'list) (CApp (CId 'list) (list ($to-object (CList (list))))))
-                   (values (CId 'tuple) (CApp (CId 'tuple) (list ($to-object (CTuple (list))))))
-                   (values (CId 'dict) (CApp (CId 'dict) (list ($to-object (CDict (list) (list)))))))))
-
 
 
 (define-type LibBinding
