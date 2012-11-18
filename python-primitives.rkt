@@ -125,6 +125,14 @@ primitives here.
 (define (toString (obj : CVal)) : CExp
   ($to-object (CStr (pretty obj))))
 
+(define (getLength (obj : CVal)) : CExp
+  (type-case CVal (getObjVal obj)
+    [VStr (s) ($to-object (CNum (length (string->list s))))]
+    [VList (elms) ($to-object (CNum (length elms)))]
+    [VTuple (elms) ($to-object (CNum (length elms)))]
+    [VDict (dict) ($to-object (CNum (length (hash-keys dict))))]
+    [else (core-error (foldr string-append "" (list "obj of " (getObjType obj) " has no len()")))]))
+
 ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
@@ -144,7 +152,8 @@ primitives here.
       ;[(tuple)]
       ;[(dict)]
       
-      [(tagof) ($to-object (CStr (getObjType obj)))])))
+      [(tagof) ($to-object (CStr (getObjType obj)))]
+      [(len) (getLength obj)])))
 
 ;;boolop may have to handle in other function
 ; boolop = {and, or}
