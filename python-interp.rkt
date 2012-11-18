@@ -494,21 +494,6 @@
                                                          (AVal-val (first values))
                                                          (VObject "MPoint" (VMPoint (VObject-loc (AVal-val (first values)))) -1 (hash empty)))) store)))
 
-(define (getNoneObjectVal (value : CVal) (store : Store)) : CVal
-  (case (string->symbol (VObject-type value))
-    [(Int) (VObject-value value)]
-    [(Str) (VObject-value value)]
-    [(List) (VList 
-             (map2 getNoneObjectVal 
-                   (VList-es (VObject-value value)) 
-                   (build-list (length (VList-es (VObject-value value))) (lambda(x) store))))]
-    [(Tuple) (VTuple (map2 getNoneObjectVal 
-                           (VTuple-es (VObject-value value)) 
-                           (build-list (length (VTuple-es (VObject-value value))) (lambda(x) store))))]
-    [(True) (VTrue)]
-    [(False) (VFalse)]
-    [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value value)))) store)]))
-
 (define (getElement (values : (listof CVal)) (n : (listof number))) : CVal
   (if (equal? (first n) 0)
       (first values)

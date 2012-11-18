@@ -161,8 +161,8 @@ primitives here.
 ; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
-  (let ([val-l (getObjVal (AVal-val arg1))]
-        [val-r (getObjVal (AVal-val arg2))]
+  (let ([val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg1))]
+        [val-r (getNoneObjectVal (AVal-val arg2) (AVal-sto arg1))]
         [loc-l (getObjLoc (AVal-val arg1))]
         [loc-r (getObjLoc (AVal-val arg2))]
         [type-l (getObjType (AVal-val arg1))]
@@ -234,3 +234,21 @@ primitives here.
   (type-case CVal obj
     [VObject (type value loc flds) loc]
     [else (error 'getObjLoc "input not an object")]))
+
+;; get rid of object, return back pure prim val only
+(define (getNoneObjectVal (obj : CVal) (store : Store)) : CVal
+  (case (string->symbol (VObject-type obj))
+    [(Int) (VObject-value obj)]
+    [(Float) (VObject-value obj)]
+    [(Str) (VObject-value obj)]
+    [(Bool) (VObject-value obj)]
+    [(List) (VList 
+             (map2 getNoneObjectVal 
+                   (VList-es (VObject-value obj)) 
+                   (build-list (length (VList-es (VObject-value obj))) (lambda(x) store))))]
+    [(Tuple) (VTuple (map2 getNoneObjectVal 
+                           (VTuple-es (VObject-value obj)) 
+                           (build-list (length (VTuple-es (VObject-value obj))) (lambda(x) store))))]
+    [(True) (VTrue)]
+    [(False) (VFalse)]
+    [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
