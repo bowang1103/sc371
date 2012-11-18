@@ -79,7 +79,7 @@ ParselTongue.
   (AExc (VStr str) env store lenv))
 
 (define isImmutableTable 
-  (make-hash (list (values "Int" true) (values "Str" true) (values "Tuple" true) 
+  (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
                    (values "Func" true) (values "MPoint" true) (values "Empty" true))))
 
 (define (isImmutable (type : string)) : boolean

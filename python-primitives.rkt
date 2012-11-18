@@ -150,7 +150,7 @@ primitives here.
       [(str) (toString obj)]
       [(abs) (absNumeric obj)]
       [(list) (CWrap "List" obj)]
-      ;[(tuple)]
+      [(tuple) (CWrap "Tuple" obj)]
       ;[(dict)]
       
       [(tagof) ($to-object (CStr (getObjType obj)))]
@@ -174,10 +174,10 @@ primitives here.
       [(!=) (if (equal? val-l val-r)
                 (CId 'False)
                 (CId 'True))]
-      [(is) (if (equal? loc-l loc-r)
+      [(is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
                 (CId 'True)
                 (CId 'False))]
-      [(!is) (if (equal? loc-l loc-r)
+      [(!is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
                  (CId 'False)
                  (CId 'True))]
       ;; TODO: add all other cases
@@ -216,6 +216,14 @@ primitives here.
                                    (if (and (equal? (VStr-s val-l) "Bool") (equal? (VStr-s val-r) "Int")) (CId 'True) (CId 'False)))])]
               [else (error 'prim2 "no case yet")])]
     )))
+
+;; see if two obj is same by comparing its loc or val according to mutability 
+(define (is2ObjSame (type1 : string) (val1 : CVal) (loc1 : Location) (type2 : string) (val2 : CVal) (loc2 : Location)) : boolean
+  (if (equal? type1 type2)
+      (if (isImmutable type1)
+          (equal? val1 val2)
+          (equal? loc1 loc2))
+      false))
 
 ;; get object value from an Ans
 (define (getObjVal (obj : CVal)) : CVal

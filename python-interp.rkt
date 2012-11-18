@@ -78,7 +78,7 @@
                                                          [VList (es) (VTuple es)]
                                                          [VTuple (es) (VTuple es)]
                                                          [VDict (dict) (VTuple (hash-keys dict))]
-                                                         [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])])]
+                                                         [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
 
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
