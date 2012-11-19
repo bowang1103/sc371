@@ -277,11 +277,14 @@
                            ;; function value
                            (type-case CVal (VObject-value v-fobj)
                              [VClosure (clargs cldfts clbody)
-                               (let ([bind-es (bind-args clargs 
-                                                         (allocLocList (length clargs)) 
-                                                         (interpArgs args e-fobj s-fobj le-fobj)
-                                                         cldfts
-                                                         env store lenv)]) ;; extend env using global instead closure-env
+                               (letrec ([self (if (symbol=? 'self (first clargs)) 
+                                                  (list (interp-env (CId 'self) e-fobj s-fobj le-fobj)) 
+                                                  (list))]
+                                        [bind-es (bind-args clargs 
+                                                            (allocLocList (length clargs))
+                                                            (append self (interpArgs args e-fobj s-fobj le-fobj))
+                                                            cldfts
+                                                            env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
                                    [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
                                    [else bind-es]))]
