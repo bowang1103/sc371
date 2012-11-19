@@ -36,6 +36,11 @@
     [PyTuple (es) ($to-object (CTuple (map desugar es)))]
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
+    [PyFunc (args body) 
+            (type-case PyExpr args
+              [PyArgs (args defaults) ($to-object (CFunc args (map desugar defaults) (desugar body)))]
+              [else (core-error "shouldn't came here")])]
+    ;[PyArgs (args defaults) (args (map desugar defaults))]
     [PyId (x) (CId x)]
     
     ; and or

@@ -56,7 +56,7 @@ primitives here.
                                      [(equal? type "Empty") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
                                      [(equal? type "Exception") (pretty value)])]
-    [VClosure (args defaults body) (error 'prim "Can't print closures yet")]
+    [VClosure (args defaults body env sto) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
     [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]

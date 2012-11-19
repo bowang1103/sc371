@@ -41,6 +41,7 @@
   ; op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
   [PyCompare (left : PyExpr) (ops : (listof symbol)) (comparators : (listof PyExpr))]
   [PyApp (fun : PyExpr) (args : (listof PyExpr))]
+  [PyFunc (args : PyExpr) (body : PyExpr)]
   
   ;;;;;; ds ;;;;;;
   [PyDict (keys : (listof PyExpr)) (values : (listof PyExpr))]

@@ -57,7 +57,7 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
-  [VClosure (args : (listof symbol)) (defaults : (listof CVal)) (body : CExp)])
+  [VClosure (args : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Env) (sto : Store)])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]

@@ -120,7 +120,12 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "UnaryOp") ('op op) ('operand operand))
      (PyUnaryOp (get-structured-python op) 
                 (get-structured-python operand))]
-;    [(hash-table ('nodetype "Lam:qbda"))]
+    [(hash-table ('nodetype "Lambda")
+                 ('args args)
+                 ('body body))
+     (PyFunc (get-structured-python args)
+             (get-structured-python body))]
+    
 ;    [(hash-table ('nodetype "IfExp"))]
     [(hash-table ('nodetype "Dict")
                  ('keys keys)

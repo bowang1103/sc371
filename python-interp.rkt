@@ -276,23 +276,28 @@
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
                            ;; function value
                            (type-case CVal (VObject-value v-fobj)
-                             [VClosure (clargs cldfts clbody)
+                             [VClosure (clargs cldfts clbody clenv csto)
                                (let ([bind-es (bind-args clargs 
                                                          (allocLocList (length clargs)) 
                                                          (interpArgs args e-fobj s-fobj le-fobj)
                                                          cldfts
-                                                         env store lenv)]) ;; extend env using global instead closure-env
+                                                         clenv csto lenv)]) ;; extend env using global instead closure-env
+                                                                           ;; Still need to extend closure-env (deal with situation of closure over local variales)
                                  (type-case CAns bind-es
-                                   [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
+                                  ; [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
+                                   [AVal (v-es e-es s-es le-es) (type-case CAns (interp-env clbody e-es s-es le-es)
+                                                                  [AVal (v-clbody e-clbody s-clbody le-clbody) (begin (display (getObjVal v-clbody)) 
+                                                                                                                      (AVal v-clbody env store lenv))]
+                                                                  [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
                                    [else bind-es]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
 
     [CFunc (args defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
-                                  (cond [(empty? dftAns) (AVal (VClosure args (list) body) env store lenv)]
+                                  (cond [(empty? dftAns) (AVal (VClosure args (list) body env store) env store lenv)]
                                         [else (let ([lastAns (first (reverse dftAns))])
                                                 (type-case CAns (first (reverse dftAns))
-                                                  [AVal (v e s le) (AVal (VClosure args (map AVal-val dftAns) body) e s le)]
+                                                  [AVal (v e s le) (AVal (VClosure args (map AVal-val dftAns) body env store) e s le)]
                                                   [else lastAns]))]))]
 
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
@@ -442,7 +447,7 @@
           (type-case (optionof CVal) (hash-ref sto loc)
             [some (v) (AVal v env sto lenv)]
             [none () (interp-error "Unbound identifier" env sto lenv)])]
-    [none () (interp-error "location not found in store" env sto lenv)]))
+    [none () (interp-error (string-append (symbol->string for) " : location not found in store") env sto lenv)]))
 
 ;; get a new memory addr
 (define newLoc
