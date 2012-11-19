@@ -47,7 +47,10 @@ structure that you define in python-syntax.rkt
      (PyDel (map get-structured-python targets))]
     [(hash-table ('nodetype "Assign") ('targets targets) ('value value))
      (PyAssign (map get-structured-python targets) (get-structured-python value))]
-;    [(hash-table ('nodetype "AugAssign"))]
+    [(hash-table ('nodetype "AugAssign") ('op op) ('target target) ('value value))
+     (PyAugAssign (get-structured-python op)
+                  (get-structured-python target)
+                  (get-structured-python value))]
 ;    [(hash-table ('nodetype "Print"))]
     [(hash-table ('nodetype "For")
                  ('target target)

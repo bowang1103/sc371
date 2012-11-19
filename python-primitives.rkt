@@ -48,6 +48,7 @@ primitives here.
     [VEmpty () ""]
     [VObject (type value loc flds) (cond
                                      [(equal? type "Int") (pretty value)]
+                                     [(equal? type "Float") (pretty value)]
                                      [(equal? type "Str") (pretty value)]
                                      [(equal? type "List") (pretty value)]
                                      [(equal? type "Tuple") (pretty value)]

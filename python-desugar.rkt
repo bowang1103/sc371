@@ -25,6 +25,7 @@
                                      [PyId (id) (CSet id (if (equal? newval (PyEmp)) (CId 'value) (desugar newval)))]
                                      [else (CEmpty)])) (reverse tgs) (cons (PyEmp) (reverse (rest tgs))))])
                       (foldl (lambda (e1 e2) (CSeq e2 e1)) (first rst) (rest rst))))]
+    [PyAugAssign (op target value) (desugar (PyAssign (list target) (PyBinOp target op value)))]
     [PySubscript (obj indexs) (cond 
                                 [(or (equal? (length indexs) 1) (equal? (length indexs) 3))
                                  (CGetelement (desugar obj) (map desugar indexs))]
