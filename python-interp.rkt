@@ -419,17 +419,16 @@
 
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
+        [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
         [(<= (length args) (+ (length anss) (length dfts)))
          (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
-           (if (AVal? latest)
-               (AVal (VStr "dummy")
-                     (extendEnv args locs (AVal-env latest))
-                     (overrideStore locs
-                                    (append (map AVal-val anss)
-                                            (lastNVals (- (length args) (length anss)) dfts (list)))
-                                    (AVal-sto latest))
-                     (AVal-lenv latest))
-               latest))]
+           (AVal (VStr "dummy")
+                 (extendEnv args locs (AVal-env latest))
+                 (overrideStore locs
+                                (append (map AVal-val anss)
+                                        (lastNVals (- (length args) (length anss)) dfts (list)))
+                                (AVal-sto latest))
+                 (AVal-lenv latest)))]
         [else (interp-error "Arity mismatch" env sto lenv)]))
 
 (define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)

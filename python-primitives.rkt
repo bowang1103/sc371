@@ -182,6 +182,13 @@ primitives here.
       [(!is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
                  (CId 'False)
                  (CId 'True))]
+      [(in) (if (isIn val-l val-r)
+                (CId 'True)
+                (CId 'False))]
+      [(!in) (if (isIn val-l val-r)
+                 (CId 'False)
+                 (CId 'True))]
+      
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -227,6 +234,21 @@ primitives here.
           (equal? loc1 loc2))
       false))
 
+(define (isIn (val1 : CVal) (val2 : CVal)) : boolean
+  (cond
+    [(and (VStr? val1) (VStr? val2)) (subString? (VStr-s val1) (VStr-s val2))] ; 2 strings
+    [(VList? val2) (isInRecur val1 (VList-es val2))]
+    [(VTuple? val2) (isInRecur val1 (VTuple-es val2))]
+    [(VDict? val2) (isInRecur val1 (hash-keys (VDict-dict val2)))]
+    [else (error 'isIn "val2 is not iterable")]))
+
+(define (isInRecur (target : CVal) (all : (listof CVal))) : boolean
+  (if (empty? all)
+      false
+      (if (equal? target (first all))
+          true
+          (isInRecur target (rest all)))))
+
 ;; get object value from an Ans
 (define (getObjVal (obj : CVal)) : CVal
   (type-case CVal obj
@@ -259,12 +281,13 @@ primitives here.
     [(Tuple) (VTuple (map2 getNoneObjectVal 
                            (VTuple-es (VObject-value obj)) 
                            (build-list (length (VTuple-es (VObject-value obj))) (lambda(x) store))))]
+    [(Dict) (VObject-value obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
 
 ;; check whether the target string is in the original string
-(define (containStr? (target : string) (all : string)) : boolean
+(define (subString? (target : string) (all : string)) : boolean
   (let ([st (string->list target)]
         [sa (string->list all)])
     (cond
