@@ -262,3 +262,35 @@ primitives here.
     [(True) (VTrue)]
     [(False) (VFalse)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
+
+;; check whether the target string is in the original string
+(define (containStr? (target : string) (all : string)) : boolean
+  (let ([st (string->list target)]
+        [sa (string->list all)])
+    (cond
+      [(empty? st) true]
+      [(empty? sa) false]
+      [else (loopCheck st sa)])))
+
+;; loop the string to find whether the target string is in
+(define (loopCheck (target : (listof char)) (str : (listof char))) : boolean
+  (let ([rst (findFirstAppear (first target) str)])
+    (if (empty? rst)
+      false
+      (if (checkSame target rst)
+          true
+          (loopCheck target (rest rst))))))
+
+;; find the first place of the str whose first element equals to the begin char
+(define (findFirstAppear (begin : char) (str : (listof char))) : (listof char)
+  (if (empty? str)
+      empty
+      (if (equal? begin (first str))
+          str
+          (findFirstAppear begin (rest str)))))
+
+;; check the whether target is the first part of another string
+(define (checkSame (target : (listof char)) (all : (listof char))) : boolean
+  (if (> (length target) (length all))
+      false
+      (equal? target (build-list (length target) (lambda (x) (list-ref all x))))))
