@@ -33,6 +33,13 @@ primitives here.
                               (let ([ptvals (map pretty elms)])
                                 (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
                           ")"))]
+    [VSet (es) (let ([elms (hash-keys es)])
+                   (foldr string-append  ""
+                          (list "{"
+                                (if (empty? elms) ""
+                                    (let ([ptvals (map pretty elms)])
+                                      (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
+                                "}")))]
     [VDict (dict) (letrec ([keys (hash-keys dict)]
                            [pair (map (lambda(x) 
                                        (foldr string-append ""
@@ -48,9 +55,11 @@ primitives here.
     [VEmpty () ""]
     [VObject (type value loc flds) (cond
                                      [(equal? type "Int") (pretty value)]
+                                     [(equal? type "Float") (pretty value)]
                                      [(equal? type "Str") (pretty value)]
                                      [(equal? type "List") (pretty value)]
                                      [(equal? type "Tuple") (pretty value)]
+                                     [(equal? type "Set") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "Empty") (pretty value)]
@@ -78,15 +87,18 @@ primitives here.
 (define (isObjTrue (obj : CVal)) : boolean
   (let ([val (getObjVal obj)])
     (type-case CVal val
-               [VNum (n) (not (= 0 n))]
-               [VStr (s) (not (equal? "" s))]
-               [VList (ls) (not (empty? ls))]
-               [VTrue () true]
-               [VFalse () false]
-               ;; TODO: all other implicit false
-               [VEmpty () false]
-               [else true]
-               )))
+      [VNum (n) (not (= 0 n))]
+      [VStr (s) (not (equal? "" s))]
+      [VList (ls) (not (empty? ls))]
+      [VTuple (ls) (not (empty? ls))]
+      [VSet (es) (not (empty? (hash-keys es)))]
+      [VDict (dict) (not (empty? (hash-keys dict)))]
+      [VTrue () true]
+      [VFalse () false]
+      ;; TODO: all other implicit false
+      [VEmpty () false]
+      [else true]
+      )))
 
 (define (negNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)])
@@ -151,6 +163,7 @@ primitives here.
       [(abs) (absNumeric obj)]
       [(list) (CWrap "List" obj)]
       [(tuple) (CWrap "Tuple" obj)]
+      [(set) (CWrap "Set" obj)]
       ;[(dict)]
       
       [(tagof) ($to-object (CStr (getObjType obj)))]
@@ -180,6 +193,13 @@ primitives here.
       [(!is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
                  (CId 'False)
                  (CId 'True))]
+      [(in) (if (isIn val-l val-r)
+                (CId 'True)
+                (CId 'False))]
+      [(!in) (if (isIn val-l val-r)
+                 (CId 'False)
+                 (CId 'True))]
+      
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
@@ -225,6 +245,21 @@ primitives here.
           (equal? loc1 loc2))
       false))
 
+(define (isIn (val1 : CVal) (val2 : CVal)) : boolean
+  (cond
+    [(and (VStr? val1) (VStr? val2)) (subString? (VStr-s val1) (VStr-s val2))] ; 2 strings
+    [(VList? val2) (isInRecur val1 (VList-es val2))]
+    [(VTuple? val2) (isInRecur val1 (VTuple-es val2))]
+    [(VDict? val2) (isInRecur val1 (hash-keys (VDict-dict val2)))]
+    [else (error 'isIn "val2 is not iterable")]))
+
+(define (isInRecur (target : CVal) (all : (listof CVal))) : boolean
+  (if (empty? all)
+      false
+      (if (equal? target (first all))
+          true
+          (isInRecur target (rest all)))))
+
 ;; get object value from an Ans
 (define (getObjVal (obj : CVal)) : CVal
   (type-case CVal obj
@@ -250,13 +285,45 @@ primitives here.
     [(Float) (VObject-value obj)]
     [(Str) (VObject-value obj)]
     [(Bool) (VObject-value obj)]
-    [(List) (VList 
-             (map2 getNoneObjectVal 
+    [(List) (VList (map2 getNoneObjectVal 
                    (VList-es (VObject-value obj)) 
                    (build-list (length (VList-es (VObject-value obj))) (lambda(x) store))))]
     [(Tuple) (VTuple (map2 getNoneObjectVal 
                            (VTuple-es (VObject-value obj)) 
                            (build-list (length (VTuple-es (VObject-value obj))) (lambda(x) store))))]
+    [(Dict) (VObject-value obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
+
+;; check whether the target string is in the original string
+(define (subString? (target : string) (all : string)) : boolean
+  (let ([st (string->list target)]
+        [sa (string->list all)])
+    (cond
+      [(empty? st) true]
+      [(empty? sa) false]
+      [else (loopCheck st sa)])))
+
+;; loop the string to find whether the target string is in
+(define (loopCheck (target : (listof char)) (str : (listof char))) : boolean
+  (let ([rst (findFirstAppear (first target) str)])
+    (if (empty? rst)
+      false
+      (if (checkSame target rst)
+          true
+          (loopCheck target (rest rst))))))
+
+;; find the first place of the str whose first element equals to the begin char
+(define (findFirstAppear (begin : char) (str : (listof char))) : (listof char)
+  (if (empty? str)
+      empty
+      (if (equal? begin (first str))
+          str
+          (findFirstAppear begin (rest str)))))
+
+;; check the whether target is the first part of another string
+(define (checkSame (target : (listof char)) (all : (listof char))) : boolean
+  (if (> (length target) (length all))
+      false
+      (equal? target (build-list (length target) (lambda (x) (list-ref all x))))))

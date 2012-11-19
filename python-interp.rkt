@@ -39,6 +39,18 @@
                                                           (VObject "MPoint" (VMPoint (VObject-loc (AVal-val x))) -1 (hash empty))))
                                          rst)) 
                              (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
+    [CSetV (es) (letrec ([rst (interpArgs es env store lenv)]
+                          [last (if (empty? rst)
+                                    (AVal (VEmpty) env store lenv)
+                                    (first (reverse rst)))])
+                   (if (AExc? last)
+                       last
+                       (AVal (VSet (let ([keys (map (lambda (x) (if (isImmutable (VObject-type (AVal-val x)))
+                                                                   (VObject-value (AVal-val x))
+                                                                   (VMPoint (VObject-loc (AVal-val x)))))
+                                                    rst)])
+                                     (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys))) 
+                             (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CDict (keys values) (if (equal? (length keys) (length values))
                              (letrec ([keyrst (interpArgs keys env store lenv)]
                                       [keylast (if (empty? keyrst)
@@ -78,8 +90,17 @@
                                                          [VList (es) (VTuple es)]
                                                          [VTuple (es) (VTuple es)]
                                                          [VDict (dict) (VTuple (hash-keys dict))]
-                                                         [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
-
+                                                         [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
+                        [(Set) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) env store lenv))])
+                                 (AVal (VObject type (type-case CVal (VObject-value obj)
+                                                       [VStr (s) (VSet (let ([keys (map (lambda(x) (VObject-value (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv)))) 
+                                                                                        (string->list s))])
+                                                                         (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))]
+                                                       [VList (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VList-es (getNoneObjectVal obj store))))]
+                                                       [VTuple (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VTuple-es (getNoneObjectVal obj store))))]
+                                                       [VDict (dict) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys dict)))]
+                                                       [else (VSet (hash empty))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
+    
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
 
@@ -96,7 +117,7 @@
                   [AVal (v-v e-v s-v le-v) 
                         (let ([val (VObject-value v-v)])
                           (if (VPoint? val)
-                              (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
+                              (interp-env (CGetfield (VPoint-obj val) (VPoint-field val)) e-v s-v le-v)
                               (if (VMPoint? val)
                                   (AVal (some-v (hash-ref store (VMPoint-loc val))) e-v s-v le-v)
                                   rst)))]
@@ -276,19 +297,30 @@
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
                            ;; function value
                            (type-case CVal (VObject-value v-fobj)
-                             [VClosure (clargs cldfts clbody clenv csto)
+
+                             #|[VClosure (clargs cldfts clbody clenv csto)
                                (let ([bind-es (bind-args clargs 
                                                          (allocLocList (length clargs)) 
                                                          (interpArgs args e-fobj s-fobj le-fobj)
                                                          cldfts
                                                          clenv csto lenv)]) ;; extend env using global instead closure-env
-                                                                           ;; Still need to extend closure-env (deal with situation of closure over local variales)
+                                                                           ;; Still need to extend closure-env (deal with situation of closure over local variales|#
+
+                             [VClosure (clargs cldfts clbody clenv csto)
+                               (letrec ([self (if (symbol=? 'self (first clargs)) 
+                                                  (list (interp-env (CId 'self) e-fobj s-fobj le-fobj)) 
+                                                  (list))]
+                                        [bind-es (bind-args clargs 
+                                                            (allocLocList (length clargs))
+                                                            (append self (interpArgs args e-fobj s-fobj le-fobj))
+                                                            cldfts
+                                                            env store lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
-                                  ; [AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                   [AVal (v-es e-es s-es le-es) (type-case CAns (interp-env clbody e-es s-es le-es)
+                                  	[AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
+                                  #| [AVal (v-es e-es s-es le-es) (type-case CAns (interp-env clbody e-es s-es le-es)
                                                                   [AVal (v-clbody e-clbody s-clbody le-clbody) (begin (display (getObjVal v-clbody)) 
                                                                                                                       (AVal v-clbody env store lenv))]
-                                                                  [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
+                                                                  [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]|#
                                    [else bind-es]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
@@ -318,18 +350,17 @@
                                                  (cond 
                                                    [(not (VObject? v-obj)) (interp-error (string-append "Non-object in field update: " (pretty v-obj)) e-obj s-obj le-obj)]
                                                    [else (begin (hash-set! (VObject-field v-obj) fld v-val)
-                                                                val)])]
+                                                                (AVal v-obj e-val s-val le-val))])]
                                            [else val]))]
                                    [else objv]))]
     ;;getfield for object
     [CGetfield (obj fld) (let ([objv (interp-env obj env store lenv)])
                            (type-case CAns objv
                              [AVal (v-obj e-obj s-obj le-obj)
-                                   (cond 
-                                     [(not (VObject? v-obj)) (interp-error (string-append "Non-object in field update: " (pretty v-obj)) e-obj s-obj le-obj)]
-                                     [else (let ([result (hash-ref (VObject-field v-obj) fld)])
-                                             (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
-                                                   [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
+                                   (let ([result (hash-ref (VObject-field v-obj) fld)])
+                                     (cond 
+                                       [(none? result) (interp-error (string-append "Unbound identifier: " fld) e-obj s-obj le-obj)]
+                                       [else (AVal (some-v result) e-obj s-obj le-obj)]))]
                              [else objv]))]
     ;; initialize the object
     [CObject (type prim exp)
@@ -346,6 +377,16 @@
                                                               (getModifiedVars le-rs)) rst))) e-rs s-rs le-pv)]
                            [else rs]))]
                  [else primVal]))]
+    ;; operations of different class
+    [COperation (obj type op)
+                (let ([o-val (interp-env obj env store lenv)])
+                  (type-case CAns o-val
+                      [AVal (v-o e-o s-o le-o)
+                            (case (string->symbol type)
+                              [(Dict) (case (string->symbol op)
+                                        [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
+                                                   (AVal rst e-o (hash-set s-o (VObject-loc v-o) rst) le-o))])])]
+                      [else o-val]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
@@ -422,17 +463,16 @@
 
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
+        [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
         [(<= (length args) (+ (length anss) (length dfts)))
          (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
-           (if (AVal? latest)
-               (AVal (VStr "dummy")
-                     (extendEnv args locs (AVal-env latest))
-                     (overrideStore locs
-                                    (append (map AVal-val anss)
-                                            (lastNVals (- (length args) (length anss)) dfts (list)))
-                                    (AVal-sto latest))
-                     (AVal-lenv latest))
-               latest))]
+           (AVal (VStr "dummy")
+                 (extendEnv args locs (AVal-env latest))
+                 (overrideStore locs
+                                (append (map AVal-val anss)
+                                        (lastNVals (- (length args) (length anss)) dfts (list)))
+                                (AVal-sto latest))
+                 (AVal-lenv latest)))]
         [else (interp-error "Arity mismatch" env sto lenv)]))
 
 (define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)

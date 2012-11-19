@@ -12,6 +12,7 @@ ParselTongue.
   [CStr (s : string)]
   [CList (es : (listof CExp))]
   [CTuple (es : (listof CExp))]
+  [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
   [CFalse]
@@ -42,6 +43,7 @@ ParselTongue.
   [CGetelement (obj : CExp) (indexs : (listof CExp))]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
+  [COperation (obj : CExp) (type : string) (op : string)]
   [CEmpty])
 
 (define-type CVal
@@ -49,6 +51,7 @@ ParselTongue.
   [VStr (s : string)]
   [VList (es : (listof CVal))]
   [VTuple (es : (listof CVal))]
+  [VSet (es : (hashof CVal boolean))]
   [VDict (dict : (hashof CVal CVal))]
   [VTrue]
   [VFalse]
@@ -80,7 +83,7 @@ ParselTongue.
 
 (define isImmutableTable 
   (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Func" true) (values "MPoint" true) (values "Empty" true))))
+                   (values "Set" true) (values "Func" true) (values "MPoint" true) (values "Empty" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))

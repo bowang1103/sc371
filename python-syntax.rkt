@@ -1,6 +1,7 @@
 #lang plai-typed
 
 (define-type PyExpr
+  [PyAttr (obj : PyExpr) (attr : string)]
   [PySubscript (obj : PyExpr) (indexs : (listof PyExpr))]
   [PyClassDef (obj : PyExpr) (name : symbol)]
   [PySeq (es : (listof PyExpr))]
@@ -12,6 +13,7 @@
   [PyFuncDef (name : symbol) (args : PyExpr) (body : PyExpr) (return : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
   [PyAssign (targets : (listof PyExpr)) (value : PyExpr)]
+  [PyAugAssign (op : symbol) (target : PyExpr) (value : PyExpr)]
   
   ; for num in range(2, 10): 
   ;     body.... 

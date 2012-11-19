@@ -7,6 +7,8 @@
 (define (desugar (expr : PyExpr)) : CExp
   (type-case PyExpr expr
     [PyClassDef (obj name) (CEmpty)]
+    [PyAttr (obj attr) (CLet 'self (desugar obj)
+                             (CGetfield (CId 'self) attr))]
     [PyAssign (tgs val)
               (CLet 'value (desugar val)
                     (let ([rst 
@@ -23,6 +25,7 @@
                                      [PyId (id) (CSet id (if (equal? newval (PyEmp)) (CId 'value) (desugar newval)))]
                                      [else (CEmpty)])) (reverse tgs) (cons (PyEmp) (reverse (rest tgs))))])
                       (foldl (lambda (e1 e2) (CSeq e2 e1)) (first rst) (rest rst))))]
+    [PyAugAssign (op target value) (desugar (PyAssign (list target) (PyBinOp target op value)))]
     [PySubscript (obj indexs) (cond 
                                 [(or (equal? (length indexs) 1) (equal? (length indexs) 3))
                                  (CGetelement (desugar obj) (map desugar indexs))]
@@ -34,6 +37,7 @@
     [PyStr (s) ($to-object (CStr s))]
     [PyList (es) ($to-object (CList (map desugar es)))]
     [PyTuple (es) ($to-object (CTuple (map desugar es)))]
+    [PySet (es) ($to-object (CSetV (map desugar es)))]
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyFunc (args body) 

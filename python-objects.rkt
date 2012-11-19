@@ -2,91 +2,77 @@
 
 (require "python-core-syntax.rkt")
 
+(define getId
+  (local ([define n (box 0)])
+    (lambda () 
+      (begin
+        (set-box! n (add1 (unbox n)))
+        (string->symbol (string-append "newObj" (to-string (unbox n))))))))
+
 (define (to-str-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Str" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref str-hash key))))
-                                (hash-keys str-hash))])
-          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Str" prim (CEmpty))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref str-hash key))))
+                                  (hash-keys str-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-int-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Int" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref num-hash key))))
-                                (hash-keys num-hash))])
-          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Int" prim (CEmpty))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref num-hash key))))
+                                  (hash-keys num-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-float-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Float" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref num-hash key))))
-                                (hash-keys num-hash))])
-          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Float" prim (CEmpty))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref num-hash key))))
+                                  (hash-keys num-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-bool-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Bool" prim (CEmpty))
-        (let ([builtin-lst (map (lambda (key) (CSetfield (CId 'newObj) key (some-v (hash-ref bool-hash key))))
-                                (hash-keys bool-hash))])
-          (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId 'newObj)))))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Bool" prim (CEmpty))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref bool-hash key))))
+                                  (hash-keys bool-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-list-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "List" prim (CEmpty))
-        (CId 'newObj)))
+  (let ([id (getId)]) 
+    (CLet id (CObject "List" prim (CEmpty))
+          (CId id))))
 
 (define (to-tuple-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Tuple" prim (CEmpty))
-        (CId 'newObj)))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Tuple" prim (CEmpty))
+          (CId id))))
+
+(define (to-set-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "Set" prim (CEmpty))
+          (CId id))))
 
 (define (to-dict-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Dict" prim (CEmpty))
-        (CId 'newObj)))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Dict" prim (CEmpty))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref dict-hash key))))
+                                  (hash-keys dict-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-func-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Func" prim (CEmpty))
-        (CId 'newObj)))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Func" prim (CEmpty))
+          (CId id))))
 
 (define (to-exc-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Exception" prim (CEmpty))
-	    (CId 'newObj)))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Exception" prim (CEmpty))
+          (CId id))))
 
 (define (to-empty-obj [prim : CExp]) : CExp
-  (CLet 'newObj (CObject "Empty" prim (CEmpty))
-        (CId 'newObj)))
-
-;; built-in methods for str
-(define str-hash 
-         (hash 
-          (list (values "%add"
-                        (CFunc (list 'self 'right)
-                               (list)
-                               (CPrim2 '+
-                                       (CId 'self)
-                                       (CId 'right))))
-                )))
-
-;; bulit-in methods for number
-(define num-hash 
-         (hash 
-          (list (values "%add"
-                        (CFunc (list 'self 'right)
-                               (list)
-                               (CPrim2 '+
-                                       (CId 'self)
-                                       (CId 'right))))
-                )))
-
-;; bulit-in methods for bool
-(define bool-hash 
-         (hash 
-          (list (values "%add"
-                        (CFunc (list 'self 'right)
-                               (list)
-                               (CPrim2 '+
-                                       (CId 'self)
-                                       (CId 'right))))
-                )))
-                                                  
-(define (isInteger (n : number)) : boolean
-  (if (= 0 n)
-      (equal? (to-string 0) (to-string n))
-      (equal? (to-string 1) (to-string (/ n n)))))
+  (let ([id (getId)]) 
+    (CLet id (CObject "Empty" prim (CEmpty))
+          (CId id))))
 
 (define ($to-object (prim : CExp)) : CExp
   (type-case CExp prim
@@ -96,9 +82,56 @@
     [CStr (s) (to-str-obj prim)]
     [CList (es) (to-list-obj prim)]
     [CTuple (es) (to-tuple-obj prim)]
+    [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
     [CFunc (args defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
     ;;[VError (exn) (exn-type exn)]
     [else (error 'to-object "not implemented object yet")]))
+
+;; built-in methods for str
+(define str-hash 
+         (hash 
+          (list (values "add"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                )))
+
+;; bulit-in methods for number
+(define num-hash 
+         (hash 
+          (list (values "add"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                )))
+
+;; bulit-in methods for bool
+(define bool-hash 
+         (hash 
+          (list (values "add"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                )))
+
+;; built-in methods for dict
+(define dict-hash
+  (hash
+   (list (values "clear"
+                 ($to-object (CFunc (list 'self)
+                                    (list)
+                                    (COperation (CId 'self) "Dict" "clear")))))))
+                                                  
+(define (isInteger (n : number)) : boolean
+  (if (= 0 n)
+      (equal? (to-string 0) (to-string n))
+      (equal? (to-string 1) (to-string (/ n n)))))
