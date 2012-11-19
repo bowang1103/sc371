@@ -1,6 +1,7 @@
 #lang plai-typed
 
 (define-type PyExpr
+  [PyAttr (obj : PyExpr) (attr : string)]
   [PySubscript (obj : PyExpr) (indexs : (listof PyExpr))]
   [PyClassDef (obj : PyExpr) (name : symbol)]
   [PySeq (es : (listof PyExpr))]

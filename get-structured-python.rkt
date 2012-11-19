@@ -155,7 +155,11 @@ structure that you define in python-syntax.rkt
      (PyNum n)]
     [(hash-table ('nodetype "Str") ('s s))
      (PyStr s)]
-;    [(hash-table ('nodetype "Attribute"))]
+    [(hash-table ('nodetype "Attribute")
+                 ('value value)
+                 ('attr attr)
+                 ('ctx ctx))
+     (PyAttr (get-structured-python value) attr)]
     [(hash-table ('nodetype "Subscript")
                  ('value value)
                  ('slice slice)

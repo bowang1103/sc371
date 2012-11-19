@@ -96,7 +96,7 @@
                   [AVal (v-v e-v s-v le-v) 
                         (let ([val (VObject-value v-v)])
                           (if (VPoint? val)
-                              (interp-env (CGetfield (VPoint-obj v-v) (VPoint-field v-v)) e-v s-v le-v)
+                              (interp-env (CGetfield (VPoint-obj val) (VPoint-field val)) e-v s-v le-v)
                               (if (VMPoint? val)
                                   (AVal (some-v (hash-ref store (VMPoint-loc val))) e-v s-v le-v)
                                   rst)))]
@@ -313,18 +313,17 @@
                                                  (cond 
                                                    [(not (VObject? v-obj)) (interp-error (string-append "Non-object in field update: " (pretty v-obj)) e-obj s-obj le-obj)]
                                                    [else (begin (hash-set! (VObject-field v-obj) fld v-val)
-                                                                val)])]
+                                                                (AVal v-obj e-val s-val le-val))])]
                                            [else val]))]
                                    [else objv]))]
     ;;getfield for object
     [CGetfield (obj fld) (let ([objv (interp-env obj env store lenv)])
                            (type-case CAns objv
                              [AVal (v-obj e-obj s-obj le-obj)
-                                   (cond 
-                                     [(not (VObject? v-obj)) (interp-error (string-append "Non-object in field update: " (pretty v-obj)) e-obj s-obj le-obj)]
-                                     [else (let ([result (hash-ref (VObject-field v-obj) fld)])
-                                             (cond [(none? result) (interp-error (string-append "Unbound identifier: "  fld) e-obj s-obj le-obj)]
-                                                   [else (AVal (some-v result) e-obj s-obj le-obj)]))])]
+                                   (let ([result (hash-ref (VObject-field v-obj) fld)])
+                                     (cond 
+                                       [(none? result) (interp-error (string-append "Unbound identifier: " fld) e-obj s-obj le-obj)]
+                                       [else (AVal (some-v result) e-obj s-obj le-obj)]))]
                              [else objv]))]
     ;; initialize the object
     [CObject (type prim exp)

@@ -78,15 +78,17 @@ primitives here.
 (define (isObjTrue (obj : CVal)) : boolean
   (let ([val (getObjVal obj)])
     (type-case CVal val
-               [VNum (n) (not (= 0 n))]
-               [VStr (s) (not (equal? "" s))]
-               [VList (ls) (not (empty? ls))]
-               [VTrue () true]
-               [VFalse () false]
-               ;; TODO: all other implicit false
-               [VEmpty () false]
-               [else true]
-               )))
+      [VNum (n) (not (= 0 n))]
+      [VStr (s) (not (equal? "" s))]
+      [VList (ls) (not (empty? ls))]
+      [VTuple (ls) (not (empty? ls))]
+      [VDict (dict) (not (empty? (hash-keys dict)))]
+      [VTrue () true]
+      [VFalse () false]
+      ;; TODO: all other implicit false
+      [VEmpty () false]
+      [else true]
+      )))
 
 (define (negNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)])
