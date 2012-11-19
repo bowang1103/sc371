@@ -33,6 +33,13 @@ primitives here.
                               (let ([ptvals (map pretty elms)])
                                 (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
                           ")"))]
+    [VSet (es) (let ([elms (hash-keys es)])
+                   (foldr string-append  ""
+                          (list "{"
+                                (if (empty? elms) ""
+                                    (let ([ptvals (map pretty elms)])
+                                      (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
+                                "}")))]
     [VDict (dict) (letrec ([keys (hash-keys dict)]
                            [pair (map (lambda(x) 
                                        (foldr string-append ""
@@ -52,6 +59,7 @@ primitives here.
                                      [(equal? type "Str") (pretty value)]
                                      [(equal? type "List") (pretty value)]
                                      [(equal? type "Tuple") (pretty value)]
+                                     [(equal? type "Set") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "Empty") (pretty value)]
@@ -83,6 +91,7 @@ primitives here.
       [VStr (s) (not (equal? "" s))]
       [VList (ls) (not (empty? ls))]
       [VTuple (ls) (not (empty? ls))]
+      [VSet (es) (not (empty? (hash-keys es)))]
       [VDict (dict) (not (empty? (hash-keys dict)))]
       [VTrue () true]
       [VFalse () false]
@@ -154,6 +163,7 @@ primitives here.
       [(abs) (absNumeric obj)]
       [(list) (CWrap "List" obj)]
       [(tuple) (CWrap "Tuple" obj)]
+      [(set) (CWrap "Set" obj)]
       ;[(dict)]
       
       [(tagof) ($to-object (CStr (getObjType obj)))]
@@ -275,8 +285,7 @@ primitives here.
     [(Float) (VObject-value obj)]
     [(Str) (VObject-value obj)]
     [(Bool) (VObject-value obj)]
-    [(List) (VList 
-             (map2 getNoneObjectVal 
+    [(List) (VList (map2 getNoneObjectVal 
                    (VList-es (VObject-value obj)) 
                    (build-list (length (VList-es (VObject-value obj))) (lambda(x) store))))]
     [(Tuple) (VTuple (map2 getNoneObjectVal 

@@ -75,6 +75,13 @@ that calls the primitive `print`.
           (list ($to-object (CTuple (list)))) ;; default ()
      (CPrim1 'tuple (CId 'to-tuple)))))
 
+;; set
+(define set-lambda
+  ($to-object
+   (CFunc (list 'to-set)
+          (list ($to-object (CSetV (list)))) ;; default ()
+     (CPrim1 'set (CId 'to-set)))))
+
 ;; dict
 (define dict-lambda
   ($to-object
@@ -184,6 +191,7 @@ that calls the primitive `print`.
         (bind 'len len-lambda)
         (bind 'list list-lambda)
         (bind 'tuple tuple-lambda)
+        (bind 'set set-lambda)
         (bind 'dict dict-lambda)
         (bind 'abs abs-lambda)
         (bind 'True true-val)

@@ -47,10 +47,17 @@
     (CLet id (CObject "Tuple" prim (CEmpty))
           (CId id))))
 
+(define (to-set-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "Set" prim (CEmpty))
+          (CId id))))
+
 (define (to-dict-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Dict" prim (CEmpty))
-          (CId id))))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref dict-hash key))))
+                                  (hash-keys dict-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
 
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
@@ -75,6 +82,7 @@
     [CStr (s) (to-str-obj prim)]
     [CList (es) (to-list-obj prim)]
     [CTuple (es) (to-tuple-obj prim)]
+    [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
     [CFunc (args defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
@@ -114,6 +122,14 @@
                                                    (CId 'self)
                                                    (CId 'right)))))
                 )))
+
+;; built-in methods for dict
+(define dict-hash
+  (hash
+   (list (values "clear"
+                 ($to-object (CFunc (list 'self)
+                                    (list)
+                                    (COperation (CId 'self) "Dict" "clear")))))))
                                                   
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)

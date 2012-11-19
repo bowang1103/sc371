@@ -37,6 +37,7 @@
     [PyStr (s) ($to-object (CStr s))]
     [PyList (es) ($to-object (CList (map desugar es)))]
     [PyTuple (es) ($to-object (CTuple (map desugar es)))]
+    [PySet (es) ($to-object (CSetV (map desugar es)))]
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
     [PyId (x) (CId x)]
