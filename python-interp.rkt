@@ -330,21 +330,28 @@
                                  (type-case CAns bind-es
                                    ;	[AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
                                    [AVal (v-es e-es s-es le-es) 
-                                                                       (type-case CAns (begin ;(display " enter here \n")
-                                                                                              ;(display e-es)
-                                                                                              ;(display "\n")
-                                                                                              (interp-env clbody e-es s-es le-es))
-                                                                         [AVal (v-clbody e-clbody s-clbody le-clbody) (begin ;(display (VClosure-env (getObjVal v-clbody)))
-                                                                                                                        ;(display "\n")
-                                                                                                                        ;(display (VClosure-sto (getObjVal v-clbody)))
-                                                                                                                        ;(display "Env leave App\n")
-                                                                                                                        ;(display env)
-                                                                                                                        ;(display "\n")
-                                                                                                                        (AVal v-clbody env store lenv))]
-                                                                         [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
-                                   [else bind-es]))]
-                             [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
-                         [else funAns]))]
+                                                                       (type-case CAns 
+                                                                         (let ([args (hash-keys e-es)])
+                                                                           (let ([locs (allocLocList (length args))])
+                                                                             (let ([values (map (lambda (x) (grabValue x e-es s-es le-es)) args)])
+                                                                             (begin ;(display " enter here \n")
+                                                                               ;(display e-es)
+                                                                               ;(display "\n")
+                                                                               (interp-env clbody 
+                                                                                           (extendEnv args locs e-fobj)
+                                                                                           (overrideStore locs (map AVal-val values) s-fobj)
+                                                                                                      le-es)))))
+                                                                               [AVal (v-clbody e-clbody s-clbody le-clbody) (begin ;(display (VClosure-env (getObjVal v-clbody)))
+                                                                                                                              ;(display "\n")
+                                                                                                                              ;(display (VClosure-sto (getObjVal v-clbody)))
+                                                                                                                              ;(display "Env leave App\n")
+                                                                                                                              ;(display env)
+                                                                                                                              ;(display "\n")
+                                                                                                                              (AVal v-clbody env store lenv))]
+                                                                               [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
+[else bind-es]))]
+[else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
+[else funAns]))]
 
     [CFunc (args defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
                                   (cond [(empty? dftAns) (AVal (VClosure args (list) body env store) env store lenv)]
