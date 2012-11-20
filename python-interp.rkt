@@ -307,20 +307,41 @@
                                                                            ;; Still need to extend closure-env (deal with situation of closure over local variales|#
 
                              [VClosure (clargs cldfts clbody clenv csto)
-                               (letrec ([self (if (symbol=? 'self (first clargs)) 
+                               (letrec ([self (if (and (not (equal? clargs empty))  
+                                                       (symbol=? 'self (first clargs))) 
                                                   (list (interp-env (CId 'self) e-fobj s-fobj le-fobj)) 
                                                   (list))]
-                                        [bind-es (bind-args clargs 
+                                        [bind-es (bind-args (begin ;(display clargs )
+                                                                   clargs)
                                                             (allocLocList (length clargs))
-                                                            (append self (interpArgs args e-fobj s-fobj le-fobj))
+                                                            ;(append self (interpArgs args e-fobj s-fobj le-fobj))
+                                                            ;; interp arguments with closure environment
+                                                            (begin ;(display "print global env \n")
+                                                                   ;(display e-fobj)
+                                                                   ;(display "\n")
+                                                                   (append self (let ([test-val (interpArgs_Func args clenv csto e-fobj s-fobj le-fobj)])
+                                                                                  (begin; (display "interpArgs_Func args \n") 
+                                                                                        ; (display test-val)
+                                                                                        ; (display "\n")
+                                                                                         test-val)))
+	)
                                                             cldfts
-                                                            env store lenv)]) ;; extend env using global instead closure-env
+                                                            e-fobj s-fobj lenv)]) ;; extend env using global instead closure-env
                                  (type-case CAns bind-es
-                                  	[AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
-                                  #| [AVal (v-es e-es s-es le-es) (type-case CAns (interp-env clbody e-es s-es le-es)
-                                                                  [AVal (v-clbody e-clbody s-clbody le-clbody) (begin (display (getObjVal v-clbody)) 
-                                                                                                                      (AVal v-clbody env store lenv))]
-                                                                  [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]|#
+                                   ;	[AVal (v-es e-es s-es le-es) (interp-env clbody e-es s-es le-es)]
+                                   [AVal (v-es e-es s-es le-es) 
+                                                                       (type-case CAns (begin ;(display " enter here \n")
+                                                                                              ;(display e-es)
+                                                                                              ;(display "\n")
+                                                                                              (interp-env clbody e-es s-es le-es))
+                                                                         [AVal (v-clbody e-clbody s-clbody le-clbody) (begin ;(display (VClosure-env (getObjVal v-clbody)))
+                                                                                                                        ;(display "\n")
+                                                                                                                        ;(display (VClosure-sto (getObjVal v-clbody)))
+                                                                                                                        ;(display "Env leave App\n")
+                                                                                                                        ;(display env)
+                                                                                                                        ;(display "\n")
+                                                                                                                        (AVal v-clbody env store lenv))]
+                                                                         [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
                                    [else bind-es]))]
                              [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
                          [else funAns]))]
@@ -335,7 +356,10 @@
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
                          (type-case CAns argAns
                            [AVal (v-obj e-obj s-obj le-obj) 
-                                 (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj)]
+                                 (begin ;(display "Prim1\n")
+                                        ;(display e-obj)
+                                        ;(display "\n")                                                 
+                                        (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj))]
                            [else argAns]))]
     
     [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
@@ -487,7 +511,8 @@
           (type-case (optionof CVal) (hash-ref sto loc)
             [some (v) (AVal v env sto lenv)]
             [none () (interp-error "Unbound identifier" env sto lenv)])]
-    [none () (interp-error (string-append (symbol->string for) " : location not found in store") env sto lenv)]))
+    ;; Didn't exist in the current env & sto ; look up the built in library
+    [none () (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)]))
 
 ;; get a new memory addr
 (define newLoc
@@ -500,12 +525,34 @@
 ; take in a list of CExp (func args) and interp them to a list of answer
 (define (interpArgs [args : (listof CExp)] [env : Env] [store : Store] [lenv : LocalEnv]) : (listof CAns)
   (cond
-    [(empty? args) empty]
+    [(empty? args) (begin ;(display "leave normally")
+                            empty)]
     [else (let ([argAns (interp-env (first args) env store lenv)])
             (type-case CAns argAns
               [AVal (v-first e-first s-first le-first)
                       (cons argAns (interpArgs (rest args) e-first s-first le-first))]
               [else (cons argAns empty)]))]))
+
+; take in a list of CExp (func args) and interp them to a list of answer
+(define (interpArgs_Func [args : (listof CExp)] [closure_env : Env] [closure_sto : Store] [global_env : Env] [global_sto : Store] [lenv : LocalEnv]) : (listof CAns)
+  (cond
+    [(empty? args) (begin ;(display "leave normally")
+                          empty)]
+    [else (let ([argAns (interp-env (first args) closure_env closure_sto lenv)]) ;;buggy part if I replace closure env store to global, it works fine
+            (type-case CAns argAns
+              [AVal (v-first e-first s-first le-first)
+                    (begin ;(display "come AVal\n")
+                           (cons argAns (interpArgs_Func (rest args) e-first s-first global_env global_sto le-first)))]
+              [AExc (v-first e-first s-first le-first) 
+                    (begin ;(display "come AExc\n")
+	                 (let ([argAns_gloenv (interp-env (first args) global_env global_sto lenv)])
+                      (type-case CAns argAns_gloenv
+                        [AVal (v2-first e2-first s2-first le2-first)
+                              (cons argAns_gloenv (interpArgs_Func (rest args) e-first s-first global_env global_sto le-first))]
+                        [else (cons argAns empty)])))]
+              
+              ))]))
+
 
 ;; return a list of location with size given by param num
 (define (allocLocList (count : number)) : (listof Location)
@@ -643,3 +690,42 @@
   (if (< val div)
       val
       (mod (- val div) div)))
+
+
+;; get built-in functions library
+(define lib_functions_env : Env
+  (let ([lib_functions (interp-env (python-lib (CEmpty)) (hash empty) (hash empty) (hash empty))])
+    (AVal-env lib_functions)))
+  
+
+;;Merge Environment : Add new_Env to old_Env , if both contains similar symobl new_Env replace old_Env 
+(define (MergeEnv (new_Env : Env) (old_Env : Env)) : Env
+  (foldl (lambda (x result) 
+           (let ([location (some-v (hash-ref new_Env x))])
+             (hash-set result x location)))
+         old_Env 
+         (hash-keys new_Env)))
+           
+           
+  
+;;Merge Store :  Add new_Sto to old_Sto , if both contains similar symobl new_Sto replace old_Sto 
+(define (MergeSto (new_Sto : Store) (old_Sto : Store)) : Store
+  (foldl (lambda (x result)
+           (let ([value (some-v (hash-ref new_Sto x))])
+             (hash-set result x value)))
+         old_Sto
+         (hash-keys new_Sto)))
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
