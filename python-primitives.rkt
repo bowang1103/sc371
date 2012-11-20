@@ -67,7 +67,11 @@ primitives here.
                                      [(equal? type "Exception") (pretty value)])]
     [VClosure (args defaults body env sto) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
-    [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
+    [VMPoint (loc) (pretty (if (none? (hash-ref curstore loc))
+                               (begin (display "Miss: ") (display (to-string loc)) (display "\n")
+                                      (display "CURSTORE: ") (display (to-string (hash-keys curstore))) (display "\n")
+                                      (VNum 1))
+                               (some-v (hash-ref curstore loc))))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
     
     
@@ -150,7 +154,7 @@ primitives here.
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
     (case op
-      [(print) (begin (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
+      [(print) (begin (display "Final: ") (display (to-string (hash-keys (AVal-sto arg)))) (display "\n") (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]
@@ -174,8 +178,8 @@ primitives here.
 ; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
-  (let ([clean-val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg1))]
-        [clean-val-r (getNoneObjectVal (AVal-val arg2) (AVal-sto arg1))]
+  (let ([clean-val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg2))]
+        [clean-val-r (getNoneObjectVal (AVal-val arg2) (AVal-sto arg2))]
         [val-l (getObjVal (AVal-val arg1))]
         [val-r (getObjVal (AVal-val arg2))]
         [loc-l (getObjLoc (AVal-val arg1))]
@@ -257,7 +261,7 @@ primitives here.
               [(VList? val-l)
                (case op
                  [(+) (if (VList? val-r)
-                          (sequenceConcat "List" (list val-l val-r))
+                          (begin (display "In prim2: ") (display (to-string (hash-keys (AVal-sto arg2)))) (display "\n") (sequenceConcat "List" (list val-l val-r)))
                           (core-error "cannot + a non list object to a list"))]
                  [(*) (if (equal? "Int" type-r)
                           (sequenceConcat "List" (build-list (VNum-n val-r) (lambda (n) val-l)))

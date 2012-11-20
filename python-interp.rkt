@@ -19,7 +19,7 @@
                               (AVal (VException type msv-str) env store lenv)))]
     [CList (es) (letrec ([rst (interpArgs es env store lenv)]
                          [last (if (empty? rst)
-                                   (AVal (VEmpty) env store lenv)
+                                   (AVal (VList empty) env store lenv)
                                    (first (reverse rst)))])
                   (if (AExc? last)
                       last
@@ -30,7 +30,7 @@
                             (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CTuple (es) (letrec ([rst (interpArgs es env store lenv)]
                           [last (if (empty? rst)
-                                    (AVal (VEmpty) env store lenv)
+                                    (AVal (VTuple empty) env store lenv)
                                     (first (reverse rst)))])
                    (if (AExc? last)
                        last
@@ -41,7 +41,7 @@
                              (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CSetV (es) (letrec ([rst (interpArgs es env store lenv)]
                           [last (if (empty? rst)
-                                    (AVal (VEmpty) env store lenv)
+                                    (AVal (VSet (hash empty)) env store lenv)
                                     (first (reverse rst)))])
                    (if (AExc? last)
                        last
@@ -78,15 +78,16 @@
     [CEmpty () (AVal (VEmpty) env store lenv)]
     
     [CWrap (type obj) (case (string->symbol type)
-                        [(List) (let ([rst (AVal-val (interp-env ($to-object (CList (list))) env store lenv))])
+                        [(List) (let ([rst (interp-env ($to-object (CList (list))) env store lenv)])
                                   (AVal (VObject type (type-case CVal (VObject-value obj)
                                                         [VStr (s) (VList (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
                                                                               (string->list s)))]
-                                                        [VList (es) (VList es)]
+                                                        [VList (es) (begin (display "Middle: ") (display (to-string (hash-keys (AVal-sto rst)))) (display "\n") (VList es))]
                                                         [VTuple (es) (VList es)]
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
-                                                        [else (VList (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
+                                                        [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) 
+                                        (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
                                    (AVal (VObject type (type-case CVal (VObject-value obj)
                                                          [VStr (s) (VTuple (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
@@ -96,16 +97,16 @@
                                                          [VDict (dict) (VTuple (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                  (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                          [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
-                        [(Set) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) env store lenv))])
+                        [(Set) (let ([rst (interp-env ($to-object (CSetV (list))) env store lenv)])
                                  (AVal (VObject type (type-case CVal (VObject-value obj)
                                                        [VStr (s) (VSet (let ([keys (map (lambda(x) (VObject-value (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv)))) 
                                                                                         (string->list s))])
                                                                          (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))]
-                                                       [VList (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VList-es (getNoneObjectVal obj store))))]
-                                                       [VTuple (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VTuple-es (getNoneObjectVal obj store))))]
+                                                       [VList (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VList-es (getNoneObjectVal obj (AVal-sto rst)))))]
+                                                       [VTuple (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VTuple-es (getNoneObjectVal obj (AVal-sto rst)))))]
                                                        [VSet (es) (VSet es)]
                                                        [VDict (dict) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys dict)))]
-                                                       [else (VSet (hash empty))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
+                                                       [else (VSet (hash empty))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) env store lenv))])]
     
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
@@ -368,8 +369,15 @@
                                    (interp-env (python-prim1 prim argAns) e-obj s-obj le-obj)]
                            [else argAns]))]
     
-    [CPrim2 (prim arg1 arg2) (interp-env (python-prim2 prim (interp-env arg1 env store lenv) (interp-env arg2 env store lenv)) env store lenv)]
-    
+    [CPrim2 (prim arg1 arg2) (let ([arg1Ans (interp-env arg1 env store lenv)])
+                               (if (AVal? arg1Ans)
+                                   (let ([arg2Ans (interp-env arg2 (AVal-env arg1Ans) (AVal-sto arg1Ans) (AVal-lenv arg1Ans))])
+                                     (if (AVal? arg2Ans)
+                                         (let ([tmp (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))])
+                                           (begin (display "after prim2: ") (display (to-string (hash-keys (AVal-sto tmp)))) (display "\n") tmp))
+                                         arg2Ans))
+                                   arg1Ans))]
+     
     ;;setfield for object 
     [CSetfield (obj fld value) (let ([objv (interp-env obj env store lenv)])
                                  (type-case CAns objv
