@@ -376,3 +376,12 @@ primitives here.
   (if (> (length target) (length all))
       false
       (equal? target (build-list (length target) (lambda (x) (list-ref all x))))))
+
+(define (valueToObjectCExp (val : CVal)) : CExp
+  (type-case CVal val
+    [VNum (n) (CNum -1)]
+    [VStr (s) (CStr "")]
+    [VList (es) (CList (list))]
+    [VTuple (es) (CTuple (list))]
+    [VSet (es) (CSetV (list))]
+    [else (CEmpty)]))

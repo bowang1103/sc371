@@ -23,6 +23,7 @@ ParselTongue.
   [CId (id : symbol)]
   [CLet (id : symbol) (bind : CExp) (body : CExp)]
   [CSet (id : symbol) (value : CExp)]
+  [CDel (tg : CExp)]
   [CApp (fun : CExp) (args : (listof CExp))]
   [CFunc (args : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)]
@@ -43,7 +44,7 @@ ParselTongue.
   [CGetelement (obj : CExp) (indexs : (listof CExp))]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
-  [COperation (obj : CExp) (type : string) (op : string)]
+  [COperation (obj : CExp) (type : string) (op : string) (args : (listof CExp))]
   [CEmpty])
 
 (define-type CVal
@@ -83,9 +84,10 @@ ParselTongue.
 
 (define isImmutableTable 
   (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Set" true) (values "Func" true) (values "MPoint" true) (values "Empty" true))))
+                   (values "Func" true) (values "MPoint" true) (values "Empty" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))
       false
       true))
+
