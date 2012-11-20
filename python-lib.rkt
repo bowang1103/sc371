@@ -167,6 +167,8 @@ that calls the primitive `print`.
 (define false-val
   ($to-object (CFalse)))
 
+(define none-val
+  ($to-object (CEmpty)))	
 #| Exception Built in function |#
 
 (define (exception-lambda (type : string)) : CExp
@@ -185,6 +187,9 @@ that calls the primitive `print`.
   (list (bind 'print print-lambda)
         (bind 'callable callable-lambda)
         (bind 'bool bool-lambda)
+        (bind 'True true-val)
+        (bind 'False false-val)
+        (bind 'None none-val)
         (bind 'int int-lambda)
         (bind 'float float-lambda)
         (bind 'str str-lambda)
@@ -194,8 +199,6 @@ that calls the primitive `print`.
         (bind 'set set-lambda)
         (bind 'dict dict-lambda)
         (bind 'abs abs-lambda)
-        (bind 'True true-val)
-        (bind 'False false-val)
         (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)
@@ -218,6 +221,17 @@ that calls the primitive `print`.
 
 ))
 
+
+;; Purpose: lookup lib-functions
+(define (lookup_lib-funcs [name : symbol] [lib-funcs : (listof LibBinding)]) : CExp
+  (cond
+    [(empty? lib-funcs) (core-error (string-append (symbol->string name) " : location not found in store"))]
+    [else  (if (equal? name (bind-left (first lib-funcs)))
+               (bind-right (first lib-funcs))
+               (lookup_lib-funcs name (rest lib-funcs)))]))
+
+
+
 (define (python-lib (expr : CExp)) : CExp
   (local [(define (python-lib/recur libs)
             (cond [(empty? libs) expr]
@@ -227,5 +241,6 @@ that calls the primitive `print`.
                            (CLet name value
                                  (python-lib/recur (rest libs)))))]))]
     (python-lib/recur lib-functions)))
+
 
 
