@@ -82,7 +82,7 @@
                                   (AVal (VObject type (type-case CVal (VObject-value obj)
                                                         [VStr (s) (VList (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
                                                                               (string->list s)))]
-                                                        [VList (es) (begin (display "Middle: ") (display (to-string (hash-keys (AVal-sto rst)))) (display "\n") (VList es))]
+                                                        [VList (es) (begin #|(display "Middle: ") (display (to-string (hash-keys (AVal-sto rst)))) (display "\n")|# (VList es))]
                                                         [VTuple (es) (VList es)]
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
@@ -374,7 +374,7 @@
                                    (let ([arg2Ans (interp-env arg2 (AVal-env arg1Ans) (AVal-sto arg1Ans) (AVal-lenv arg1Ans))])
                                      (if (AVal? arg2Ans)
                                          (let ([tmp (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))])
-                                           (begin (display "after prim2: ") (display (to-string (hash-keys (AVal-sto tmp)))) (display "\n") tmp))
+                                           (begin #|(display "after prim2: ") (display (to-string (hash-keys (AVal-sto tmp)))) (display "\n")|# tmp))
                                          arg2Ans))
                                    arg1Ans))]
      
