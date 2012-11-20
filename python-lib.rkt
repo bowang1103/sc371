@@ -123,7 +123,7 @@ that calls the primitive `print`.
 (define assert-notin-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2) (list)
-     (CIf (CPrim2 '!in (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not In Failed")) (CId 'True)))))
+     (CIf (CPrim2 '!in (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Not In Failed"))))))
 
 ;; ___assertEqual
 (define assert-equal-lambda
@@ -135,7 +135,7 @@ that calls the primitive `print`.
 (define assert-notequal-lambda
   ($to-object 
    (CFunc (list 'arg1 'arg2) (list)
-     (CIf (CPrim2 '!= (CId 'arg1) (CId 'arg2)) (CError (CStr "Assert Not Equal Failed")) (CId 'True)))))
+     (CIf (CPrim2 '!= (CId 'arg1) (CId 'arg2)) (CId 'True) (CError (CStr "Assert Not Equal Failed"))))))
 
 ;; ___assertRaises
 ;(define assert-raises-lambda)
