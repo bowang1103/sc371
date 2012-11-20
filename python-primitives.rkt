@@ -174,66 +174,96 @@ primitives here.
 ; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
-  (let ([val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg1))]
-        [val-r (getNoneObjectVal (AVal-val arg2) (AVal-sto arg1))]
+  (let ([clean-val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg1))]
+        [clean-val-r (getNoneObjectVal (AVal-val arg2) (AVal-sto arg1))]
+        [val-l (getObjVal (AVal-val arg1))]
+        [val-r (getObjVal (AVal-val arg2))]
         [loc-l (getObjLoc (AVal-val arg1))]
         [loc-r (getObjLoc (AVal-val arg2))]
         [type-l (getObjType (AVal-val arg1))]
         [type-r (getObjType (AVal-val arg2))])
+    
     (case op
-      [(==) (if (equal? val-l val-r)
+      [(==) (if (equal? clean-val-l clean-val-r)
                 (CId 'True)
                 (CId 'False))]
-      [(!=) (if (equal? val-l val-r)
+      [(!=) (if (equal? clean-val-l clean-val-r)
                 (CId 'False)
                 (CId 'True))]
-      [(is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
+      [(is) (if (is2ObjSame type-l clean-val-l loc-l type-r clean-val-r loc-r)
                 (CId 'True)
                 (CId 'False))]
-      [(!is) (if (is2ObjSame type-l val-l loc-l type-r val-r loc-r)
+      [(!is) (if (is2ObjSame type-l clean-val-l loc-l type-r clean-val-r loc-r)
                  (CId 'False)
                  (CId 'True))]
-      [(in) (if (isIn val-l val-r)
+      [(in) (if (isIn clean-val-l clean-val-r)
                 (CId 'True)
                 (CId 'False))]
-      [(!in) (if (isIn val-l val-r)
+      [(!in) (if (isIn clean-val-l clean-val-r)
                  (CId 'False)
                  (CId 'True))]
       
       ;; TODO: add all other cases
       [else (cond 
               ;; NUMBER CASE (and BOOL)
-              [(and (VNum? val-l) (VNum? val-r))
+              [(and (VNum? clean-val-l) (VNum? clean-val-r))
                (case op
-                 [(+) ($to-object (CNum (+ (VNum-n val-l) (VNum-n val-r))))]
-                 [(-) ($to-object (CNum (- (VNum-n val-l) (VNum-n val-r))))]
-                 [(*) ($to-object (CNum (* (VNum-n val-l) (VNum-n val-r))))]
-                 [(/) (if (or (equal? (VNum-n val-r) 0)
-                              (equal? (VNum-n val-r) 0.0))
+                 [(+) ($to-object (CNum (+ (VNum-n clean-val-l) (VNum-n clean-val-r))))]
+                 [(-) ($to-object (CNum (- (VNum-n clean-val-l) (VNum-n clean-val-r))))]
+                 [(*) ($to-object (CNum (* (VNum-n clean-val-l) (VNum-n clean-val-r))))]
+                 [(/) (if (or (equal? (VNum-n clean-val-r) 0)
+                              (equal? (VNum-n clean-val-r) 0.0))
                           ;;Two way of raising exception
                           (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
                           ;(CRaise ($to-object (CEmpty)) (CApp (CId 'ZeroDivisionError) (list ($to-object (CStr "divison by zero")))))
-                          ($to-object (CNum (/ (VNum-n val-l) (VNum-n val-r)))))]
-                 [(//) (if (or (equal? (VNum-n val-r) 0)
-                               (equal? (VNum-n val-r) 0.0))
+                          ($to-object (CNum (/ (VNum-n clean-val-l) (VNum-n clean-val-r)))))]
+                 [(//) (if (or (equal? (VNum-n clean-val-r) 0)
+                               (equal? (VNum-n clean-val-r) 0.0))
                            (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
-                           ($to-object (CNum (floor (/ (VNum-n val-l) (VNum-n val-r))))))]
-                 [(%) (if (or (equal? (VNum-n val-r) 0)
-                              (equal? (VNum-n val-r) 0.0))
+                           ($to-object (CNum (floor (/ (VNum-n clean-val-l) (VNum-n clean-val-r))))))]
+                 [(%) (if (or (equal? (VNum-n clean-val-r) 0)
+                              (equal? (VNum-n clean-val-r) 0.0))
                           (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
-                          ($to-object (CNum (mod (VNum-n val-l) (VNum-n val-r)))))]
-                 [(<) (if (< (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(>) (if (> (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(<=) (if (<= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
-                 [(>=) (if (>= (VNum-n val-l) (VNum-n val-r)) (CId 'True) (CId 'False))]
+                          ($to-object (CNum (mod (VNum-n clean-val-l) (VNum-n clean-val-r)))))]
+                 [(<) (if (< (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
+                 [(>) (if (> (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
+                 [(<=) (if (<= (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
+                 [(>=) (if (>= (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
                  )]
               ;; STRING CASE
-              [(and (VStr? val-l) (VStr? val-r))
+              [(VStr? clean-val-l)
                (case op
-                 [(+) ($to-object (CStr (string-append (VStr-s val-l) (VStr-s val-r))))]
-                 [(instanceof) (if (equal? val-l val-r)
+                 [(+) (if (VStr? clean-val-r)
+                          ;($to-object (CStr (string-append (VStr-s clean-val-l) (VStr-s clean-val-r))))
+                          (sequenceConcat "Str" (list clean-val-l clean-val-r))
+                          (core-error "cannot + a non string object a string"))]
+                 [(*) (if (equal? "Int" type-r)
+                          (sequenceConcat "Str" (build-list (VNum-n clean-val-r) (lambda (n) clean-val-l)))
+                          (core-error "cannot multiply sequence by a non-int"))]
+                 [(instanceof) (if (equal? clean-val-l clean-val-r)
                                    (CId 'True)
-                                   (if (and (equal? (VStr-s val-l) "Bool") (equal? (VStr-s val-r) "Int")) (CId 'True) (CId 'False)))])]
+                                   (if (and (equal? (VStr-s clean-val-l) "Bool") (equal? (VStr-s clean-val-r) "Int")) (CId 'True) (CId 'False)))])]
+              ;; TUPLE CASE
+              [(VTuple? val-l)
+               (case op
+                 [(+) (if (VTuple? val-r)
+                          (sequenceConcat "Tuple" (list val-l val-r))
+                          (core-error "cannot + a non tuple object to a tuple"))]
+                 [(*) (if (equal? "Int" type-r)
+                          (sequenceConcat "Tuple" (build-list (VNum-n val-r) (lambda (n) val-l)))
+                          (core-error "cannot multiply sequence by a non-int"))])]
+              
+              ;; LIST CASE
+              [(VList? val-l)
+               (case op
+                 [(+) (if (VList? val-r)
+                          (sequenceConcat "List" (list val-l val-r))
+                          (core-error "cannot + a non list object to a list"))]
+                 [(*) (if (equal? "Int" type-r)
+                          (sequenceConcat "List" (build-list (VNum-n val-r) (lambda (n) val-l)))
+                          (core-error "cannot multiply sequence by a non-int"))])]
+              
+              
               [else (error 'prim2 "no case yet")])]
     )))
 
@@ -245,6 +275,7 @@ primitives here.
           (equal? loc1 loc2))
       false))
 
+;; check if a value is in a collection
 (define (isIn (val1 : CVal) (val2 : CVal)) : boolean
   (cond
     [(and (VStr? val1) (VStr? val2)) (subString? (VStr-s val1) (VStr-s val2))] ; 2 strings
@@ -259,6 +290,24 @@ primitives here.
       (if (equal? target (first all))
           true
           (isInRecur target (rest all)))))
+
+(define (sequenceConcat (type : string) (seqs : (listof CVal))) : CExp
+  (case (string->symbol type)
+    [(Str) ($to-object (CStr 
+                        (if (empty? seqs)
+                            ""
+                            (foldl (lambda (el rst) (string-append rst (VStr-s el))) (VStr-s (first seqs)) (rest seqs)))))]
+    [(List) (CWrap "List" (VObject "List" (VList 
+                                           (if (empty? seqs)
+                                               (list)
+                                               (foldl (lambda (el rst) (append rst (VList-es el))) (VList-es (first seqs)) (rest seqs))))
+                                           -1 (hash empty)))]
+    [(Tuple) (CWrap "Tuple" (VObject "Tuple" (VTuple 
+                                              (if (empty? seqs)
+                                                  (list)
+                                                  (foldl (lambda (el rst) (append rst (VTuple-es el))) (VTuple-es (first seqs)) (rest seqs))))
+                                              -1 (hash empty)))]
+    [else (core-error "input is not a sequence")]))
 
 ;; get object value from an Ans
 (define (getObjVal (obj : CVal)) : CVal
