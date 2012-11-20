@@ -40,17 +40,18 @@
                                           rst)) 
                              (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
     [CSetV (es) (letrec ([rst (interpArgs es env store lenv)]
-                         [last (if (empty? rst)
-                                   (AVal (VEmpty) env store lenv)
-                                   (first (reverse rst)))])
-                  (if (AExc? last)
-                      last
-                      (AVal (VSet (let ([keys (map (lambda (x) (if (isImmutable (VObject-type (AVal-val x)))
-                                                                   (VObject-value (AVal-val x))
-                                                                   (VMPoint (VObject-loc (AVal-val x)))))
-                                                   rst)])
-                                    (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys))) 
-                            (AVal-env last) (AVal-sto last) (AVal-lenv last))))]
+                          [last (if (empty? rst)
+                                    (AVal (VEmpty) env store lenv)
+                                    (first (reverse rst)))])
+                   (if (AExc? last)
+                       last
+                       ;; check whether all the elements in the set are immutable
+                       (if (not (foldl (lambda (x result) (and (isRecurImmutable (AVal-val x) (AVal-sto last)) result)) true rst))
+                           (interp-error "They are not hashable" env store lenv)
+                           ;; build the set
+                           (AVal (VSet (let ([keys (map (lambda (x) (VObject-value (AVal-val x))) rst)])
+                                     (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))
+                                 (AVal-env last) (AVal-sto last) (AVal-lenv last)))))]
     [CDict (keys values) (if (equal? (length keys) (length values))
                              (letrec ([keyrst (interpArgs keys env store lenv)]
                                       [keylast (if (empty? keyrst)
@@ -58,7 +59,9 @@
                                                    (first (reverse keyrst)))])
                                (if (AExc? keylast)
                                    keylast
-                                   (if (not (equal? (length (filter isImmutable (map (lambda (x) (VObject-type (AVal-val x))) keyrst)) )
+                                   ;; use the length to check whether all keys are recursive immutable
+                                   ;; by filter if they are all immutable they length should be same
+                                   (if (not (equal? (length (filter (lambda(x) (isRecurImmutable (AVal-val x) (AVal-sto keylast))) keyrst))
                                                     (length keyrst)))
                                        (interp-error "key should be immutable" env store lenv)
                                        (letrec ([valuesrst (interpArgs values (AVal-env keylast) (AVal-sto keylast) (AVal-lenv keylast))]
@@ -81,7 +84,8 @@
                                                                               (string->list s)))]
                                                         [VList (es) (VList es)]
                                                         [VTuple (es) (VList es)]
-                                                        [VDict (dict) (VList (hash-keys dict))]
+                                                        [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
+                                                                                               (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                         [else (VList (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
                                    (AVal (VObject type (type-case CVal (VObject-value obj)
@@ -89,7 +93,8 @@
                                                                                 (string->list s)))]
                                                          [VList (es) (VTuple es)]
                                                          [VTuple (es) (VTuple es)]
-                                                         [VDict (dict) (VTuple (hash-keys dict))]
+                                                         [VDict (dict) (VTuple (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
+                                                                                                 (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                          [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
                         [(Set) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) env store lenv))])
                                  (AVal (VObject type (type-case CVal (VObject-value obj)
@@ -98,6 +103,7 @@
                                                                          (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))]
                                                        [VList (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VList-es (getNoneObjectVal obj store))))]
                                                        [VTuple (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VTuple-es (getNoneObjectVal obj store))))]
+                                                       [VSet (es) (VSet es)]
                                                        [VDict (dict) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys dict)))]
                                                        [else (VSet (hash empty))]) (VObject-loc rst) (VObject-field rst)) env store lenv))])]
     
@@ -154,6 +160,17 @@
                          ;                                           (hash-set le-v id true))])))]
                          [else vans]))]
     
+    [CDel (tg) (let ([tar (interp-env tg env store lenv)])
+                 (type-case CAns tar
+                   [AVal (v-v e-v s-v le-v) 
+                         (type-case CExp tg
+                           [CId (id) (AVal (AVal-val tar) (hash-remove env id) store (hash-remove lenv id))]
+                           [CGetelement (obj indexs) (let ([v-o (AVal-val (interp-env obj env store lenv))])
+                                                       (case (string->symbol (VObject-type v-o))
+                                                         [(Dict) (interp-env (COperation obj "Dict" "pop" indexs) env store lenv)]))]
+                           [else tar])]
+                   [else tar]))]
+    
     [CSetelement (obj index value) 
                  (let ([oval (interp-env obj env store lenv)] 
                        [ival (interp-env index env store lenv)]
@@ -183,7 +200,7 @@
                                                        (VDict
                                                         (hash-set (VDict-dict (VObject-value (AVal-val oval))) 
                                                                   (VObject-value (AVal-val ival))
-                                                                  (VObject-value (AVal-val vval))))
+                                                                  (AVal-val vval)))
                                                        (VObject-loc (AVal-val oval))
                                                        (VObject-field (AVal-val oval)))])) lenv)
                            (if (equal? (VObject-type (AVal-val oval)) "Tuple") 
@@ -194,6 +211,7 @@
                          [(AExc? ival) ival]
                          [(AExc? vval) vval]
                          [else (interp-error "You should not been here" env store lenv)])))]
+    
     [CGetelement (obj indexs) (let ([oval (interp-env obj env store lenv)])
                                 (if (AVal? oval)
                                     (letrec ([ival (interpArgs indexs (AVal-env oval) (AVal-sto oval) (AVal-lenv oval))]
@@ -390,16 +408,27 @@
                            [else rs]))]
                  [else primVal]))]
     ;; operations of different class
-    [COperation (obj type op)
+    [COperation (obj type op args)
                 (let ([o-val (interp-env obj env store lenv)])
                   (type-case CAns o-val
-                    [AVal (v-o e-o s-o le-o)
-                          (case (string->symbol type)
-                            [(Dict) (case (string->symbol op)
-                                      [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
-                                                 (AVal rst e-o (hash-set s-o (VObject-loc v-o) rst) le-o))])])]
-                    [else o-val]))]
-    
+                      [AVal (v-o e-o s-o le-o)
+                            (case (string->symbol type)
+                              [(Dict) (case (string->symbol op)
+                                        [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
+                                                   (AVal rst e-o (hash-set s-o (VObject-loc v-o) rst) le-o))]
+                                        [(keys) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) e-o s-o le-o))])
+                                                  (AVal (VObject (VObject-type rst) 
+                                                                 (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys (VDict-dict (VObject-value v-o)))))
+                                                                 (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
+                                        [(pop) (let ([v-o (AVal-val (interp-env obj env store lenv))]
+                                                     [index (AVal-val (interp-env (first args) env store lenv))])
+                                                 (AVal (VEmpty) env (hash-set store (VObject-loc v-o) 
+                                                                              (VObject (VObject-type v-o) 
+                                                                                       (VDict (hash-remove (VDict-dict (VObject-value v-o)) (getNoneObjectVal index store))) 
+                                                                                       (VObject-loc v-o)
+                                                                                       (VObject-field v-o))) lenv))])])]
+                      [else o-val]))]
+
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
                                    ;; if no exception, interp "else" part
@@ -676,16 +705,34 @@
       val
       (mod (- val div) div)))
 
+;; get built-in functions library
+(define lib_functions_env : Env
+  (let ([lib_functions (interp-env (python-lib (CEmpty)) (hash empty) (hash empty) (hash empty))])
+    (AVal-env lib_functions)))
+  
 
-
-
-
-
-
-
-
-
-
-
-
-
+;;Merge Environment : Add new_Env to old_Env , if both contains similar symobl new_Env replace old_Env 
+(define (MergeEnv (new_Env : Env) (old_Env : Env)) : Env
+  (foldl (lambda (x result) 
+           (let ([location (some-v (hash-ref new_Env x))])
+             (hash-set result x location)))
+         old_Env 
+         (hash-keys new_Env)))
+  
+;;Merge Store :  Add new_Sto to old_Sto , if both contains similar symobl new_Sto replace old_Sto 
+(define (MergeSto (new_Sto : Store) (old_Sto : Store)) : Store
+  (foldl (lambda (x result)
+           (let ([value (some-v (hash-ref new_Sto x))])
+             (hash-set result x value)))
+         old_Sto
+         (hash-keys new_Sto)))
+  
+;; check whether all the elements can reach from the object is immutable
+(define (isRecurImmutable (obj : CVal) store) : boolean
+  (if (not (isImmutable (VObject-type obj)))
+      false
+      (type-case CVal (VObject-value obj)
+        [VTuple (es) (foldl (lambda (x result) (and (isRecurImmutable x store) result)) true es)]
+        ;; if it's a pointer get the value from the store and call the function again
+        [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
+        [else true])))
