@@ -34,12 +34,12 @@ primitives here.
                                 (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
                           ")"))]
     [VSet (es) (let ([elms (hash-keys es)])
-                   (foldr string-append  ""
-                          (list "{"
-                                (if (empty? elms) ""
-                                    (let ([ptvals (map pretty elms)])
-                                      (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals))))
-                                "}")))]
+                 (if (empty? elms) "set()"
+                     (foldr string-append  ""
+                            (list "{"
+                                  (let ([ptvals (map pretty elms)])
+                                    (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first ptvals) (rest ptvals)))
+                                  "}"))))]
     [VDict (dict) (letrec ([keys (hash-keys dict)]
                            [pair (map (lambda(x) 
                                        (foldr string-append ""
@@ -154,7 +154,7 @@ primitives here.
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
     (case op
-      [(print) (begin (display "Final: ") (display (to-string (hash-keys (AVal-sto arg)))) (display "\n") (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
+      [(print) (begin #|(display "Final: ") (display (to-string (hash-keys (AVal-sto arg)))) (display "\n")|# (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]
@@ -175,7 +175,7 @@ primitives here.
 
 ;;boolop may have to handle in other function
 ; boolop = {and, or}
-; op = {+, -, *, /, %, **, <<, >>, bor, ^, band, //}
+; op = {+, -, *, /, %, **, <<, >>, bor, bxor, band, //}
 ; compare op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
 (define (python-prim2 [op : symbol] [arg1 : CAns] [arg2 : CAns]) : CExp
   (let ([clean-val-l (getNoneObjectVal (AVal-val arg1) (AVal-sto arg2))]
@@ -267,6 +267,31 @@ primitives here.
                           (sequenceConcat "List" (build-list (VNum-n val-r) (lambda (n) val-l)))
                           (core-error "cannot multiply sequence by a non-int"))])]
               
+              ;; SET CASE
+              [(VSet? clean-val-l)
+               (if (VSet? clean-val-r)
+                   (let ([lh (VSet-es clean-val-l)]
+                         [rh (VSet-es clean-val-r)])
+                     (case op
+                       [(-) (CWrap "Set" (VObject "Set" 
+                              (VSet (foldl (lambda (key ht) (hash-remove ht key)) lh (hash-keys rh))) 
+                              -1 (hash empty)))]
+                       [(band) (CWrap "Set" (VObject "Set" 
+                                 (VSet (foldl 
+                                        (lambda (key rst) (if (some? (hash-ref lh key)) (hash-set rst key true) rst))
+                                        (hash empty) (hash-keys rh)))
+                                 -1 (hash empty)))]
+                       [(bor) (CWrap "Set" (VObject "Set" 
+                                 (VSet (foldl (lambda (key ht) (hash-set ht key true)) lh (hash-keys rh)))
+                                 -1 (hash empty)))]
+                       [(bxor) (CWrap "Set" (VObject "Set" 
+                                 (VSet (foldl 
+                                        (lambda (key rst) (if (some? (hash-ref lh key)) (hash-remove rst key) (hash-set rst key true)))
+                                        lh (hash-keys rh)))
+                                 -1 (hash empty)))]))
+                   (core-error (foldr string-append "" (list "cannot " (symbol->string op) " by a non-set"))))]
+               
+              
               
               [else (error 'prim2 "no case yet")])]
     )))
@@ -295,6 +320,7 @@ primitives here.
           true
           (isInRecur target (rest all)))))
 
+;; concat a list of sequence together
 (define (sequenceConcat (type : string) (seqs : (listof CVal))) : CExp
   (case (string->symbol type)
     [(Str) ($to-object (CStr 
@@ -344,10 +370,31 @@ primitives here.
     [(Tuple) (VTuple (map2 getNoneObjectVal 
                            (VTuple-es (VObject-value obj)) 
                            (build-list (length (VTuple-es (VObject-value obj))) (lambda(x) store))))]
-    [(Dict) (VObject-value obj)]
+    ;[(Dict) (VObject-value obj)]
+    [(Dict) (let ([dict (VDict-dict (VObject-value obj))])
+              (VDict (cleanDictFoldl2 
+                      (hash-keys dict) 
+                      (map (lambda (key) (getNoneObjectVal (some-v (hash-ref dict key)) store)) (hash-keys dict))
+                      (hash empty))))]
+    [(Set) (getObjVal obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
+
+;; create a hash table for dictionary given clean keys and celan vals
+(define (cleanDictFoldl2 (cleanKeys : (listof CVal)) (cleanVals : (listof CVal)) (ht : (hashof CVal CVal))) : (hashof CVal CVal)
+  (if (empty? cleanKeys)
+      ht
+      (cleanDictFoldl2 (rest cleanKeys) (rest cleanVals) (hash-set ht (first cleanKeys) (first cleanVals)))))
+
+;; specific function to app values into hash table
+(define (valfoldl2 (keys : (listof CVal)) (values : (listof CVal)) (h : (hashof CVal CVal)) (store : Store)) : (hashof CVal CVal)
+  (if (empty? keys)
+      h            
+      (valfoldl2 (rest keys) (rest values) (hash-set h (getNoneObjectVal (first keys) store) 
+                                                     (if (isImmutable (VObject-type (first values)))
+                                                         (first values)
+                                                         (VObject "MPoint" (VMPoint (VObject-loc (first values))) -1 (hash empty)))) store)))
 
 ;; check whether the target string is in the original string
 (define (subString? (target : string) (all : string)) : boolean

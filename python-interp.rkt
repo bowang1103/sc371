@@ -70,7 +70,7 @@
                                                                 (first (reverse valuesrst)))])
                                          (if (AExc? valueslast)
                                              valueslast
-                                             (AVal (VDict (valfoldl2 keyrst valuesrst (hash empty) store))
+                                             (AVal (VDict (valfoldl2 (map AVal-val keyrst) (map AVal-val valuesrst) (hash empty) store))
                                                    (AVal-env valueslast) (AVal-sto valueslast) (AVal-lenv valueslast)))))))
                              (interp-error "length is not same" env store lenv))]
     [CTrue () (AVal (VTrue) env store lenv)]
@@ -597,24 +597,6 @@
      (overrideStore (rest locs) (rest vals) 
                     (hash-set sto (first locs) (first vals)))]
     [else sto]))
-
-;; interp a list and return the result, if there is exception in the list it will be on the last element
-(define (interpList (expr : (listof CExp)) (env : Env) (store : Store) (lenv : LocalEnv)) : (listof CAns)
-  (if (empty? expr)
-      empty
-      (let ([rst (interp-env (first expr) env store lenv)])
-        (if (AExc? rst)
-            (cons rst empty)
-            (cons rst (interpList (rest expr) (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))))))
-
-;; specific function to app values into hash table
-(define (valfoldl2 (keys : (listof CAns)) (values : (listof CAns)) (h : (hashof CVal CVal)) (store : Store)) : (hashof CVal CVal)
-  (if (empty? keys)
-      h            
-      (valfoldl2 (rest keys) (rest values) (hash-set h (getNoneObjectVal (AVal-val (first keys)) store) 
-                                                     (if (isImmutable (VObject-type (AVal-val (first values))))
-                                                         (AVal-val (first values))
-                                                         (VObject "MPoint" (VMPoint (VObject-loc (AVal-val (first values)))) -1 (hash empty)))) store)))
 
 (define (getElement (values : (listof CVal)) (n : (listof number))) : CVal
   (if (equal? (first n) 0)

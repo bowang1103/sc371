@@ -31,7 +31,7 @@ that calls the primitive `print`.
 (define bool-lambda
   ($to-object
    (CFunc (list 'check-bool) 
-          (list ($to-object (CFalse))) ;; default false
+          (list (CId 'False)) ;; default false
      (CPrim1 'bool (CId 'check-bool)))))
 
 ;; int
