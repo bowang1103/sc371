@@ -67,11 +67,7 @@ primitives here.
                                      [(equal? type "Exception") (pretty value)])]
     [VClosure (args defaults body env sto) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
-    [VMPoint (loc) (pretty (if (none? (hash-ref curstore loc))
-                               (begin (display "Miss: ") (display (to-string loc)) (display "\n")
-                                      (display "CURSTORE: ") (display (to-string (hash-keys curstore))) (display "\n")
-                                      (VNum 1))
-                               (some-v (hash-ref curstore loc))))]
+    [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
     
     
@@ -154,7 +150,7 @@ primitives here.
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
     (case op
-      [(print) (begin #|(display "Final: ") (display (to-string (hash-keys (AVal-sto arg)))) (display "\n")|# (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
+      [(print) (begin  (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]
@@ -261,7 +257,7 @@ primitives here.
               [(VList? val-l)
                (case op
                  [(+) (if (VList? val-r)
-                          (begin (display "In prim2: ") (display (to-string (hash-keys (AVal-sto arg2)))) (display "\n") (sequenceConcat "List" (list val-l val-r)))
+                          (sequenceConcat "List" (list val-l val-r))
                           (core-error "cannot + a non list object to a list"))]
                  [(*) (if (equal? "Int" type-r)
                           (sequenceConcat "List" (build-list (VNum-n val-r) (lambda (n) val-l)))
@@ -428,6 +424,7 @@ primitives here.
       false
       (equal? target (build-list (length target) (lambda (x) (list-ref all x))))))
 
+;; transfer the value to a CExp
 (define (valueToObjectCExp (val : CVal)) : CExp
   (type-case CVal val
     [VNum (n) (CNum -1)]
@@ -436,3 +433,25 @@ primitives here.
     [VTuple (es) (CTuple (list))]
     [VSet (es) (CSetV (list))]
     [else (CEmpty)]))
+
+;; the API to call isRecurImmutable
+(define (isObjRecurImmutable (obj : CVal) (store : Store)) : boolean
+  (if (and (isImmutable (VObject-type obj))
+           (not (equal? (VObject-type obj) "Tuple")))
+      true
+      (type-case CVal (VObject-value obj)
+        [VTuple (es) (foldl (lambda (x result) (and (isRecurImmutable x store) result)) true es)]
+        [VList (es) (foldl (lambda (x result) (and (isRecurImmutable x store) result)) true es)]
+        [VSet (es) true]
+        [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
+        [else false])))
+
+;; check whether all the elements can reach from the object is immutable
+(define (isRecurImmutable (obj : CVal) (store : Store)) : boolean
+  (if (not (isImmutable (VObject-type obj)))
+      false
+      (type-case CVal (VObject-value obj)
+        [VTuple (es) (foldl (lambda (x result) (and (isRecurImmutable x store) result)) true es)]
+        ;; if it's a pointer get the value from the store and call the function again
+        [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
+        [else true])))

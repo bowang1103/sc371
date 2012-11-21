@@ -133,7 +133,11 @@
          (values "keys"
                  ($to-object (CFunc (list 'self)
                                     (list)
-                                    (COperation (CId 'self) "Dict" "keys" (list))))))))
+                                    (COperation (CId 'self) "Dict" "keys" (list)))))
+         (values "values"
+                 ($to-object (CFunc (list 'self)
+                                    (list)
+                                    (COperation (CId 'self) "Dict" "values" (list))))))))
                                                   
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)

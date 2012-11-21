@@ -82,7 +82,7 @@
                                   (AVal (VObject type (type-case CVal (VObject-value obj)
                                                         [VStr (s) (VList (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
                                                                               (string->list s)))]
-                                                        [VList (es) (begin #|(display "Middle: ") (display (to-string (hash-keys (AVal-sto rst)))) (display "\n")|# (VList es))]
+                                                        [VList (es) (VList es)]
                                                         [VTuple (es) (VList es)]
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
@@ -98,7 +98,9 @@
                                                                                                  (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                          [else (VTuple (list (VEmpty)))]) (VObject-loc rst) (VObject-field rst)) env store lenv))]
                         [(Set) (let ([rst (interp-env ($to-object (CSetV (list))) env store lenv)])
-                                 (AVal (VObject type (type-case CVal (VObject-value obj)
+                                 (if (not (isObjRecurImmutable obj store))
+                                     (interp-error "It's not hashable" env store lenv)
+                                     (AVal (VObject type (type-case CVal (VObject-value obj)
                                                        [VStr (s) (VSet (let ([keys (map (lambda(x) (VObject-value (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv)))) 
                                                                                         (string->list s))])
                                                                          (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))]
@@ -106,7 +108,7 @@
                                                        [VTuple (es) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (VTuple-es (getNoneObjectVal obj (AVal-sto rst)))))]
                                                        [VSet (es) (VSet es)]
                                                        [VDict (dict) (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys dict)))]
-                                                       [else (VSet (hash empty))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) env store lenv))])]
+                                                       [else (VSet (hash empty))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) env store lenv)))])]
     
     [CError (e) (let ([ans (interp-env e env store lenv)])
                   (AExc (AVal-val ans) (AVal-env ans) (AVal-sto ans) (AVal-lenv ans)))]
@@ -315,7 +317,10 @@
                        (type-case CAns funAns
                          [AVal (v-fobj e-fobj s-fobj le-fobj)
                                ;; function value
-                               (type-case CVal (VObject-value v-fobj)
+                               (begin
+                                 ;;;; 這段打印的是interp完fun以後的store
+                                 ;;(display "APP: ") (display (to-string (hash-keys s-fobj))) (display "\n") 
+                                 (type-case CVal (VObject-value v-fobj)
                                  [VClosure (clargs cldfts clbody clenv csto)
                                            (letrec ([self (if (and (not (equal? clargs empty))  
                                                                    (symbol=? 'self (first clargs))) 
@@ -336,7 +341,10 @@
                                                                         clenv csto lenv)]) ;; extend closure-env (if no arguments)
                                              (type-case CAns bind-es
                                                [AVal (v-es e-es s-es le-es) 
-                                                     (type-case CAns
+                                                     (begin
+                                                       ;;;; 這段打印的是interp完args以後的store
+                                                       ;;(display "APP2: ") (display (to-string (hash-keys s-es))) (display "\n") 
+                                                       (type-case CAns
                                                        ;; Merge closure environment & current environment
                                                        ;; if closure environment and current environment have similar symbol; closure one replace current one
                                                        (let ([args (hash-keys e-es)])
@@ -348,12 +356,16 @@
                                                                ;;interp with Merge Environment
                                                                (interp-env clbody 
                                                                            (extendEnv args locs e-fobj)
-                                                                           (overrideStore locs (map AVal-val values) s-fobj)
+                                                                           (let ([tmp (overrideStore locs (map AVal-val values) s-fobj)])
+                                                                             (begin 
+                                                                               ;;;; 在最後打印錢傳進去的store，來自args的store丟失了
+                                                                               ;;(display "APP3: ") (display (to-string (hash-keys tmp))) (display "\n")
+                                                                               tmp))
                                                                            le-es)))))
                                                        [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody env store lenv)]
-                                                       [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)])]
+                                                       [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)]))]
                                                [else bind-es]))]
-                                 [else (interp-error "Not a function" e-fobj s-fobj le-fobj)])]
+                                 [else (interp-error "Not a function" e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
     
     [CFunc (args defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
@@ -373,8 +385,7 @@
                                (if (AVal? arg1Ans)
                                    (let ([arg2Ans (interp-env arg2 (AVal-env arg1Ans) (AVal-sto arg1Ans) (AVal-lenv arg1Ans))])
                                      (if (AVal? arg2Ans)
-                                         (let ([tmp (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))])
-                                           (begin #|(display "after prim2: ") (display (to-string (hash-keys (AVal-sto tmp)))) (display "\n")|# tmp))
+                                         (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))
                                          arg2Ans))
                                    arg1Ans))]
      
@@ -428,14 +439,16 @@
                                                   (AVal (VObject (VObject-type rst) 
                                                                  (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys (VDict-dict (VObject-value v-o)))))
                                                                  (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
-                                        [(pop) (let ([v-o (AVal-val (interp-env obj env store lenv))]
-                                                     [index (AVal-val (interp-env (first args) env store lenv))])
+                                        [(pop) (let ([index (AVal-val (interp-env (first args) e-o s-o le-o))])
                                                  (AVal (VEmpty) env (hash-set store (VObject-loc v-o) 
                                                                               (VObject (VObject-type v-o) 
                                                                                        (VDict (hash-remove (VDict-dict (VObject-value v-o)) (getNoneObjectVal index store))) 
                                                                                        (VObject-loc v-o)
-                                                                                       (VObject-field v-o))) lenv))])])]
-                      [else o-val]))]
+                                                                                       (VObject-field v-o))) lenv))]
+                                        [(values) (let ([rst (AVal-val (interp-env ($to-object (CList (list))) e-o s-o le-o))])
+                                                    (AVal (VObject (VObject-type rst) (VList (map (lambda(x) (some-v (hash-ref (VDict-dict (VObject-value v-o)) x))) (hash-keys (VDict-dict (VObject-value v-o)))))
+                                                                   (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))])])]
+                    [else o-val]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
@@ -716,13 +729,3 @@
              (hash-set result x value)))
          old_Sto
          (hash-keys new_Sto)))
-  
-;; check whether all the elements can reach from the object is immutable
-(define (isRecurImmutable (obj : CVal) store) : boolean
-  (if (not (isImmutable (VObject-type obj)))
-      false
-      (type-case CVal (VObject-value obj)
-        [VTuple (es) (foldl (lambda (x result) (and (isRecurImmutable x store) result)) true es)]
-        ;; if it's a pointer get the value from the store and call the function again
-        [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
-        [else true])))
