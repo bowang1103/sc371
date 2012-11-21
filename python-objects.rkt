@@ -71,7 +71,7 @@
 
 (define (to-empty-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
-    (CLet id (CObject "Empty" prim (CEmpty))
+    (CLet id (CObject "None" prim (CEmpty))
           (CId id))))
 
 (define ($to-object (prim : CExp)) : CExp

@@ -1,7 +1,8 @@
 #lang plai-typed
 
 (require "python-core-syntax.rkt"
-         "python-objects.rkt")
+         "python-objects.rkt"
+         "python-ascii.rkt")
 
 #|
 
@@ -62,7 +63,7 @@ primitives here.
                                      [(equal? type "Set") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
-                                     [(equal? type "Empty") (pretty value)]
+                                     [(equal? type "None") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
                                      [(equal? type "Exception") (pretty value)])]
     [VClosure (args defaults body env sto) (error 'prim "Can't print closures yet")]
@@ -230,19 +231,33 @@ primitives here.
                  [(<=) (if (<= (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
                  [(>=) (if (>= (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
                  )]
+              [(VNum? val-l)
+               (if (equal? "Int" type-l)
+                   (case op
+                     [(*) (cond
+                            [(VStr? val-r) (sequenceConcat "Str" (build-list (VNum-n val-l) (lambda (n) val-r)))]
+                            [(VTuple? val-r) (sequenceConcat "Tuple" (build-list (VNum-n val-l) (lambda (n) val-r)))]
+                            [(VList? val-r) (sequenceConcat "List" (build-list (VNum-n val-l) (lambda (n) val-r)))])])
+                   (core-error "cannot multiply sequence by a non-int"))]
               ;; STRING CASE
-              [(VStr? clean-val-l)
+              [(and (VStr? clean-val-l) (VStr? clean-val-r))
                (case op
-                 [(+) (if (VStr? clean-val-r)
-                          ;($to-object (CStr (string-append (VStr-s clean-val-l) (VStr-s clean-val-r))))
-                          (sequenceConcat "Str" (list clean-val-l clean-val-r))
-                          (core-error "cannot + a non string object a string"))]
-                 [(*) (if (equal? "Int" type-r)
-                          (sequenceConcat "Str" (build-list (VNum-n clean-val-r) (lambda (n) clean-val-l)))
-                          (core-error "cannot multiply sequence by a non-int"))]
+                 [(+) (sequenceConcat "Str" (list clean-val-l clean-val-r))]
+                 [(<) (if (= -1 (sequenceCompare clean-val-l clean-val-r)) (CId 'True) (CId 'False))]
+                 [(>) (if (= 1 (sequenceCompare clean-val-l clean-val-r)) (CId 'True) (CId 'False))]
+                 [(<=) (if (or (= 0 (sequenceCompare clean-val-l clean-val-r))
+                               (= -1 (sequenceCompare clean-val-l clean-val-r))) (CId 'True) (CId 'False))]
+                 [(>=) (if (or (= 0 (sequenceCompare clean-val-l clean-val-r))
+                               (= 1 (sequenceCompare clean-val-l clean-val-r))) (CId 'True) (CId 'False))]
                  [(instanceof) (if (equal? clean-val-l clean-val-r)
                                    (CId 'True)
                                    (if (and (equal? (VStr-s clean-val-l) "Bool") (equal? (VStr-s clean-val-r) "Int")) (CId 'True) (CId 'False)))])]
+              [(VStr? clean-val-l)
+               (case op
+                 [(*) (if (equal? "Int" type-r)
+                          (sequenceConcat "Str" (build-list (VNum-n clean-val-r) (lambda (n) clean-val-l)))
+                          (core-error "cannot multiply sequence by a non-int"))]
+                 )]
               ;; TUPLE CASE
               [(VTuple? val-l)
                (case op
@@ -335,6 +350,16 @@ primitives here.
                                               -1 (hash empty)))]
     [else (core-error "input is not a sequence")]))
 
+;; compare two sequence objects, return 0 if =, 1 if >, -1 if <
+(define (sequenceCompare (val1 : CVal) (val2 : CVal)) : number
+  (cond 
+    [(and (VNum? val1) (VNum? val2)) (if (= (VNum-n val1) (VNum-n val2)) 0 (if (> (VNum-n val1) (VNum-n val2)) 1 -1))]
+    [(and (VStr? val1) (VStr? val2)) (strCompare (VStr-s val1) (VStr-s val2))]
+    ;[(and (VList? val1) (VList? val2))]
+    ;[(and (VTuple? val1) (VTuple? val2))]
+    ;[(and (VSet? val1) (VSet? val2))]
+    [else -2]))
+
 ;; get object value from an Ans
 (define (getObjVal (obj : CVal)) : CVal
   (type-case CVal obj
@@ -366,7 +391,6 @@ primitives here.
     [(Tuple) (VTuple (map2 getNoneObjectVal 
                            (VTuple-es (VObject-value obj)) 
                            (build-list (length (VTuple-es (VObject-value obj))) (lambda(x) store))))]
-    ;[(Dict) (VObject-value obj)]
     [(Dict) (let ([dict (VDict-dict (VObject-value obj))])
               (VDict (cleanDictFoldl2 
                       (hash-keys dict) 
@@ -375,7 +399,8 @@ primitives here.
     [(Set) (getObjVal obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
-    [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]))
+    [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]
+    [(None) (VEmpty)]))
 
 ;; create a hash table for dictionary given clean keys and celan vals
 (define (cleanDictFoldl2 (cleanKeys : (listof CVal)) (cleanVals : (listof CVal)) (ht : (hashof CVal CVal))) : (hashof CVal CVal)
