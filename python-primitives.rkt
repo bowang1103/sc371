@@ -144,8 +144,48 @@ primitives here.
     [VStr (s) ($to-object (CNum (length (string->list s))))]
     [VList (elms) ($to-object (CNum (length elms)))]
     [VTuple (elms) ($to-object (CNum (length elms)))]
+    [VSet (elms) ($to-object (CNum (length (hash-keys elms))))]
     [VDict (dict) ($to-object (CNum (length (hash-keys dict))))]
     [else (core-error (foldr string-append "" (list "obj of " (getObjType obj) " has no len()")))]))
+
+(define (findMinOrMax (val : CVal) (findMin? : boolean)) : CExp
+  (cond
+    [(VStr? val) 
+     (let ([chars (string->list (VStr-s val))])
+       (if (empty? chars)
+           (core-error "arg is an empty sequence")
+           ($to-object (CStr (list->string (list (foldl 
+                                                  (lambda (el rst) (if (< (some-v (hash-ref ascii el)) (some-v (hash-ref ascii rst)))
+                                                                       (if findMin? el rst)
+                                                                       (if findMin? rst el)))
+                                                  (first chars) (rest chars))))))))]
+    [(or (VList? val) (VTuple? val))
+     (let ([elms (if (VList? val) (VList-es val) (VTuple-es val))])
+       (if (empty? elms)
+           (core-error "arg is an empty sequence")
+           (let ([elm (foldl 
+                       (lambda (el rst) 
+                         (if (VEmpty? rst) rst
+                             (cond
+                               [(and (VNum? el) (VNum? rst))
+                                (if (< (VNum-n el) (VNum-n rst))
+                                    (if findMin? el rst)
+                                    (if findMin? rst el))]
+                               [(and (VStr? el) (VStr? rst))
+                                (if (= -1 (strCompare (VStr-s el) (VStr-s rst)))
+                                    (if findMin? el rst)
+                                    (if findMin? rst el))]
+                               [else (VEmpty)])))
+                       (first elms) (rest elms))])
+             (cond
+               [(VNum? elm)
+                ($to-object (CNum (VNum-n elm)))]
+               [(VStr? elm)
+                ($to-object (CStr (VStr-s elm)))]
+               [else (core-error "elements in sequence not the same type")]))))]
+    ;[VTuple (elms)]
+    ;[VSet (elms)]
+    [else (core-error "Input not a sequence object")]))
 
 ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
@@ -162,6 +202,8 @@ primitives here.
       [(float) (floatNumeric obj)]
       [(str) (toString obj)]
       [(abs) (absNumeric obj)]
+      [(min) (findMinOrMax (getNoneObjectVal obj (AVal-sto arg)) true)]
+      [(max) (findMinOrMax (getNoneObjectVal obj (AVal-sto arg)) false)]
       [(list) (CWrap "List" obj)]
       [(tuple) (CWrap "Tuple" obj)]
       [(set) (CWrap "Set" obj)]

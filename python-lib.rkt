@@ -101,6 +101,18 @@ that calls the primitive `print`.
    (CFunc (list 'instance 'class) (list)
      (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list)))))))
 
+;; min
+(define min-lambda
+  ($to-object
+   (CFunc (list 'sequence) (list)
+     (CPrim1 'min (CId 'sequence)))))
+
+;; max
+(define max-lambda
+  ($to-object
+   (CFunc (list 'sequence) (list)
+     (CPrim1 'max (CId 'sequence)))))
+
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -199,6 +211,8 @@ that calls the primitive `print`.
         (bind 'set set-lambda)
         (bind 'dict dict-lambda)
         (bind 'abs abs-lambda)
+        (bind 'min min-lambda)
+        (bind 'max max-lambda)
         (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)
