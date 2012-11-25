@@ -12,52 +12,60 @@
 (define (to-str-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Str" prim (CEmpty))
+       (CLet 'self (CId id)
           (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref str-hash key))))
                                   (hash-keys str-hash))])
-            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-int-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Int" prim (CEmpty))
+       (CLet 'self (CId id)
           (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref num-hash key))))
                                   (hash-keys num-hash))])
-            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-float-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Float" prim (CEmpty))
+       (CLet 'self (CId id)
           (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref num-hash key))))
                                   (hash-keys num-hash))])
-            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-bool-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Bool" prim (CEmpty))
+       (CLet 'self (CId id)
           (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref bool-hash key))))
                                   (hash-keys bool-hash))])
-            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-list-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "List" prim (CEmpty))
-          (CId id))))
+       (CLet 'self (CId id)
+          (CId id)))))
 
 (define (to-tuple-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Tuple" prim (CEmpty))
-          (CId id))))
+       (CLet 'self (CId id)
+          (CId id)))))
 
 (define (to-set-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Set" prim (CEmpty))
-          (CId id))))
+       (CLet 'self (CId id)
+          (CId id)))))
 
 (define (to-dict-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Dict" prim (CEmpty))
+       (CLet 'self (CId id)
           (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref dict-hash key))))
                                   (hash-keys dict-hash))])
-            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id))))))
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
