@@ -10,7 +10,7 @@
   ;; added by hichuang
   
   ;;;;;; stmt ;;;;;;
-  [PyFuncDef (name : symbol) (args : PyExpr) (body : PyExpr) (return : PyExpr)]
+  [PyFuncDef (name : symbol) (args : PyExpr) (body : PyExpr)]
   [PyDel (targets : (listof PyExpr))]
   [PyAssign (targets : (listof PyExpr)) (value : PyExpr)]
   [PyAugAssign (op : symbol) (target : PyExpr) (value : PyExpr)]

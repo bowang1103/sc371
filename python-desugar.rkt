@@ -45,6 +45,10 @@
     [PySet (es) ($to-object (CSetV (map desugar es)))]
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args) (CApp (desugar f) (map desugar args))]
+    [PyReturn (ret) (CRet (desugar ret))]
+    [PyFuncDef (name args body)
+               (CLet name ($to-object (CFunc (list) (list) (CEmpty)))
+                     (CSet name (desugar (PyFunc args body))))]
     [PyFunc (args body) 
             (type-case PyExpr args
               [PyArgs (args defaults) ($to-object (CFunc args (map desugar defaults) (desugar body)))]

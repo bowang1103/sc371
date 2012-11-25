@@ -17,16 +17,6 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Module") 
                  ('body expr-list))
      (PySeq (map get-structured-python expr-list))]
-    [(hash-table ('nodetype "FunctionDef") 
-                 ('name name) 
-                 ('args args) 
-                 ('decorator_list dl) ;; ignoring decorator_list for now
-                 ('body body)
-                 ('returns returns))
-     (PyFuncDef (string->symbol name) 
-                (if (empty? args) (list) (get-structured-python args)) 
-                (get-structured-python (first body)) 
-                (if (equal? returns '#\nul) (PyEmp) (get-structured-python returns)))]
     [(hash-table ('nodetype "ClassDef")
                  ('name name)
                  ('keywords kws)
@@ -123,6 +113,15 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "UnaryOp") ('op op) ('operand operand))
      (PyUnaryOp (get-structured-python op) 
                 (get-structured-python operand))]
+    [(hash-table ('nodetype "FunctionDef") 
+                 ('name name) 
+                 ('args args) 
+                 ('decorator_list dl) ;; ignoring decorator_list for now
+                 ('body body)
+                 ('returns returns))
+     (PyFuncDef (string->symbol name) 
+                (if (empty? args) (list) (get-structured-python args)) 
+                (if (empty? body) (PyEmp) (PySeq (map get-structured-python body))))]
     [(hash-table ('nodetype "Lambda")
                  ('args args)
                  ('body body))

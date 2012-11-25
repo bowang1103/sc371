@@ -16,6 +16,7 @@ ParselTongue.
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
   [CFalse]
+  [CCopy (obj : CVal)]
   [CSeq (e1 : CExp) (e2 : CExp)]
   [CError (e1 : CExp)]
   [CException (type : string) (message : CExp)]
@@ -24,6 +25,7 @@ ParselTongue.
   [CLet (id : symbol) (bind : CExp) (body : CExp)]
   [CSet (id : symbol) (value : CExp)]
   [CDel (tg : CExp)]
+  [CRet (ret : CExp)]
   [CApp (fun : CExp) (args : (listof CExp))]
   [CFunc (args : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)]
@@ -73,7 +75,7 @@ ParselTongue.
 
 ;; LocalEnv only works when interping the class, when Assigning the 
 ;; variable in Class definition, we'll set boolean to True; (defualt is False)
-(define-type-alias LocalEnv (hashof symbol boolean))
+(define-type-alias LocalEnv (hashof number (listof symbol)))
 (define-type-alias ObjfieldV (hashof string CVal))
 
 (define (core-error str)

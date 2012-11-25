@@ -137,7 +137,15 @@
          (values "values"
                  ($to-object (CFunc (list 'self)
                                     (list)
-                                    (COperation (CId 'self) "Dict" "values" (list))))))))
+                                    (COperation (CId 'self) "Dict" "values" (list)))))
+         (values "get"
+                 ($to-object (CFunc (list 'self 'index 'default)
+                                    (list ($to-object (CEmpty)))
+                                    (COperation (CId 'self) "Dict" "get" (list (CId 'index) (CId 'default))))))
+         (values "update"
+                 ($to-object (CFunc (list 'self 'value)
+                                    (list ($to-object (CEmpty)))
+                                    (COperation (CId 'self) "Dict" "update" (list (CId 'value)))))))))
                                                   
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)
