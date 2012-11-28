@@ -89,6 +89,17 @@ that calls the primitive `print`.
           (list ($to-object (CDict (list) (list)))) ;; default {}
      (CPrim1 'dict (CId 'to-dict)))))
 
+;; range
+(define range-lambda
+  ($to-object
+   (CFunc (list 'arg1 'arg2 'arg3)
+          (list (CId 'None) (CId 'None)) ;; defualt start and step
+     (CIf (CPrim2 'is (CId 'arg2) (CId 'None))
+          ($to-object (CRange (list ($to-object (CNum 0)) (CId 'arg1) ($to-object (CNum 1)))))
+          (CIf (CPrim2 'is (CId 'arg3) (CId 'None))
+               ($to-object (CRange (list (CId 'arg1) (CId 'arg2) ($to-object (CNum 1)))))
+               ($to-object (CRange (list (CId 'arg1) (CId 'arg2) (CId 'arg3)))))))))
+
 ;; abs
 (define abs-lambda
   ($to-object
@@ -229,6 +240,7 @@ def ___assertRaises(e, f, *args):
         (bind 'tuple tuple-lambda)
         (bind 'set set-lambda)
         (bind 'dict dict-lambda)
+        (bind 'range range-lambda)
         (bind 'abs abs-lambda)
         (bind 'min min-lambda)
         (bind 'max max-lambda)
@@ -251,6 +263,7 @@ def ___assertRaises(e, f, *args):
         (bind 'KeyError (exception-lambda "KeyError"))
         (bind 'IndexError (exception-lambda "IndexError"))
         (bind 'RuntimeError (exception-lambda "RuntimeError"))
+        (bind 'ValueError (exception-lambda "ValueError"))
 
 ))
 
