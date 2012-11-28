@@ -93,6 +93,7 @@ that calls the primitive `print`.
 (define range-lambda
   ($to-object
    (CFunc (list 'arg1 'arg2 'arg3)
+	      (list)
           (list (CId 'None) (CId 'None)) ;; defualt start and step
      (CIf (CPrim2 'is (CId 'arg2) (CId 'None))
           ($to-object (CRange (list ($to-object (CNum 0)) (CId 'arg1) ($to-object (CNum 1)))))
