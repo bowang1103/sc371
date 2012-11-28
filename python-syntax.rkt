@@ -26,7 +26,7 @@
   
   ;;;;;; exceptions ;;;;;;
   [PyRaise (cause : PyExpr) (exc : PyExpr)]
-  [PyTryExcept (body : PyExpr) (handlers : PyExpr) (orelse : PyExpr)] ;;???
+  [PyTryExcept (body : PyExpr) (handlers : PyExpr) (orelse : PyExpr)]
   [PyTryFinally (body : PyExpr) (finalbody : PyExpr)]
   [PyExceptHandler (name : PyExpr) (body : PyExpr) (type : PyExpr)]
   
@@ -42,7 +42,7 @@
   [PyUnaryOp (unaryop : symbol) (operand : PyExpr)]
   ; op = {==, !=, <, <=, >, >=, is, !is, in, !in} a < b < c => a < b and b < c
   [PyCompare (left : PyExpr) (ops : (listof symbol)) (comparators : (listof PyExpr))]
-  [PyApp (fun : PyExpr) (args : (listof PyExpr))]
+  [PyApp (fun : PyExpr) (args : (listof PyExpr)) (starargs : (listof PyExpr))]
   [PyFunc (args : PyExpr) (body : PyExpr)]
   
   ;;;;;; ds ;;;;;;
@@ -55,7 +55,7 @@
   [PyNum (n : number)]
   [PyStr (s : string)]
   
-  [PyArgs (args : (listof symbol)) (defaults : (listof PyExpr))]
+  [PyArgs (args : (listof symbol)) (varargs :(listof symbol)) (defaults : (listof PyExpr))]
   
   
   

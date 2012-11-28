@@ -156,7 +156,10 @@ structure that you define in python-syntax.rkt
                  ('args args-list)
                  ('func func-expr))
      (PyApp (get-structured-python func-expr)
-            (map get-structured-python args-list))]
+            (map get-structured-python args-list)
+            (if (equal? starargs '#\nul)
+		        (list)
+                (list (get-structured-python starargs))))]
 ;    [(hash-table ('nodetype "Repr"))]
     [(hash-table ('nodetype "Num") ('n n))
      (PyNum n)]
@@ -259,7 +262,11 @@ structure that you define in python-syntax.rkt
                  ('kwarg kwa)
                  ('varargannotation vwar)
 		         ('kw_defaults kwd))
-     (PyArgs (map get-structured-python args-list) (map get-structured-python default-list))]
+     (PyArgs (map get-structured-python args-list) 
+	         (if (equal? var '#\nul)
+			     (list)
+	             (list (string->symbol var))) 
+	         (map get-structured-python default-list))]
     [(hash-table ('nodetype "arg")
                  ('arg arg)
                  ('annotation annotation))

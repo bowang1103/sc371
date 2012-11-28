@@ -43,14 +43,14 @@
     [PyTuple (es) ($to-object (CTuple (map desugar es)))]
     [PySet (es) ($to-object (CSetV (map desugar es)))]
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
-    [PyApp (f args) (CApp (desugar f) (map desugar args))]
+    [PyApp (f args starargs) (CApp (desugar f) (map desugar args) (map desugar starargs))]
     [PyReturn (ret) (CRet (desugar ret))]
     [PyFuncDef (name args body)
-               (CLet name ($to-object (CFunc (list) (list) (CEmpty)))
+               (CLet name ($to-object (CFunc (list) (list) (list) (CEmpty)))
                      (CSet name (desugar (PyFunc args body))))]
     [PyFunc (args body) 
             (type-case PyExpr args
-              [PyArgs (args defaults) ($to-object (CFunc args (map desugar defaults) (desugar body)))]
+              [PyArgs (args varargs defaults) ($to-object (CFunc args varargs (map desugar defaults) (desugar body)))]
               [else (core-error "shouldn't came here")])]
     ;[PyArgs (args defaults) (args (map desugar defaults))]
     [PyId (x) (CId x)]

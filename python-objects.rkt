@@ -92,7 +92,7 @@
     [CTuple (es) (to-tuple-obj prim)]
     [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
-    [CFunc (args defaults body) (to-func-obj prim)]
+    [CFunc (args varargs defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
     ;;[VError (exn) (exn-type exn)]
@@ -103,7 +103,7 @@
          (hash 
           (list (values "add"
                         ($to-object (CFunc (list 'self 'right)
-                                           (list)
+                                           (list) (list)
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
@@ -114,7 +114,7 @@
          (hash 
           (list (values "add"
                         ($to-object (CFunc (list 'self 'right)
-                                           (list)
+                                           (list) (list)
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
@@ -125,7 +125,7 @@
          (hash 
           (list (values "add"
                         ($to-object (CFunc (list 'self 'right)
-                                           (list)
+                                           (list) (list)
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
@@ -136,22 +136,22 @@
   (hash
    (list (values "clear"
                  ($to-object (CFunc (list 'self)
-                                    (list)
+                                    (list) (list)
                                     (COperation (CId 'self) "Dict" "clear" (list)))))
          (values "keys"
                  ($to-object (CFunc (list 'self)
-                                    (list)
+                                    (list) (list)
                                     (COperation (CId 'self) "Dict" "keys" (list)))))
          (values "values"
                  ($to-object (CFunc (list 'self)
-                                    (list)
+                                    (list) (list)
                                     (COperation (CId 'self) "Dict" "values" (list)))))
          (values "get"
-                 ($to-object (CFunc (list 'self 'index 'default)
+                 ($to-object (CFunc (list 'self 'index 'default) (list)
                                     (list ($to-object (CEmpty)))
                                     (COperation (CId 'self) "Dict" "get" (list (CId 'index) (CId 'default))))))
          (values "update"
-                 ($to-object (CFunc (list 'self 'value)
+                 ($to-object (CFunc (list 'self 'value) (list)
                                     (list ($to-object (CEmpty)))
                                     (COperation (CId 'self) "Dict" "update" (list (CId 'value)))))))))
                                                   
