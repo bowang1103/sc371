@@ -19,6 +19,7 @@ structure that you define in python-syntax.rkt
      (PySeq (map get-structured-python expr-list))]
     [(hash-table ('nodetype "ClassDef")
                  ('name name)
+                 ('starargs sts)
                  ('keywords kws)
                  ('kwargs kgs)
                  ('decorator_list drl)

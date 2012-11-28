@@ -95,4 +95,3 @@ ParselTongue.
   (if (equal? (none) (hash-ref isImmutableTable type))
       false
       true))
-

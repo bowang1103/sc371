@@ -174,7 +174,7 @@
                                            (hash-set e-v id where)
                                            (hash-set s-v where v-v)
                                            (add-lenv id le-v))
-                                     (AVal v-v (hash-set e-v id (VObject-loc v-v)) s-v (add-lenv id le-v))))]
+                                     (AVal v-v (hash-set e-v id (VObject-loc v-v)) (hash-set s-v (VObject-loc v-v) v-v) (add-lenv id le-v))))]
                          ;                                     (type-case CExp value
                          ;                                       [CId (c-id) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v c-id))) s-v le-v)]
                          ;                                       ;[CGetelement (obj indexs) (AVal v-v (hash-set e-v id (some-v (hash-ref e-v ))))]
@@ -504,42 +504,17 @@
                                                       [AVal (v-a e-a s-a le-a)
                                                             (case (string->symbol (VObject-type v-a))
                                                               [(Dict) (let ([keys (hash-keys (VDict-dict (VObject-value v-a)))])
-                                                                        (let ([other (foldl (lambda(x rst) (begin (display (to-string (hash-keys (VDict-dict (VObject-value (some-v (hash-ref (AVal-sto rst) 109)))))))
-                                                                                                                  (let ([tmp (interp-env 
-                                                                                                          (CSetelement (begin (display (to-string (VObject-loc v-o))) (CCopy v-o)) (let ([newkey (AVal-val (interp-env 
-                                                                                                                                                            ($to-object (valueToObjectCExp x))
-                                                                                                                                                            (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))])
-                                                                                                                                     (CCopy (VObject (VObject-type newkey)
-                                                                                                                                                 x
-                                                                                                                                                 (VObject-loc newkey)
-                                                                                                                                                 (VObject-field newkey)))) 
-                                                                                                                       (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
-                                                                                                          (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))])
-                                                                                                (begin (display (to-string (hash-keys (VDict-dict (VObject-value (some-v (hash-ref (AVal-sto tmp) 109)))))))
-                                                                                                       tmp)))) o-val keys)])
-                                                                          (begin
-                                                                            (display "A: ")
-                                                                            (display (to-string obj))
-                                                                            (display "\n")
-                                                                            (display (to-string (hash-keys (VDict-dict (VObject-value (AVal-val (interp-env (CId 'd) (AVal-env other) (AVal-sto other) (AVal-lenv other))))))))
-                                                                            (display "\n")
-                                                                            (display (to-string (hash-keys (VDict-dict (VObject-value (AVal-val (interp-env (CId 'self) (AVal-env other) (AVal-sto other) (AVal-lenv other))))))))
-                                                                            (display "\n")
-                                                                            (display (to-string (hash-keys (VDict-dict (VObject-value (AVal-val (interp-env obj (AVal-env other) (AVal-sto other) (AVal-lenv other))))))))
-                                                                            (display "\n")
-                                                                            (display "B: ")
-                                                                            (display (to-string (hash-keys (VDict-dict (VObject-value (some-v (hash-ref (AVal-sto other) 109)))))))
-                                                                            (display "\n")
-                                                                            (display "C: ")
-                                                                            (display (to-string (VObject-loc (AVal-val (interp-env (CId 'd) (AVal-env other) (AVal-sto other) (AVal-lenv other))))))
-                                                                            (display "\n")
-                                                                            (display (to-string (VObject-loc (AVal-val (interp-env (CId 'self) (AVal-env other) (AVal-sto other) (AVal-lenv other))))))
-                                                                            (display "\n")
-                                                                            (display "D: ")
-                                                                            (display (to-string (some-v (hash-ref (AVal-env other) 'd))))
-                                                                            (display "\n")
-                                                                            (display (to-string (some-v (hash-ref (AVal-env other) 'self))))
-                                                                            other)))]
+                                                                        (foldl (lambda (x rst) 
+                                                                                 (interp-env (CSetelement (CCopy v-o) 
+                                                                                                          (let ([newkey (AVal-val (interp-env 
+                                                                                                                                   ($to-object (valueToObjectCExp x))
+                                                                                                                                   (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))])
+                                                                                                            (CCopy (VObject (VObject-type newkey)
+                                                                                                                            x
+                                                                                                                            (VObject-loc newkey)
+                                                                                                                            (VObject-field newkey)))) 
+                                                                                                          (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
+                                                                                             (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
                                                               [(Empty) o-val]
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
@@ -760,7 +735,7 @@
     [some (loc) 
           (type-case (optionof CVal) (hash-ref sto loc)
             [some (v) (AVal v env sto lenv)]
-            [none () (interp-error "Unbound identifier" env sto lenv)])]
+            [none () (interp-error "Unbound value" env sto lenv)])]
     ;; Didn't exist in the current env & sto ; look up the built in library
     [none () (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)]))
 
