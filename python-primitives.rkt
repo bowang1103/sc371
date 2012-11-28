@@ -51,6 +51,10 @@ primitives here.
                            (list "{" 
                                  (if (empty? pair) "" (foldl (lambda (el rst) (string-append rst (string-append ", " el))) (first pair) (rest pair)))
                                  "}")))]
+    [VRange (to from step es) (let ([prettyRange (map pretty (list to from step))])
+                                (foldr string-append "" 
+                                       (list "range(" (first prettyRange) ", " (second prettyRange) 
+                                             (if (equal? "1" (third prettyRange)) "" (string-append ", " (third prettyRange))) ")")))]
     [VTrue () "True"]
     [VFalse () "False"]
     [VEmpty () ""]
@@ -62,6 +66,7 @@ primitives here.
                                      [(equal? type "Tuple") (pretty value)]
                                      [(equal? type "Set") (pretty value)]
                                      [(equal? type "Dict") (pretty value)]
+                                     [(equal? type "Range") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") (pretty value)]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
@@ -257,16 +262,19 @@ primitives here.
                  [(/) (if (or (equal? (VNum-n clean-val-r) 0)
                               (equal? (VNum-n clean-val-r) 0.0))
                           ;;Two way of raising exception
-                          (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                          (raise-error "ZeroDivisionError" "division by zero")
+                          ;(CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
                           ;(CRaise ($to-object (CEmpty)) (CApp (CId 'ZeroDivisionError) (list ($to-object (CStr "divison by zero")))))
                           ($to-object (CNum (/ (VNum-n clean-val-l) (VNum-n clean-val-r)))))]
                  [(//) (if (or (equal? (VNum-n clean-val-r) 0)
                                (equal? (VNum-n clean-val-r) 0.0))
-                           (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                           (raise-error "ZeroDivisionError" "division by zero")
+                           ;(CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
                            ($to-object (CNum (floor (/ (VNum-n clean-val-l) (VNum-n clean-val-r))))))]
                  [(%) (if (or (equal? (VNum-n clean-val-r) 0)
                               (equal? (VNum-n clean-val-r) 0.0))
-                          (CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
+                          (raise-error "ZeroDivisionError" "division by zero")
+                          ;(CRaise ($to-object (CEmpty)) ($to-object (CException "ZeroDivisionError" ($to-object (CStr "divison by zero")))))
                           ($to-object (CNum (mod (VNum-n clean-val-l) (VNum-n clean-val-r)))))]
                  [(<) (if (< (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
                  [(>) (if (> (VNum-n clean-val-l) (VNum-n clean-val-r)) (CId 'True) (CId 'False))]
@@ -438,6 +446,7 @@ primitives here.
                       (hash-keys dict) 
                       (map (lambda (key) (getNoneObjectVal (some-v (hash-ref dict key)) store)) (hash-keys dict))
                       (hash empty))))]
+    [(Range) (VObject-value obj)]
     [(Set) (getObjVal obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
@@ -523,3 +532,6 @@ primitives here.
         ;; if it's a pointer get the value from the store and call the function again
         [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
         [else true])))
+
+(define (raise-error error-type msg)
+  (CRaise ($to-object (CEmpty)) ($to-object (CException error-type ($to-object (CStr msg))))))
