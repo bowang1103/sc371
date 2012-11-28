@@ -497,8 +497,8 @@
                                                  (let ([rst (interp-env (CGetelement obj (list (first args))) e-o s-o le-o)])
                                                    (if (AVal? rst)
                                                        rst
-                                                       (if (equal? (VObject-type (AVal-val arg)) "Empty")
-                                                           (interp-env ($to-object (CEmpty)) (AExc-env rst) (AExc-sto rst) (AExc-lenv rst))
+                                                       (if (equal? (VObject-type (AVal-val arg)) "None")
+                                                           (interp-env (CId 'None) (AExc-env rst) (AExc-sto rst) (AExc-lenv rst))
                                                            arg))))]
                                         [(update) (let ([arg (interp-env (first args) e-o s-o le-o)])
                                                     (type-case CAns arg
