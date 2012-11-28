@@ -202,21 +202,29 @@ def ___assertRaises(e, f, *args):
     return
   else:
     assert(False)
-  assert(False)|#
+  assert(False)
+
+___assertRaises(TypeError, range)
+
+|#
   
 ;; ___assertRaises
 (define assert-raises-lambda
   ($to-object 
    (CFunc (list 'e_exception 'f_function) (list 'args) (list) 
           (CSeq (CTryExn (CApp (CId 'f_function) (list) (list (CId 'args)))
-                         (CExceptHandler ($to-object (CStr "the_exn")) (CRet (CEmpty)) (CId 'e_exception))
-                         (CApp assert-false-lambda (list ($to-object (CFalse))) (list)))
-                (CApp assert-false-lambda (list ($to-object (CFalse))) (list))))))
+                         ;(CExceptHandler ($to-object (CStr "the_exn")) (CRet (CEmpty)) (CId 'e_exception))
+                         ;(CExceptHandler ($to-object (CStr "the_exn")) (CRet (CId 'None)) (CId 'e_exception))
+                         (CExceptHandler ($to-object (CStr "the_exn")) (CPrim1 'print (CStr "PASS")) (CId 'e_exception))
+                         (CPrim1 'print (CStr "FAILED")))
+                         ;(CError (CStr "Assert False Failed2")))
+                (CPrim1 'print (CStr "FAILED!!\n"))))))
+                ;(CError (CStr "Assert False Failed3"))))))
 
 (define (exception-lambda (type : string)) : CExp
   ($to-object 
    (CFunc (list 'fuckbo) (list)
-	      (list ($to-object (CStr "")))    ; default argument ""
+          (list ($to-object (CStr "")))    ; default argument ""
           ($to-object (CException type (CId 'fuckbo))))))
 
 (define (ContructExc (excpt : CExp) (message : string)) : CExp

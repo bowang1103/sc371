@@ -383,24 +383,26 @@
                                                                           ;; interp arguments with closure environment
                                                                           (begin 
                                                                             (append self (let ([test-val (interpArgs_Func args starargs clenv csto e-fobj s-fobj le-fobj)])
-                                                                                           (begin ;(display "closure env \n") 
+                                                                                           (begin
+                                                                                             ;(display "InterpArgs_Func list of Answers :")
+                                                                                             ;(display "\n")
+                                                                                             ;(display (map AVal-val test-val))
+                                                                                             ;(display "closure env \n") 
                                                                                              ;(display clenv)
                                                                                              ;(display "\n")
                                                                                              test-val))))
                                                                           cldfts
                                                                           clenv csto (hash-set lenv (+ 1 (getmaxnumber (hash-keys lenv))) (list)))]) ;; extend closure-env (if no arguments)
                                              (type-case CAns bind-es
-                                               [AVal (v-es e-es s-es le-es) 
-                                                     (begin
+                                                 [AVal (v-es e-es s-es le-es) 
+                                                       (begin
                                                        ;;;; 這段打印的是interp完args以後的store
-                                                       ;(display "APP2: e-es") (display e-es) (display "\n") (display "\n") 
-                                                       ;(display "APP2: s-es") (display s-es) (display "\n") (display "\n")
                                                        ;(display "APP2: ") (display (to-string (hash-keys s-es))) (display "\n") 
                                                        ;; Merge closure environment & current environment
                                                        ;; if closure environment and current environment have similar symbol; closure one replace current one
-                                                       (letrec ([newenv (MergeEnv e-es env le-es)]
-                                                                [newsto (MergeSto s-es store newenv)])
-                                                         (begin
+                                                         (letrec ([newenv (MergeEnv e-es env le-es)]
+                                                                  [newsto (MergeSto s-es store newenv)])
+                                                           (begin
                                                            ;(map (lambda (x) (begin (display (to-string x)) (display " : ") (display (to-string (some-v (hash-ref le-es x)))) (display "\n"))) (hash-keys le-es))
                                                            ;(map (lambda (x) (begin (display (to-string x)) (display " : ") (display (to-string (some-v (hash-ref newenv x)))) (display "\n"))) (hash-keys newenv))
                                                            ;(map (lambda (x) (begin (display (to-string x)) (display " : ") (display (to-string (some-v (hash-ref newsto x)))) (display "\n") (display "\n") (display "\n"))) (hash-keys newsto))
@@ -409,7 +411,9 @@
                                                            (type-case CAns (interp-env clbody newenv newsto le-es)
                                                            [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody env store lenv)]
                                                            [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)]))))]
-                                               [else bind-es]))]
+                                               [AExc (v-es e-es s-es le-se)
+                                                     (begin ;(display "hichuang")
+                                                            (AExc v-es env store lenv))]))]
                                  [else (interp-error "Not a function" e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
     
@@ -549,10 +553,16 @@
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
                                    ;; if no exception, interp "else" part
-                                   [AVal (v-bv e-bv s-bv le-bv) (interp-env els e-bv s-bv le-bv)]
+                                   [AVal (v-bv e-bv s-bv le-bv) (begin ;(display "no exception occur")
+                                                                       ;(display v-bv)
+                                                                       ;(display "\n")
+                                                                       (interp-env els e-bv s-bv le-bv))]
+                                                                       
                                    ;; Exception, interp "Exception Handler" part
                                    ;; bind exception object to Env & Store
-                                   [AExc (v-bv e-bv s-bv le-bv) 
+                                   [AExc (v-bv e-bv s-bv le-bv) (begin ;(display "exception occur")
+                                                                       ;(display v-bv)
+                                                                       ;(display "\n")  
                                          (let ([where (newLoc)])
                                            (let ([value (grabValue 'exception_symbol e-bv s-bv le-bv)])
                                              (type-case CAns value
@@ -566,7 +576,7 @@
                                                        ;; case : no exception sitting in the env
                                                        ;; leave the Except body ; remove 'exception_symbol in environment
                                                        [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]
-                                                       [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)])])))]))]
+                                                       [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)])]))))]))]
                                                
     
     
@@ -578,15 +588,26 @@
                             [AExc (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]))]
     
     [CExceptHandler (name body type) (let ([value (grabValue 'exception_symbol env store lenv)])
-                                       (let ([ErrorType (VException-type (getObjVal (AVal-val value)))]
+                                       (let ([ErrorType (begin ;(display "ErrorType : ")
+                                                               ;(display (VException-type (getObjVal (AVal-val value))))
+                                                               ;(display "\n")
+                                                               (VException-type (getObjVal (AVal-val value))))]
                                              [typev (if (not (CId? type))
                                                         (interp-env type env store lenv)
                                                         (interp-env (ContructExc type "") env store lenv))]
                                              [namev (interp-env name env store lenv)])
                                          ;; Two condition for entering the Except body 
                                          ;; (a) except "nothing" : (b) except "certain Exception"
-                                         (if (or (VEmpty? (getObjVal (AVal-val typev)))       
-                                                 (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                         (if (or (begin ;(display "Type : ") 
+                                                        ;(display (getObjVal (AVal-val typev)))
+                                                        ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                                        ;(display "\n")
+                                                        (VEmpty? (getObjVal (AVal-val typev))))       
+                                                 (begin ;(display "Type2 :")
+                                                        ;(display (VException-type (getObjVal (AVal-val typev))))
+                                                        ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                                        ;(display "\n")
+                                                        (equal? ErrorType (VException-type (getObjVal (AVal-val typev))))))
                                              (if (VEmpty? (getObjVal (AVal-val namev)))
                                                  (interp-env body env store lenv)
                                                  (let ([where (newLoc)])
@@ -660,33 +681,79 @@
 ;(define (getModifiedVars (oldEnv : LocalEnv)) : (listof symbol)
 ;  (filter (lambda (x) (some-v (hash-ref oldEnv x))) (hash-keys oldEnv)))
 
+; take in a list of CExp (func args) and interp them to a list of answer
+(define (interpArgs_Func [args : (listof CExp)] [starargs : (listof CExp)] [closure_env : Env] [closure_sto : Store] [global_env : Env] [global_sto : Store] [lenv : LocalEnv]) : (listof CAns)
+  (cond
+    [(and (empty? args)
+          (not (empty? starargs)))
+     ;; Here is a work-around, passing global_env instead of closure_env
+     (begin ;(display "came in to interArgs Func 2 : ")  
+            ;(display (first starargs)) (display "\n")
+     (let ([starargV (interp-env (first starargs) global_env global_sto lenv)])
+       (type-case CAns starargV
+         [AVal (v-sa e-sa s-sa le-sa)
+               (let ([starargAns (map (lambda (x) (AVal x e-sa s-sa le-sa)) (VTuple-es (getObjVal v-sa)))])
+                 starargAns)]             
+         [else (cons starargV empty)])))]
+    [(empty? args) empty]
+    [else (begin ;(display "came in to interArgs Func 3 : ") (display (first args)) (display "\n")
+           (let ([argAns (interp-env (first args) closure_env closure_sto lenv)]) 
+            (type-case CAns argAns
+              [AVal (v-first e-first s-first le-first)
+                    (cons argAns (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
+              ;; If not exist in closure env ; find in global env
+              [AExc (v-first e-first s-first le-first) 
+                    (let ([argAns_gloenv (interp-env (first args) global_env global_sto lenv)])
+                      (type-case CAns argAns_gloenv
+                        [AVal (v2-first e2-first s2-first le2-first)
+                              (cons argAns_gloenv (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
+                        [else (cons argAns empty)]))]
+              
+              )))]))
+
 (define (bind-args (args : (listof symbol)) (varargs : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]  ;if it's empty, return the original env and store 
         [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
-        [(not (empty? varargs))
+        [(and (not (empty? varargs)) 
+              (<= (length args) (length anss)))
              (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
+               (begin ;(display "came in here")
+                      ;(display "\n")
+                      ;(display (length args)) (display "\n") (display (length anss)) (display "\n")
+                      ;(display (length locs))
                (let ([new_locs (cons (newLoc) locs)])
-                 (AVal (VStr "dummy")
+                 (begin ;(display "came in here2") (display "\n")
+                        ;(display (length (append args varargs))) (display "\n")
+                        ;(display (length new_locs)) (display "\n")
+                        ;(display (length (Varargs_CVal (length args) (map AVal-val anss) (list)))) (display "\n")
+                   (AVal (VStr "dummy")
                        (extendEnv (append args varargs) new_locs (AVal-env latest))
                        (overrideStore new_locs 
-                                      (Varargs_CVal (length args) (map AVal-val anss) (list))
+                                      (begin ;(display "Varargs_CVal") 
+                                             ;(display (Varargs_CVal (length args) (map AVal-val anss) (list)))
+                                             ;(display "\n")
+                                             (Varargs_CVal (length args) (map AVal-val anss) (list)))
                                       (AVal-sto latest))
-                       (foldl (lambda (x result) (add-lenv x result)) lenv args))))]
+                       (foldl (lambda (x result) (add-lenv x result)) lenv args))))))]
         [(and (and (<= (length args) (+ (length anss) (length dfts))) (>= (length args) (length anss))) (empty? varargs))
+        ; [(and (<= (length args) (+ (length anss) (length dfts))) (empty? varargs))
          (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
+           (begin ;(display (length args)) (display "\n") (display (length anss)) (display "\n")
            (AVal (VStr "dummy")
                  (extendEnv args locs (AVal-env latest)) ;; Use the latest enviornmnet 
                  (overrideStore locs
                                 (append (map AVal-val anss)
                                         (lastNVals (- (length args) (length anss)) dfts (list)))
                                 (AVal-sto latest))
-                 (foldl (lambda (x result) (add-lenv x result)) lenv args)))]
-        [else (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv)]))
+                 (foldl (lambda (x result) (add-lenv x result)) lenv args))))]
+        [else (begin ;(display "Arity mismatch !!!!")
+                     ;(display "\n")
+                (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv))]))
 
                
 (define (Varargs_CVal (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
   (if (= 0 n)
-      (append output (list (VObject "Tuple"(VTuple input) -1 (hash empty))))  
+      (append (reverse output) (list (VObject "Tuple" (VTuple input) -1 (hash empty))))  
       (Varargs_CVal (- n 1) (rest input) (cons (first input) output))))
                
 (define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
@@ -721,33 +788,6 @@
               [AVal (v-first e-first s-first le-first)
                     (cons argAns (interpArgs (rest args) e-first s-first le-first))]
               [else (cons argAns empty)]))]))
-
-; take in a list of CExp (func args) and interp them to a list of answer
-(define (interpArgs_Func [args : (listof CExp)] [starargs : (listof CExp)] [closure_env : Env] [closure_sto : Store] [global_env : Env] [global_sto : Store] [lenv : LocalEnv]) : (listof CAns)
-  (cond
-    [(and (empty? args)
-          (not (empty? starargs)))
-     ;; Here is a work-around, passing global_env instead of closure_env
-     (let ([starargV (interp-env (first starargs) global_env global_sto lenv)])
-       (type-case CAns starargV
-         [AVal (v-sa e-sa s-sa le-sa)
-               (let ([starargAns (map (lambda (x) (AVal x e-sa s-sa le-sa)) (VTuple-es (getObjVal v-sa)))])
-                 starargAns)]             
-         [else (cons starargV empty)]))]
-    [(empty? args) empty]
-    [else (let ([argAns (interp-env (first args) closure_env closure_sto lenv)]) 
-            (type-case CAns argAns
-              [AVal (v-first e-first s-first le-first)
-                    (cons argAns (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
-              ;; If not exist in closure env ; find in global env
-              [AExc (v-first e-first s-first le-first) 
-                    (let ([argAns_gloenv (interp-env (first args) global_env global_sto lenv)])
-                      (type-case CAns argAns_gloenv
-                        [AVal (v2-first e2-first s2-first le2-first)
-                              (cons argAns_gloenv (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
-                        [else (cons argAns empty)]))]
-              
-              ))]))
 
               
 (define (CValtoCAns [element : CVal] [env : Env] [sto : Store] [lenv : LocalEnv]) : CAns
