@@ -88,7 +88,7 @@ ParselTongue.
 
 (define isImmutableTable 
   (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Func" true) (values "MPoint" true) (values "Empty" true) (values "Exception" true))))
+                   (values "Func" true) (values "MPoint" true) (values "None" true) (values "Empty" true) (values "Exception" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))
