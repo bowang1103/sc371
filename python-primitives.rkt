@@ -74,6 +74,7 @@ primitives here.
     [VClosure (args varargs defaults body env sto) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
     [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
+    [VEnv (e) "I haven't address"]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
     [VRet (ret) (pretty ret)]
     

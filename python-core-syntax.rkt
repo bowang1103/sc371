@@ -12,7 +12,6 @@ ParselTongue.
   [CStr (s : string)]
   [CList (es : (listof CExp))]
   [CTuple (es : (listof CExp))]
-  [CRange (range : (listof CExp))]
   [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
@@ -27,8 +26,8 @@ ParselTongue.
   [CSet (id : symbol) (value : CExp)]
   [CDel (tg : CExp)]
   [CRet (ret : CExp)]
-  [CApp (fun : CExp) (args : (listof CExp)) (starargs : (listof CExp))]
-  [CFunc (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
+  [CApp (fun : CExp) (args : (listof CExp))]
+  [CFunc (args : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)]
   [CPrim2 (prim : symbol) (arg1 : CExp) (arg2 : CExp)] ;; arg1 and arg2 should be IdC
   [CPrim2Seq (left : CExp) (prims : (listof symbol)) (args : (listof CExp))]
@@ -55,7 +54,6 @@ ParselTongue.
   [VStr (s : string)]
   [VList (es : (listof CVal))]
   [VTuple (es : (listof CVal))]
-  [VRange (from : CVal) (to : CVal) (step : CVal) (es : (listof CVal))]
   [VSet (es : (hashof CVal boolean))]
   [VDict (dict : (hashof CVal CVal))]
   [VTrue]
@@ -66,21 +64,22 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
-  [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Env) (sto : Store)])
+  [VClosure (args : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Env) (sto : Store)]
+  [VEnv (e : (hashof symbol Location))])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]
   [AExc (exc : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)])
 
 (define-type-alias Location number)
-(define-type-alias Env (hashof symbol Location))
+(define-type-alias Env (hashof number (hashof symbol Location)))
 (define-type-alias Store (hashof Location CVal))
 
 ;; LocalEnv only works when interping the class, when Assigning the 
 ;; variable in Class definition, we'll set boolean to True; (defualt is False)
 (define-type-alias LocalEnv (hashof number (listof symbol)))
 (define-type-alias ObjfieldV (hashof string CVal))
-	
+
 (define (core-error str)
   (CError (CStr str)))
 
@@ -89,7 +88,7 @@ ParselTongue.
 
 (define isImmutableTable 
   (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Func" true) (values "MPoint" true) (values "None" true) (values "Empty" true) (values "Exception" true))))
+                   (values "Func" true) (values "MPoint" true) (values "Empty" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))

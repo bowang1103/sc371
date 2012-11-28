@@ -730,14 +730,39 @@
         output
         (lastNVals (- n 1) (rest input) (cons (first revs) output)))))
 
-(define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
+#| (define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (type-case (optionof Location) (hash-ref env for)
     [some (loc) 
           (type-case (optionof CVal) (hash-ref sto loc)
             [some (v) (AVal v env sto lenv)]
             [none () (interp-error "Unbound value" env sto lenv)])]
     ;; Didn't exist in the current env & sto ; look up the built in library
-    [none () (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)]))
+    [none () (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)])) |#
+
+
+;; define the number to represent the level of different scope
+;; 3 for global, 2 for nonlocal, 1 for local
+(define local-level 3)
+(define nonlocal-level 2)
+(define global-level 1)
+
+;; grab the value from the store, however, due to the change of design, we have to
+;; traverse from high level of env to lower level of env to find the location of
+;; value
+(define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
+  (let ([loc (findTheLevel for env local-level)])
+    (if (equal? -1 loc)
+        (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)
+        (type-case (optionof CVal) (hash-ref sto loc)
+          [some (v) (AVal v env sto lenv)]
+          [none () (interp-error "Unbound value" env sto lenv)]))))
+
+(define (findTheLevel (for : symbol) (env : Env) (level : number)) : number
+  (if (< level global-level)
+      -1
+      (type-case (optionof Location) (hash-ref (some-v (hash-ref env level)) for)
+        [some(n) n]
+        [none() (findTheLevel for env (- level 1))])))
 
 ;; get a new memory addr
 (define newLoc
