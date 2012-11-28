@@ -67,6 +67,12 @@
                                   (hash-keys dict-hash))])
             (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
+(define (to-range-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "Range" prim (CEmpty))
+       (CLet 'self (CId id)
+          (CId id)))))
+
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Func" prim (CEmpty))
@@ -90,6 +96,7 @@
     [CStr (s) (to-str-obj prim)]
     [CList (es) (to-list-obj prim)]
     [CTuple (es) (to-tuple-obj prim)]
+    [CRange (range) (to-range-obj prim)]
     [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
     [CFunc (args defaults body) (to-func-obj prim)]

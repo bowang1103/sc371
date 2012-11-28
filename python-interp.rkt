@@ -76,6 +76,24 @@
                                              (AVal (VDict (valfoldl2 (map AVal-val keyrst) (map AVal-val valuesrst) (hash empty) store))
                                                    (AVal-env valueslast) (AVal-sto valueslast) (AVal-lenv valueslast)))))))
                              (interp-error "length is not same" env store lenv))]
+    
+    [CRange (range) (letrec ([rangeList (interpArgs range env store lenv)]
+                             [last (first (reverse rangeList))])
+                      (if (AExc? last)
+                          last
+                          (letrec ([objList (map AVal-val rangeList)]
+                                   [numList (map getObjVal objList)]
+                                   [typeList (map getObjType objList)])
+                            (if (foldl (lambda (el rst) (and el rst)) true (map (lambda (el) (or (equal? el "Int") (equal? el "Bool"))) typeList))
+                                (if (= 0 (VNum-n (third numList)))
+                                    (interp-env (raise-error "ValueError" "arg 3 must not be zero") (AVal-env last) (AVal-sto last) (AVal-lenv last))
+                                    ;(interp-error "arg 3 must not be zero" (AVal-env last) (AVal-sto last) (AVal-lenv last))
+                                    (let ([rangeValAns (interpArgs (getRangeList numList) (AVal-env last) (AVal-sto last) (AVal-lenv last))])
+                                      (AVal (VRange (first objList) (second objList) (third objList)
+                                                    (map AVal-val rangeValAns)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))
+                                (interp-env (raise-error "TypeError" "args for range should be integer type") (AVal-env last) (AVal-sto last) (AVal-lenv last))))))]
+                                ;(interp-error "args for range should be integer type" (AVal-env last) (AVal-sto last) (AVal-lenv last))))))]
+    
     [CCopy (obj) (AVal obj env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
     [CFalse () (AVal (VFalse) env store lenv)]
@@ -90,6 +108,7 @@
                                                         [VTuple (es) (VList es)]
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
+                                                        [VRange (from to step es) (VList es)]
                                                         [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) 
                                         (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
@@ -585,6 +604,16 @@
                  (error 'interp "no case"))]))
 
 
+;; produece a range list for range object by given start num, end num and step num
+(define (getRangeList (range : (listof CVal))) : (listof CExp)
+  (map (lambda (el) ($to-object (CNum el))) (getNumRangeList (VNum-n (first range)) (VNum-n (second range)) (VNum-n (third range)))))
+
+(define (getNumRangeList (from : number) (to : number) (step : number)) : (listof number)
+  (if (or (and (> step 0) (> to from)) 
+          (and (< step 0) (< to from)))
+      (cons from (getNumRangeList (+ from step) to step))
+      (list)))
+  
 
 ;; add a symbol into current level
 (define (add-lenv (val : symbol) (lenv : LocalEnv)) : LocalEnv
@@ -617,7 +646,7 @@
 (define (bind-args (args : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]
         [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
-        [(<= (length args) (+ (length anss) (length dfts)))
+        [(and (<= (length args) (+ (length anss) (length dfts))) (>= (length args) (length anss)))
          (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
            (AVal (VStr "dummy")
                  (extendEnv args locs (AVal-env latest))
@@ -626,7 +655,7 @@
                                         (lastNVals (- (length args) (length anss)) dfts (list)))
                                 (AVal-sto latest))
                  (foldl (lambda (x result) (add-lenv x result)) lenv args)))]
-        [else (interp-error "Arity mismatch" env sto lenv)]))
+        [else (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv)]))
 
 (define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
   (let ([revs (reverse input)])

@@ -12,6 +12,7 @@ ParselTongue.
   [CStr (s : string)]
   [CList (es : (listof CExp))]
   [CTuple (es : (listof CExp))]
+  [CRange (range : (listof CExp))]
   [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
@@ -54,6 +55,7 @@ ParselTongue.
   [VStr (s : string)]
   [VList (es : (listof CVal))]
   [VTuple (es : (listof CVal))]
+  [VRange (from : CVal) (to : CVal) (step : CVal) (es : (listof CVal))]
   [VSet (es : (hashof CVal boolean))]
   [VDict (dict : (hashof CVal CVal))]
   [VTrue]
@@ -77,7 +79,7 @@ ParselTongue.
 ;; variable in Class definition, we'll set boolean to True; (defualt is False)
 (define-type-alias LocalEnv (hashof number (listof symbol)))
 (define-type-alias ObjfieldV (hashof string CVal))
-
+	
 (define (core-error str)
   (CError (CStr str)))
 
