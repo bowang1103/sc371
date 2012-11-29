@@ -411,9 +411,8 @@
                                                            (type-case CAns (interp-env clbody newenv newsto le-es)
                                                            [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody env store lenv)]
                                                            [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)]))))]
-                                               [AExc (v-es e-es s-es le-se)
-                                                     (begin ;(display "hichuang")
-                                                            (AExc v-es env store lenv))]))]
+                                               ;; must return the previous env store!!
+                                               [AExc (v-es e-es s-es le-se) (AExc v-es env store lenv)]))]
                                  [else (interp-error "Not a function" e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
     
@@ -501,8 +500,8 @@
                                                  (let ([rst (interp-env (CGetelement obj (list (first args))) e-o s-o le-o)])
                                                    (if (AVal? rst)
                                                        rst
-                                                       (if (equal? (VObject-type (AVal-val arg)) "None")
-                                                           (interp-env (CId 'None) (AExc-env rst) (AExc-sto rst) (AExc-lenv rst))
+                                                       (if (equal? (VObject-type (AVal-val arg)) "Empty")
+                                                           (interp-env ($to-object (CEmpty)) (AExc-env rst) (AExc-sto rst) (AExc-lenv rst))
                                                            arg))))]
                                         [(update) (let ([arg (interp-env (first args) e-o s-o le-o)])
                                                     (type-case CAns arg
@@ -553,30 +552,25 @@
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
                                    ;; if no exception, interp "else" part
-                                   [AVal (v-bv e-bv s-bv le-bv) (begin ;(display "no exception occur")
-                                                                       ;(display v-bv)
-                                                                       ;(display "\n")
-                                                                       (interp-env els e-bv s-bv le-bv))]
-                                                                       
+                                   [AVal (v-bv e-bv s-bv le-bv) (interp-env els e-bv s-bv le-bv)]
                                    ;; Exception, interp "Exception Handler" part
                                    ;; bind exception object to Env & Store
-                                   [AExc (v-bv e-bv s-bv le-bv) (begin ;(display "exception occur")
-                                                                       ;(display v-bv)
-                                                                       ;(display "\n")  
+                                   [AExc (v-bv e-bv s-bv le-bv) 
                                          (let ([where (newLoc)])
                                            (let ([value (grabValue 'exception_symbol e-bv s-bv le-bv)])
-                                             (type-case CAns value
-                                               [AVal (v-ev e-ev s-ev le-ev) 
-                                                     (type-case CAns (interp-env hdlers (hash-set e-bv 'exception_symbol where) (hash-set s-bv where v-bv) le-bv)
-                                                       ;; leave the Except body ; replace 'exception_symbol with previous exception in environment 
-                                                       [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-set e-hd 'exception_symbol where) (hash-set s-hd where v-ev) le-hs)]
-                                                       [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd (hash-set e-hd 'exception_symbol where) (hash-set s-hd where v-ev) le-hs)])]
-                                               [AExc (v-ev e-ev s-ev le-ev)
-                                                     (type-case CAns (interp-env hdlers (hash-set e-bv 'exception_symbol where) (hash-set s-bv where v-bv) le-bv)
-                                                       ;; case : no exception sitting in the env
-                                                       ;; leave the Except body ; remove 'exception_symbol in environment
-                                                       [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]
-                                                       [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)])]))))]))]
+                                             (let ([hdlersv (interp-env hdlers (hash-set e-bv 'exception_symbol where) (hash-set s-bv where v-bv) le-bv)])
+                                               (type-case CAns value
+                                                 [AVal (v-ev e-ev s-ev le-ev) 
+                                                       (type-case CAns hdlersv
+                                                         ;; leave the Except body ; replace 'exception_symbol with previous exception in environment 
+                                                         [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-set e-hd 'exception_symbol where) (hash-set s-hd where v-ev) le-hs)]
+                                                         [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd e-hd s-hd le-hs)])]
+                                                 [AExc (v-ev e-ev s-ev le-ev)
+                                                       (type-case CAns hdlersv
+                                                         ;; case : no exception sitting in the env
+                                                         ;; leave the Except body ; remove 'exception_symbol in environment
+                                                         [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]
+                                                         [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd e-hd s-hd le-hs)])]))))]))]
                                                
     
     
@@ -585,13 +579,27 @@
                           ;;whether an exception has occurred or not
                           (type-case CAns bv
                             [AVal (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]
-                            [AExc (v-bv e-bv s-bv le-bv) (interp-env fb e-bv s-bv le-bv)]))]
+                            [AExc (v-bv e-bv s-bv le-bv) 
+                                  (let ([where (newLoc)])
+                                    (let ([value (grabValue 'exception_symbol e-bv s-bv le-bv)])
+                                      (let ([fbv (interp-env fb (hash-set e-bv 'exception_symbol where) (hash-set s-bv where v-bv) le-bv)])
+                                        (type-case CAns value
+                                                     [AVal (v-ev e-ev s-ev le-ev) 
+                                                           (type-case CAns fbv
+                                                             ;; leave the Except body ; replace 'exception_symbol with previous exception in environment 
+                                                             [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-set e-hd 'exception_symbol where) (hash-set s-hd where v-ev) le-hs)]
+                                                             ;; continue pass down the exception
+                                                             [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd e-hd s-hd le-hs)])]
+                                                     [AExc (v-ev e-ev s-ev le-ev)
+                                                           (type-case CAns fbv
+                                                             ;; case : no exception sitting in the env
+                                                             ;; leave the Except body ; remove 'exception_symbol in environment
+                                                             [AVal (v-hd e-hd s-hd le-hs) (AVal v-hd (hash-remove e-hd 'exception_symbol) (hash-remove s-hd where) le-hs)]
+                                                             ;; continue pass down the exception
+                                                             [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd e-hd s-hd le-hs)])]))))]))]
     
     [CExceptHandler (name body type) (let ([value (grabValue 'exception_symbol env store lenv)])
-                                       (let ([ErrorType (begin ;(display "ErrorType : ")
-                                                               ;(display (VException-type (getObjVal (AVal-val value))))
-                                                               ;(display "\n")
-                                                               (VException-type (getObjVal (AVal-val value))))]
+                                       (let ([ErrorType (VException-type (getObjVal (AVal-val value)))]
                                              [typev (if (not (CId? type))
                                                         (interp-env type env store lenv)
                                                         (interp-env (ContructExc type "") env store lenv))]
@@ -631,7 +639,6 @@
                       ;; There's no 'exception_symbol sit on the env, raise runtimeError
                       [AExc (v-v e-v s-v le-v) 
                             (let ([runTimeError (interp-env (ContructExc (CId 'RuntimeError) "No active exception to reraise") e-v s-v le-v)])
-                              ;(let ([where (newLoc)])
                               (AExc (AVal-val runTimeError) e-v s-v le-v))]))
                   ;; hande case : raie with argument (i.e. raise TypeError("foo")
                   (AExc (AVal-val excv) (AVal-env excv) (AVal-sto excv) (AVal-lenv excv))))]
@@ -685,19 +692,16 @@
 (define (interpArgs_Func [args : (listof CExp)] [starargs : (listof CExp)] [closure_env : Env] [closure_sto : Store] [global_env : Env] [global_sto : Store] [lenv : LocalEnv]) : (listof CAns)
   (cond
     [(and (empty? args)
-          (not (empty? starargs)))
+          (not (empty? starargs))) ; there is an "*args" when applying function
      ;; Here is a work-around, passing global_env instead of closure_env
-     (begin ;(display "came in to interArgs Func 2 : ")  
-            ;(display (first starargs)) (display "\n")
      (let ([starargV (interp-env (first starargs) global_env global_sto lenv)])
        (type-case CAns starargV
          [AVal (v-sa e-sa s-sa le-sa)
-               (let ([starargAns (map (lambda (x) (AVal x e-sa s-sa le-sa)) (VTuple-es (getObjVal v-sa)))])
+               (let ([starargAns (map (lambda (x) (AVal x e-sa s-sa le-sa)) (VTuple-es (getObjVal v-sa)))]) ; unwrap the tuple, make it to a list of CAns
                  starargAns)]             
-         [else (cons starargV empty)])))]
+         [else (cons starargV empty)]))]
     [(empty? args) empty]
-    [else (begin ;(display "came in to interArgs Func 3 : ") (display (first args)) (display "\n")
-           (let ([argAns (interp-env (first args) closure_env closure_sto lenv)]) 
+    [else (let ([argAns (interp-env (first args) closure_env closure_sto lenv)]) 
             (type-case CAns argAns
               [AVal (v-first e-first s-first le-first)
                     (cons argAns (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
@@ -708,13 +712,12 @@
                         [AVal (v2-first e2-first s2-first le2-first)
                               (cons argAns_gloenv (interpArgs_Func (rest args) starargs e-first s-first global_env global_sto le-first))]
                         [else (cons argAns empty)]))]
-              
-              )))]))
+              ))]))
 
 (define (bind-args (args : (listof symbol)) (varargs : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]  ;if it's empty, return the original env and store 
         [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
-        [(and (not (empty? varargs)) 
+        [(and (not (empty? varargs))  ; if func-def has "*agrs" arguments 
               (<= (length args) (length anss)))
              (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
                (begin ;(display "came in here")
@@ -728,29 +731,23 @@
                         ;(display (length (Varargs_CVal (length args) (map AVal-val anss) (list)))) (display "\n")
                    (AVal (VStr "dummy")
                        (extendEnv (append args varargs) new_locs (AVal-env latest))
-                       (overrideStore new_locs 
-                                      (begin ;(display "Varargs_CVal") 
-                                             ;(display (Varargs_CVal (length args) (map AVal-val anss) (list)))
-                                             ;(display "\n")
-                                             (Varargs_CVal (length args) (map AVal-val anss) (list)))
+                       (overrideStore new_locs
+                                      (Varargs_CVal (length args) (map AVal-val anss) (list))
                                       (AVal-sto latest))
                        (foldl (lambda (x result) (add-lenv x result)) lenv args))))))]
         [(and (and (<= (length args) (+ (length anss) (length dfts))) (>= (length args) (length anss))) (empty? varargs))
-        ; [(and (<= (length args) (+ (length anss) (length dfts))) (empty? varargs))
          (let ([latest (if (empty? anss) (AVal (VStr "dummy") env sto lenv) (first (reverse anss)))])
-           (begin ;(display (length args)) (display "\n") (display (length anss)) (display "\n")
            (AVal (VStr "dummy")
                  (extendEnv args locs (AVal-env latest)) ;; Use the latest enviornmnet 
                  (overrideStore locs
                                 (append (map AVal-val anss)
                                         (lastNVals (- (length args) (length anss)) dfts (list)))
                                 (AVal-sto latest))
-                 (foldl (lambda (x result) (add-lenv x result)) lenv args))))]
-        [else (begin ;(display "Arity mismatch !!!!")
-                     ;(display "\n")
-                (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv))]))
-
-               
+                 (foldl (lambda (x result) (add-lenv x result)) lenv args)))]
+        [else (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv)]))
+ ; case :
+ ; Varargs (3,(1,2,3,4,5),() )  
+ ; return : 1,2,3,(4,5)<-tuple  
 (define (Varargs_CVal (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
   (if (= 0 n)
       (append (reverse output) (list (VObject "Tuple" (VTuple input) -1 (hash empty))))  
