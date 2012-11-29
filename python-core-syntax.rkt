@@ -12,6 +12,7 @@ ParselTongue.
   [CStr (s : string)]
   [CList (es : (listof CExp))]
   [CTuple (es : (listof CExp))]
+  [CRange (range : (listof CExp))]
   [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
   [CTrue]
@@ -26,8 +27,8 @@ ParselTongue.
   [CSet (id : symbol) (value : CExp)]
   [CDel (tg : CExp)]
   [CRet (ret : CExp)]
-  [CApp (fun : CExp) (args : (listof CExp))]
-  [CFunc (args : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
+  [CApp (fun : CExp) (args : (listof CExp)) (starargs : (listof CExp))]
+  [CFunc (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
   [CPrim1 (prim : symbol) (arg : CExp)]
   [CPrim2 (prim : symbol) (arg1 : CExp) (arg2 : CExp)] ;; arg1 and arg2 should be IdC
   [CPrim2Seq (left : CExp) (prims : (listof symbol)) (args : (listof CExp))]
@@ -54,6 +55,7 @@ ParselTongue.
   [VStr (s : string)]
   [VList (es : (listof CVal))]
   [VTuple (es : (listof CVal))]
+  [VRange (from : CVal) (to : CVal) (step : CVal) (es : (listof CVal))]
   [VSet (es : (hashof CVal boolean))]
   [VDict (dict : (hashof CVal CVal))]
   [VTrue]
@@ -64,15 +66,16 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
-  [VClosure (args : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Env) (sto : Store)]
-  [VEnv (e : (hashof symbol Location))])
+  [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Location)]
+  [VEnv (e : LevelEnv)])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]
   [AExc (exc : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)])
 
 (define-type-alias Location number)
-(define-type-alias Env (hashof number (hashof symbol Location)))
+(define-type-alias Env (hashof number LevelEnv))
+(define-type-alias LevelEnv (hashof symbol Location))
 (define-type-alias Store (hashof Location CVal))
 
 ;; LocalEnv only works when interping the class, when Assigning the 
@@ -86,9 +89,9 @@ ParselTongue.
 (define (interp-error str env store lenv)
   (AExc (VStr str) env store lenv))
 
-(define isImmutableTable 
-  (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Func" true) (values "MPoint" true) (values "Empty" true))))
+(define isImmutableTable
+  (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true)
+                   (values "Func" true) (values "MPoint" true) (values "None" true) (values "Empty" true) (values "Exception" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))
