@@ -45,6 +45,7 @@
     [PyDict (keys values) ($to-object (CDict (map desugar keys) (map desugar values)))]
     [PyApp (f args starargs) (CApp (desugar f) (map desugar args) (map desugar starargs))]
     [PyReturn (ret) (CRet (desugar ret))]
+    [PyBreak () (CRet (CId 'None))]
     [PyFuncDef (name args body)
                (CLet name ($to-object (CFunc (list) (list) (list) (CEmpty)))
                      (CSet name (desugar (PyFunc args body))))]

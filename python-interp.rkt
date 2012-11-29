@@ -332,29 +332,22 @@
     
     [CSeq (e1 e2) (let ([e1Ans (interp-env e1 env store lenv)])
                     (type-case CAns e1Ans
-                      [AVal (v-e1 e-e1 s-e1 le-e1) (type-case CExp e1
-                                                     [CRet (ret) e1Ans]
-                                                     [else (interp-env e2 e-e1 s-e1 le-e1)])]
+                      [AVal (v-e1 e-e1 s-e1 le-e1) (interp-env e2 e-e1 s-e1 le-e1)]
                       [else e1Ans]))]
     
     [CRet (ret) (let ([result (interp-env ret env store lenv)])
                   (type-case CAns result
                     [AVal (v-a e-a s-a l-a)
-                          (type-case CExp ret 
-                            [CId (x) (type-case CVal v-a
-                                       [VObject (t-o v-o l-o f-o)
-                                                (type-case CVal v-o
-                                                  [VClosure (args varargs defaults body e-v s-v)
-                                                            (begin #| (display "Val : ")
-                                                                   (display (to-string ret))
-                                                                   (display (to-string (if (AVal? (grabValue 'x env store lenv))
-                                                                                           (VNum-n (VObject-value (AVal-val (grabValue 'x env store lenv))))
-                                                                                           0))) 
-                                                                   (display "\n") |#
-                                                                   (AVal (VObject t-o (VClosure args varargs defaults body env store) l-o f-o) e-a s-a l-a))]
-                                                  [else result])]
-                                       [else result])]
-                            [else result])]
+                          (let ([retVal (AExc (VRet v-a) e-a s-a l-a)]) ;; repackage to a AExc with a VRet inside
+                            (type-case CExp ret 
+                              [CId (x) (type-case CVal v-a
+                                         [VObject (t-o v-o l-o f-o)
+                                                  (type-case CVal v-o
+                                                    [VClosure (args varargs defaults body e-v s-v)
+                                                              (AExc (VRet (VObject t-o (VClosure args varargs defaults body env store) l-o f-o)) e-a s-a l-a)]
+                                                    [else retVal])]
+                                         [else retVal])]
+                              [else retVal]))]
                     [else result]))]
     
     [CApp (fun args starargs) 
@@ -408,7 +401,10 @@
                                                            ;  (display (AVal-val test-val)))
                                                            (type-case CAns (interp-env clbody newenv newsto le-es)
                                                            [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody env store lenv)]
-                                                           [AExc (v-clbody e-clbody s-clbody le-clbody) (AExc v-clbody env store lenv)]))))]
+                                                           [AExc (v-clbody e-clbody s-clbody le-clbody) 
+                                                                 (if (VRet? v-clbody)
+                                                                     (AVal (VRet-ret v-clbody) env store lenv)
+                                                                     (AExc v-clbody env store lenv))]))))]
                                                [else bind-es]))]
                                  [else (interp-error "Not a function" e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
