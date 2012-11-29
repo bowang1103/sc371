@@ -75,7 +75,7 @@ primitives here.
     [VPoint (name field) (error 'prim "VPoint")]
     [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
-    
+    [VRet (ret) (pretty ret)]
     
     #|(cond [(VObject? excpt)
                  (let ([excv (getObjVal excpt)])

@@ -61,6 +61,7 @@ ParselTongue.
   [VTrue]
   [VFalse]
   [VEmpty]
+  [VRet (ret : CVal)]
   [VObject (type : string) (value : CVal) (loc : Location) (field : ObjfieldV)]
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]

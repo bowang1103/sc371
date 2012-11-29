@@ -214,12 +214,12 @@ ___assertRaises(TypeError, range)
    (CFunc (list 'e_exception 'f_function) (list 'args) (list) 
           (CSeq (CTryExn (CApp (CId 'f_function) (list) (list (CId 'args)))
                          ;(CExceptHandler ($to-object (CStr "the_exn")) (CRet (CEmpty)) (CId 'e_exception))
-                         ;(CExceptHandler ($to-object (CStr "the_exn")) (CRet (CId 'None)) (CId 'e_exception))
-                         (CExceptHandler ($to-object (CStr "the_exn")) (CPrim1 'print (CStr "PASS")) (CId 'e_exception))
-                         (CPrim1 'print (CStr "FAILED")))
-                         ;(CError (CStr "Assert False Failed2")))
-                (CPrim1 'print (CStr "FAILED!!\n"))))))
-                ;(CError (CStr "Assert False Failed3"))))))
+                         (CExceptHandler ($to-object (CStr "the_exn")) (CRet (CId 'None)) (CId 'e_exception))
+                         ;(CExceptHandler ($to-object (CStr "the_exn")) (CPrim1 'print (CStr "PASS")) (CId 'e_exception))
+                         ;(CPrim1 'print (CStr "FAILED")))
+                         (CError (CStr "Assert False Failed2")))
+                ;(CPrim1 'print (CStr "FAILED!!\n"))))))
+                (CError (CStr "Assert False Failed3"))))))
 
 (define (exception-lambda (type : string)) : CExp
   ($to-object 
