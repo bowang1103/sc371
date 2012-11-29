@@ -101,7 +101,7 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Expr") ('value expr))
      (get-structured-python expr)]
     [(hash-table ('nodetype "Pass")) (PyEmp)]
-    [(hash-table ('nodetype "Break")) PyBreak]
+    [(hash-table ('nodetype "Break")) (PyBreak)]
 ;    [(hash-table ('nodetype "Continue"))]
     [(hash-table ('nodetype "BoolOp") ('values values) ('op op))
      (PyBoolOp (get-structured-python op) 

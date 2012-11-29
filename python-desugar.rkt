@@ -65,11 +65,16 @@
     ; unaryop = {~, not, pos, neg} ~must be int, pos and neg should be numeric, not ?
     [PyUnaryOp (unaryop operand) (CPrim1 unaryop (desugar operand))]
     
-	;; Handling Try Exception
+    ;; Handling Try Exception
     [PyTryExcept (b hdlers els) (CTryExn (desugar b) (desugar hdlers) (desugar els) )]
     [PyExceptHandler (name body type) (CExceptHandler (desugar name) (desugar body) (desugar type))]   
     [PyTryFinally (b fb) (CTryFinally (desugar b) (desugar fb) )]
     [PyRaise (cause exc) (CRaise (desugar cause) (desugar exc))]
+    
+    ;; Loop
+    ;[PyFor (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)]
+    [PyWhile (test body orelse) (desugar-while test body orelse)]
+    
     [else (CNum 10)]))
 
 (define (make-ids (n : number)) : (listof symbol)
@@ -77,6 +82,23 @@
 
 (define (last l)
   (first (reverse l)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for loops ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
+    (CIf (desugar test)
+         (CLet 'while-var dummy-fun
+               (CLet 'while-fun
+                     ($to-object (CFunc (list) (list) (list)
+                                        (CLet 'whilebody (desugar body)
+                                              (CIf (desugar test)
+                                                   (CApp (CId 'while-var) (list) (list))
+                                                   (CId 'whilebody)))))
+                     (CSeq (CSet 'while-var (CId 'while-fun))
+                           (CApp (CId 'while-var) (list) (list)))))
+         (CId 'False))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for compare ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
