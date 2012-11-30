@@ -56,8 +56,7 @@
 (define (to-set-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Set" prim (CEmpty))
-       (CLet 'self (CId id)
-          (CId id)))))
+       (CId id))))
 
 (define (to-dict-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
@@ -159,7 +158,7 @@
                                     (COperation (CId 'self) "Dict" "get" (list (CId 'index) (CId 'default))))))
          (values "update"
                  ($to-object (CFunc (list 'self 'value) (list)
-                                    (list ($to-object (CEmpty)))
+                                    (list ($to-object (CSetV (list))))
                                     (COperation (CId 'self) "Dict" "update" (list (CId 'value)))))))))
                                                   
 (define (isInteger (n : number)) : boolean
