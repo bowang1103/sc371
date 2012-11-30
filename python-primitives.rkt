@@ -55,7 +55,7 @@ primitives here.
                                 (foldr string-append "" 
                                        (list "range(" (first prettyRange) ", " (second prettyRange) 
                                              (if (equal? "1" (third prettyRange)) "" (string-append ", " (third prettyRange))) ")")))]
-    [VIter (at es) (to-string arg)]
+    [VIter (at es) "Iter Object"]
     [VTrue () "True"]
     [VFalse () "False"]
     [VEmpty () ""]

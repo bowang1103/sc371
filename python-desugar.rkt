@@ -87,7 +87,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for loops ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-#|(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
   (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
     (CIf (desugar test)
          (CLet 'while-var dummy-fun
@@ -99,9 +99,9 @@
                                                    (desugar orelse)))))
                      (CSeq (CSet 'while-var (CId 'while-fun))
                            (CApp (CId 'while-var) (list) (list)))))
-         (desugar orelse))))|#
+         (desugar orelse))))
 
-(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+#|(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
   (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
     (CLet 'while-var dummy-fun
           (CLet 'while-fun
@@ -113,7 +113,7 @@
                 (CSeq (CSet 'while-var (CId 'while-fun))
                       (CApp (CId 'while-var) (list) (list)))))
     ))
-
+|#
 
 ;(define (desugar-for (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
  ; (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))])

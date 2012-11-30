@@ -103,11 +103,10 @@
                                 (interp-env (raise-error "TypeError" "args for range should be integer type") (AVal-env last) (AVal-sto last) (AVal-lenv last))))))]
     
     [CIter (lst) (let ([listAns (interp-env lst env store lenv)])
-                   (begin ;(display (to-string (AVal-val listAns)))
                    (type-case CAns listAns
                      [AVal (obj-lst obj-e obj-s obj-le)
                            (AVal (VIter 0 (VList-es (VObject-value obj-lst))) obj-e obj-s obj-le)]
-                     [else listAns])))]
+                     [else listAns]))]
     
     [CCopy (obj) (AVal obj env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
@@ -435,7 +434,7 @@
                                                                (if (VRet? v-clbody)
                                                                    (AVal (VRet-ret v-clbody) env s-clbody lenv)
                                                                    (AExc v-clbody env s-clbody lenv))]))]
-                                                 [AExc (v-es e-es s-es le-se) (AExc v-es env store lenv)]))]
+                                                 [AExc (v-es e-es s-es le-se) (AExc v-es env s-es lenv)]))]
                                    [else (interp-error "Not a function" e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
     
@@ -866,7 +865,7 @@
         [lenv (some-v (hash-ref env local-level))])
     (let ([newenv (foldl (lambda (x result) (hash-set result x (some-v (hash-ref lenv x)))) nenv (hash-keys lenv))])
       (if (none? (hash-ref newenv 'self))
-          (if (none? (hash-ref (some-v (hash-ref env local-level)) 'self))
+          (if (none? (hash-ref (some-v (hash-ref env global-level)) 'self))
               newenv
               (hash-set newenv 'self (some-v (hash-ref (some-v (hash-ref env global-level)) 'self))))
           newenv))))
