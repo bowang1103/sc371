@@ -865,9 +865,11 @@
   (let ([nenv (some-v (hash-ref env nonlocal-level))]
         [lenv (some-v (hash-ref env local-level))])
     (let ([newenv (foldl (lambda (x result) (hash-set result x (some-v (hash-ref lenv x)))) nenv (hash-keys lenv))])
-      (if (none? (hash-ref (some-v (hash-ref env global-level)) 'self))
-          newenv
-          (hash-set newenv 'self (some-v (hash-ref (some-v (hash-ref env global-level)) 'self)))))))
+      (if (none? (hash-ref newenv 'self))
+          (if (none? (hash-ref (some-v (hash-ref env local-level)) 'self))
+              newenv
+              (hash-set newenv 'self (some-v (hash-ref (some-v (hash-ref env global-level)) 'self))))
+          newenv))))
 
 ;; get a new memory addr
 (define newLoc
