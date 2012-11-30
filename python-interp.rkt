@@ -388,14 +388,26 @@
                                                                       (cons (VObject-loc (AVal-val (first self))) (allocLocList (- (length clargs) 1))))]
                                                       [bind-es (bind-args clargs
                                                                           clvarargs
-                                                                          (begin #|(display (to-string newLocList))|# newLocList)
+                                                                          (begin #|
+                                                                            (display "\nIn CApp :\n")
+                                                                            (display (to-string fun))
+                                                                            (display "\n")
+                                                                            (display (to-string clargs))
+                                                                            (display "\n")
+                                                                            (display (to-string clbody))
+                                                                            (display "\n")
+                                                                            (display (to-string newLocList))|# newLocList)
                                                                           ;; interp arguments with closure environment
                                                                           (begin
                                                                             (append self (let ([test-val (interpArgs_Func 
                                                                                                           args 
                                                                                                           starargs 
                                                                                                           ;(hash-set (hash-set e-fobj nonlocal-level (VEnv-e (some-v (hash-ref s-fobj clenv)))) local-level (hash empty))  
-                                                                                                          (begin #|
+                                                                                                          (begin 
+                                                                                                            #|
+                                                                                                            (display "Before Bind : \n")
+                                                                                                            (display (to-string (grabValue 'fact e-fobj s-fobj le-fobj)))
+                                                                                                            (display "\nBind Finish\n")
                                                                                                             (display "In CApp : \n")
                                                                                                             (display (to-string fun))
                                                                                                             (display "\n")
@@ -413,11 +425,14 @@
                                                                                            (begin
                                                                                              test-val))))
                                                                           cldfts
-                                                                          (hash-set (hash-set e-fobj nonlocal-level (VEnv-e (some-v (hash-ref s-fobj clenv)))) local-level (hash empty)) 
+                                                                          (hash-set e-fobj nonlocal-level (VEnv-e (some-v (hash-ref s-fobj clenv)))) 
                                                                           s-fobj (hash-set le-fobj (+ 1 (getmaxnumber (hash-keys lenv))) (list)))]) ;; extend closure-env (if no arguments)
                                                (type-case CAns bind-es
                                                  [AVal (v-es e-es s-es le-es)
                                                        (begin #|
+                                                         (display "After Bind : \n")
+                                                         (display (to-string (grabValue 'fact e-es s-es le-es)))
+                                                         (display "\nBind Finish\n")
                                                          (display "The EnvAfterBind : \n")
                                                          (display "  global-level: ")
                                                          (display (to-string (hash-keys (some-v (hash-ref e-es global-level)))))
@@ -777,7 +792,7 @@
                  (let ([tstlen (foldl (lambda (x result) (add-lenv x result)) lenv args)])
                    (begin #| (display (to-string tstlen)) |#
                           tstlen))))]
-        [else (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv)]))
+        [else (begin #| (display (to-string args)) (display (to-string (length anss))) |# (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv))]))
  ; case :
  ; Varargs (3,(1,2,3,4,5),() )  
  ; return : 1,2,3,(4,5)<-tuple  
