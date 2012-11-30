@@ -61,7 +61,7 @@
                       (if (not (foldl (lambda (x result) (and (isRecurImmutable (AVal-val x) (AVal-sto last)) result)) true rst))
                           (interp-error "They are not hashable" env store lenv)
                           ;; build the set
-                          (AVal (VSet (let ([keys (map (lambda (x) (VObject-value (AVal-val x))) rst)])
+                          (AVal (VSet (let ([keys (map (lambda (x) (getNoneObjectVal (AVal-val x) (AVal-sto last))) rst)])
                                         (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) keys)))
                                 (AVal-env last) (AVal-sto last) (AVal-lenv last)))))]
     [CDict (keys values) (if (equal? (length keys) (length values))
@@ -549,13 +549,26 @@
                                                        (if (equal? (VObject-type (AVal-val arg)) "Empty")
                                                            (interp-env ($to-object (CEmpty)) (AExc-env rst) (AExc-sto rst) (AExc-lenv rst))
                                                            arg))))]
+                                        [(items) (let ([rst (AVal-val (interp-env ($to-object (CList (list))) e-o s-o le-o))])
+                                                   (interp-env (CWrap "Set" (VObject (VObject-type rst) 
+                                                                                     (VList (map (lambda(x) (let ([tmptup (AVal-val (interp-env ($to-object (CTuple (list))) e-o s-o le-o))])
+                                                                                                              (VObject (VObject-type tmptup) 
+                                                                                                                       (VTuple (list (let ([newkey (AVal-val (interp-env 
+                                                                                                                                                              ($to-object (valueToObjectCExp x))
+                                                                                                                                                              e-o s-o le-o))])
+                                                                                                                                       (VObject (VObject-type newkey) x (VObject-loc newkey) (VObject-field newkey))) 
+                                                                                                                                     (some-v (hash-ref (VDict-dict (VObject-value v-o)) x))))
+                                                                                                                       (VObject-loc tmptup)
+                                                                                                                       (VObject-field tmptup)))) 
+                                                                                                 (hash-keys (VDict-dict (VObject-value v-o))))) (VObject-loc rst) (VObject-field rst))) 
+                                                               e-o s-o le-o))]
                                         [(update) (let ([arg (interp-env (first args) e-o s-o le-o)])
                                                     (type-case CAns arg
                                                       [AVal (v-a e-a s-a le-a)
                                                             (case (string->symbol (VObject-type v-a))
                                                               [(Dict) (let ([keys (hash-keys (VDict-dict (VObject-value v-a)))])
                                                                         (foldl (lambda (x rst)  
-                                                                                 (interp-env (CSetelement obj 
+                                                                                 (interp-env (CSetelement (CId 'self)
                                                                                                           (let ([newkey (AVal-val (interp-env 
                                                                                                                                    ($to-object (valueToObjectCExp x))
                                                                                                                                    (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))])

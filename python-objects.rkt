@@ -240,7 +240,15 @@
          (values "__iter__"
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
-                                           (COperation (CId 'self) "Dict" "iter" (list))))))))
+                                           (COperation (CId 'self) "Dict" "iter" (list)))))
+         (values "__getitem__"
+                 ($to-object (CFunc (list 'self 'index) (list)
+                                    (list)
+                                    (COperation (CId 'self) "Dict" "get" (list (CId 'index))))))
+         (values "items"
+                 ($to-object (CFunc (list 'self)
+                                    (list) (list)
+                                    (COperation (CId 'self) "Dict" "items" (list))))))))
                                                   
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)
