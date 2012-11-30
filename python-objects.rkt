@@ -45,13 +45,17 @@
   (let ([id (getId)]) 
     (CLet id (CObject "List" prim (CEmpty))
        (CLet 'self (CId id)
-          (CId id)))))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref list-hash key))))
+                                  (hash-keys list-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-tuple-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Tuple" prim (CEmpty))
        (CLet 'self (CId id)
-          (CId id)))))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref tuple-hash key))))
+                                  (hash-keys tuple-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-set-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
@@ -71,7 +75,17 @@
   (let ([id (getId)]) 
     (CLet id (CObject "Range" prim (CEmpty))
        (CLet 'self (CId id)
-          (CId id)))))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref range-hash key))))
+                                  (hash-keys range-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
+
+(define (to-iter-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "Iter" prim (CEmpty))
+       (CLet 'self (CId id)
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref iter-hash key))))
+                                  (hash-keys iter-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
@@ -99,6 +113,7 @@
     [CRange (range) (to-range-obj prim)]
     [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
+    [CIter (lst) (to-iter-obj prim)]
     [CFunc (args varargs defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
@@ -108,18 +123,22 @@
 ;; built-in methods for str
 (define str-hash 
          (hash 
-          (list (values "add"
+          (list (values "__add__"
                         ($to-object (CFunc (list 'self 'right)
                                            (list) (list)
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Str" "iter" (list)))))
                 )))
 
 ;; bulit-in methods for number
 (define num-hash 
          (hash 
-          (list (values "add"
+          (list (values "__add__"
                         ($to-object (CFunc (list 'self 'right)
                                            (list) (list)
                                            (CPrim2 '+
@@ -130,12 +149,70 @@
 ;; bulit-in methods for bool
 (define bool-hash 
          (hash 
-          (list (values "add"
+          (list (values "__add__"
                         ($to-object (CFunc (list 'self 'right)
                                            (list) (list)
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
+                )))
+
+;; bulit-in methods for tuple
+(define tuple-hash 
+         (hash 
+          (list (values "__add__"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list) (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Tuple" "iter" (list)))))
+                )))
+
+;; bulit-in methods for list
+(define list-hash 
+         (hash 
+          (list (values "__add__"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list) (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "List" "iter" (list)))))
+                )))
+
+;; bulit-in methods for range
+(define range-hash 
+         (hash 
+          (list (values "__add__"
+                        ($to-object (CFunc (list 'self 'right)
+                                           (list) (list)
+                                           (CPrim2 '+
+                                                   (CId 'self)
+                                                   (CId 'right)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Range" "iter" (list)))))
+                )))
+
+;; bulit-in methods for iter
+(define iter-hash 
+         (hash 
+          (list (values "__next__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Iter" "next" (list)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Iter" "iter" (list)))))
                 )))
 
 ;; built-in methods for dict
@@ -160,7 +237,11 @@
          (values "update"
                  ($to-object (CFunc (list 'self 'value) (list)
                                     (list ($to-object (CEmpty)))
-                                    (COperation (CId 'self) "Dict" "update" (list (CId 'value)))))))))
+                                    (COperation (CId 'self) "Dict" "update" (list (CId 'value))))))
+         (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Dict" "iter" (list))))))))
                                                   
 (define (isInteger (n : number)) : boolean
   (if (= 0 n)

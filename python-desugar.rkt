@@ -95,10 +95,31 @@
                                         (CLet 'whilebody (desugar body)
                                               (CIf (desugar test)
                                                    (CApp (CId 'while-var) (list) (list))
-                                                   (CId 'whilebody)))))
+                                                   (desugar orelse)))))
                      (CSeq (CSet 'while-var (CId 'while-fun))
                            (CApp (CId 'while-var) (list) (list)))))
-         (CId 'False))))
+         (desugar orelse))))
+
+#|(define (desugar-for (init : ExprP) (test : ExprP) (update : ExprP) (body : ExprP)) : ExprC
+  ;; dummy-fun will tell us it was called if we do so accidentally
+  (local ([define dummy-fun (FuncC (list) (desugar-error "Dummy function"))])
+    (LetC 'v1 (desugar init)
+          (IfC (desugar test)
+               ;; for-var will hold the actual function once we tie
+               ;; everything together
+               (LetC 'for-var dummy-fun
+                     (LetC 'for-fun
+                           (FuncC (list)
+                                  (LetC 'v3 (desugar body)
+                                       (SeqC (desugar update)
+                                             (IfC (desugar test)
+                                                  (AppC (IdC 'for-var) (list))
+                                                  (IdC 'v3)))))
+                           
+                           ;; 
+                           (SeqC (Set!C 'for-var (IdC 'for-fun))
+                                 (AppC (IdC 'for-var) (list)))))
+               (IdC 'v1)))))|#
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for compare ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

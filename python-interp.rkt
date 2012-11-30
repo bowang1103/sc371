@@ -92,7 +92,12 @@
                                       (AVal (VRange (first objList) (second objList) (third objList)
                                                     (map AVal-val rangeValAns)) (AVal-env last) (AVal-sto last) (AVal-lenv last))))
                                 (interp-env (raise-error "TypeError" "args for range should be integer type") (AVal-env last) (AVal-sto last) (AVal-lenv last))))))]
-                                ;(interp-error "args for range should be integer type" (AVal-env last) (AVal-sto last) (AVal-lenv last))))))]
+    
+    [CIter (lst) (let ([listAns (interp-env lst env store lenv)])
+                   (type-case CAns listAns
+                     [AVal (obj-lst obj-e obj-s obj-le)
+                           (AVal (VIter 0 (VList-es (VObject-value obj-lst))) obj-e obj-s obj-le)]
+                     [else listAns]))]
     
     [CCopy (obj) (AVal obj env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
@@ -109,6 +114,7 @@
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                         [VRange (from to step es) (VList es)]
+                                                        ;; TODO [VIter]
                                                         [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) 
                                         (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
@@ -476,7 +482,18 @@
                   (type-case CAns o-val
                       [AVal (v-o e-o s-o le-o)
                             (case (string->symbol type)
+                              [(Str) (case (string->symbol op)
+                                       [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                              [(List) (case (string->symbol op)
+                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                              [(Range) (case (string->symbol op)
+                                         [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                              [(Tuple) (case (string->symbol op)
+                                         [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                              [(Iter) (case (string->symbol op)
+                                        [(iter) o-val])]
                               [(Dict) (case (string->symbol op)
+                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)]
                                         [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
                                                    (AVal rst e-o (hash-set s-o (VObject-loc v-o) rst) le-o))]
                                         [(keys) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) e-o s-o le-o))])

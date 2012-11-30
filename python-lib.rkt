@@ -125,6 +125,18 @@ that calls the primitive `print`.
    (CFunc (list 'sequence) (list) (list)
      (CPrim1 'max (CId 'sequence)))))
 
+;; iter
+(define iter-lambda
+  ($to-object
+   (CFunc (list 'iterable) (list) (list)
+     (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list)))))
+
+;; next
+(define next-lambda
+  ($to-object
+   (CFunc (list 'iterobj) (list) (list)
+     (CApp (CGetfield (CId 'iterobj) "__next__") (list) (list)))))
+
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -253,6 +265,8 @@ ___assertRaises(TypeError, range)
         (bind 'abs abs-lambda)
         (bind 'min min-lambda)
         (bind 'max max-lambda)
+        (bind 'iter iter-lambda)
+        (bind 'next next-lambda)
         (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)
