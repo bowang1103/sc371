@@ -51,14 +51,18 @@ structure that you define in python-syntax.rkt
      (PyFor (get-structured-python target) 
             (get-structured-python iter) 
             (PySeq (map get-structured-python body))
-            (PySeq (map get-structured-python orelse)))]
+            (if (empty? orelse)
+                (PyEmp)
+                (PySeq (map get-structured-python orelse))))]
     [(hash-table ('nodetype "While")
                  ('test test)
                  ('body body)
                  ('orelse orelse))
-     (PyWhile (get-structured-python test) 
-              (PySeq (map get-structured-python body)) 
-              (PySeq (map get-structured-python orelse)))]
+     (PyWhile (get-structured-python test)
+              (PySeq (map get-structured-python body))
+              (if (empty? orelse)
+                  (PyEmp)
+                  (PySeq (map get-structured-python orelse))))]
     [(hash-table ('nodetype "If") ('test test) ('body body) ('orelse orelse))
      (PyIf (get-structured-python test) 
            (PySeq (map get-structured-python body))

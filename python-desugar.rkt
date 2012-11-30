@@ -115,8 +115,14 @@
     ))
 |#
 
-;(define (desugar-for (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
- ; (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))])
+(define (desugar-for (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))])
+    (CLet 'forvar dummy-fun
+          (CLet 'for-var
+                ($to-object (CFunc (list) (list) (list)
+                                   (CEmpty)))
+                (CSeq (CSet 'for-var (CId 'for-fun))
+                      (CApp (CId 'for-var) (list) (list)))))))
     
 #|(define (desugar-for (init : ExprP) (test : ExprP) (update : ExprP) (body : ExprP)) : ExprC
   ;; dummy-fun will tell us it was called if we do so accidentally
