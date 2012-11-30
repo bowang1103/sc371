@@ -6,7 +6,8 @@
 
 (define (desugar (expr : PyExpr)) : CExp
   (type-case PyExpr expr
-    [PyClassDef (obj name) (CEmpty)]
+    [PyClassDef (name obj) 
+                (CSet name (CObject "Class" (CEmpty) (desugar obj)))]
     [PyAttr (obj attr) (CGetfield (desugar obj) attr)]
     [PyAssign (tgs val)
               (CLet 'value (desugar val)

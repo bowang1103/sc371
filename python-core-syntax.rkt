@@ -68,33 +68,34 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
-  [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Env) (sto : Store)])
+  [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CVal)) (body : CExp) (env : Location)]
+  [VEnv (e : LevelEnv)])
    
 (define-type CAns 
   [AVal (val : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)]
   [AExc (exc : CVal) (env : Env) (sto : Store) (lenv : LocalEnv)])
 
 (define-type-alias Location number)
-(define-type-alias Env (hashof symbol Location))
+(define-type-alias Env (hashof number LevelEnv))
+(define-type-alias LevelEnv (hashof symbol Location))
 (define-type-alias Store (hashof Location CVal))
 
 ;; LocalEnv only works when interping the class, when Assigning the 
 ;; variable in Class definition, we'll set boolean to True; (defualt is False)
 (define-type-alias LocalEnv (hashof number (listof symbol)))
 (define-type-alias ObjfieldV (hashof string CVal))
-	
+
 (define (core-error str)
   (CError (CStr str)))
 
 (define (interp-error str env store lenv)
   (AExc (VStr str) env store lenv))
 
-(define isImmutableTable 
-  (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true) 
-                   (values "Func" true) (values "MPoint" true) (values "None" true) (values "Empty" true) (values "Exception" true))))
+(define isImmutableTable
+  (make-hash (list (values "Int" true) (values "Float" true) (values "Bool" true) (values "Str" true) (values "Tuple" true)
+                   (values "Func" true) (values "MPoint" true) (values "None" true) (values "Exception" true))))
 
 (define (isImmutable (type : string)) : boolean
   (if (equal? (none) (hash-ref isImmutableTable type))
       false
       true))
-

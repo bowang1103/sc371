@@ -235,9 +235,9 @@ ___assertRaises(TypeError, range)
 
 (define (exception-lambda (type : string)) : CExp
   ($to-object 
-   (CFunc (list 'fuckbo) (list)
+   (CFunc (list 'err-msg) (list)
           (list ($to-object (CStr "")))    ; default argument ""
-          ($to-object (CException type (CId 'fuckbo))))))
+          ($to-object (CException type (CId 'err-msg))))))
 
 (define (ContructExc (excpt : CExp) (message : string)) : CExp
   (CApp excpt (list ($to-object (CStr message))) (list)))
@@ -287,7 +287,8 @@ ___assertRaises(TypeError, range)
         (bind 'IndexError (exception-lambda "IndexError"))
         (bind 'RuntimeError (exception-lambda "RuntimeError"))
         (bind 'ValueError (exception-lambda "ValueError"))
-
+        (bind 'AttributeError (exception-lambda "AttributeError"))
+        (bind 'StopIteration (exception-lambda "StopIteration"))
 ))
 
 

@@ -3,7 +3,7 @@
 (define-type PyExpr
   [PyAttr (obj : PyExpr) (attr : string)]
   [PySubscript (obj : PyExpr) (indexs : (listof PyExpr))]
-  [PyClassDef (obj : PyExpr) (name : symbol)]
+  [PyClassDef (name : symbol) (obj : PyExpr)]
   [PySeq (es : (listof PyExpr))]
   [PyId (x : symbol)]
   
