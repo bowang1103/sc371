@@ -382,7 +382,7 @@
                                    [VClosure (clargs clvarargs cldfts clbody clenv)
                                              (letrec ([self (if (and (not (equal? clargs empty))
                                                                      (symbol=? 'self (first clargs)))
-                                                                (list (interp-env (CId 'self) e-fobj s-fobj le-fobj))
+                                                                (list (interp-env (CId 'self) (hash-set (hash-set e-fobj nonlocal-level (VEnv-e (some-v (hash-ref s-fobj clenv)))) local-level (hash empty)) s-fobj le-fobj))
                                                                 (list))]
                                                       [newLocList (if (empty? self)
                                                                       (allocLocList (length clargs))
@@ -578,7 +578,7 @@
                                                                                                                             (VObject-field newkey)))) 
                                                                                                           (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
                                                                                              (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
-                                                              [(Set) o-val]
+                                                              [(None) o-val]
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
                     [else o-val]))]
@@ -860,10 +860,14 @@
       (hash-set env local-level (hash-remove (some-v (hash-ref env local-level)) id)))) 
 
 ;; merge nonlocal and local into one hash table
+;; The most important thing is to bind self into the env
 (define (mergeNAndL (env : Env)) : LevelEnv
   (let ([nenv (some-v (hash-ref env nonlocal-level))]
         [lenv (some-v (hash-ref env local-level))])
-    (foldl (lambda (x result) (hash-set result x (some-v (hash-ref lenv x)))) nenv (hash-keys lenv))))
+    (let ([newenv (foldl (lambda (x result) (hash-set result x (some-v (hash-ref lenv x)))) nenv (hash-keys lenv))])
+      (if (none? (hash-ref (some-v (hash-ref env global-level)) 'self))
+          newenv
+          (hash-set newenv 'self (some-v (hash-ref (some-v (hash-ref env global-level)) 'self)))))))
 
 ;; get a new memory addr
 (define newLoc
