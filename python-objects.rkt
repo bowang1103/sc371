@@ -185,6 +185,10 @@
                         ($to-object (CFunc (list 'self 'ele)
                                            (list) (list)
                                            (COperation (CId 'self) "List" "append" (list (CId 'ele))))))
+                (values "extend"
+                        ($to-object (CFunc (list 'self 'lst)
+                                           (list) (list)
+                                           (COperation (CId 'self) "List" "extend" (list (CId 'lst))))))
                 (values "__iter__"
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
