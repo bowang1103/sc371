@@ -368,6 +368,21 @@
                                          [else retVal])]
                               [else retVal]))]
                     [else result]))]
+#|                    [AVal (v-a e-a s-a l-a)
+                          (let ([retVal (AExc (VRet v-a) e-a s-a l-a)])
+                            (begin (display "Begin:\n")
+                                   (display (to-string ret))
+                                   (display "\n")
+                                   (display (to-string v-a))
+                                   (display "\n")
+                                     (type-case CVal v-a
+                                       [VObject (t-o v-o l-o f-o)
+                                                (type-case CVal v-o
+                                                  [VClosure (args varags defaults body e-v)
+                                                            (AExc (VRet (VObject t-o v-o l-o f-o)) e-a (hash-set s-a e-v (VEnv (mergeNAndL e-a))) l-a)]
+                                                  [else retVal])]
+                                       [else retVal])))]
+                    [else result] |#
     
     [CApp (fun args starargs) 
           (let ([funAns (interp-env fun env store lenv)])
@@ -525,7 +540,14 @@
                               [(Str) (case (string->symbol op)
                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(List) (case (string->symbol op)
-                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)]
+                                        [(append) (letrec ([appele (AVal-val (interp-env (first args) e-o s-o le-o))]
+                                                           [rst (append (VList-es (VObject-value v-o)) (list appele))]
+                                                           [ret (VObject (VObject-type v-o)
+                                                                         (VList rst)
+                                                                         (VObject-loc v-o)
+                                                                         (VObject-field v-o))])
+                                                    (AVal ret e-o (hash-set s-o (VObject-loc v-o) ret) le-o))])]
                               [(Range) (case (string->symbol op)
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(Tuple) (case (string->symbol op)
@@ -548,11 +570,11 @@
                                                                  (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys (VDict-dict (VObject-value v-o)))))
                                                                  (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
                                         [(pop) (let ([index (AVal-val (interp-env (first args) e-o s-o le-o))])
-                                                 (AVal (VEmpty) env (hash-set store (VObject-loc v-o) 
+                                                 (AVal (VEmpty) e-o (hash-set s-o (VObject-loc v-o) 
                                                                               (VObject (VObject-type v-o) 
                                                                                        (VDict (hash-remove (VDict-dict (VObject-value v-o)) (getNoneObjectVal index store))) 
                                                                                        (VObject-loc v-o)
-                                                                                       (VObject-field v-o))) lenv))]
+                                                                                       (VObject-field v-o))) le-o))]
                                         [(values) (let ([rst (AVal-val (interp-env ($to-object (CList (list))) e-o s-o le-o))])
                                                     (AVal (VObject (VObject-type rst) (VList (map (lambda(x) (some-v (hash-ref (VDict-dict (VObject-value v-o)) x))) (hash-keys (VDict-dict (VObject-value v-o)))))
                                                                    (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
