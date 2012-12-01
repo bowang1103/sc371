@@ -181,6 +181,10 @@
                                            (CPrim2 '+
                                                    (CId 'self)
                                                    (CId 'right)))))
+                (values "append"
+                        ($to-object (CFunc (list 'self 'ele)
+                                           (list) (list)
+                                           (COperation (CId 'self) "List" "append" (list (CId 'ele))))))
                 (values "__iter__"
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
