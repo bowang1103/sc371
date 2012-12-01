@@ -114,7 +114,8 @@
     [CEmpty () (AVal (VEmpty) env store lenv)]
     
     [CWrap (type obj) (case (string->symbol type)
-                        [(List) (let ([rst (interp-env ($to-object (CList (list))) env store lenv)])
+                        [(List) (letrec ([rst (interp-env ($to-object (CList (list))) env store lenv)]
+                                         [rstSto (AVal-sto rst)])
                                   (AVal (VObject type (type-case CVal (VObject-value obj)
                                                         [VStr (s) (VList (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 
                                                                               (string->list s)))]
@@ -124,8 +125,13 @@
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                         [VRange (from to step es) (VList es)]
                                                         ;; TODO [VIter]
-                                                        [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst))) 
-                                        (AVal-env rst) (AVal-sto rst) (AVal-lenv rst)))]
+                                                        [VIter (at es) (begin
+                                                                         (let ([updateIter (VObject "Iter" (VIter (length es) es) (VObject-loc obj) (VObject-field obj))])
+                                                                           (set! rstSto (hash-set rstSto (VObject-loc obj) updateIter)))
+                                                                         (VList (foldr (lambda (index rst) (cons (list-ref es index) rst))
+                                                                                       (list) (build-list (- (length es) at) (lambda(x) (+ at x))))))]
+                                                        [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst)))
+                                        (AVal-env rst) rstSto (AVal-lenv rst)))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
                                    (AVal (VObject type (type-case CVal (VObject-value obj)
                                                          [VStr (s) (VTuple (map (lambda(x) (AVal-val (interp-env ($to-object (CStr (list->string (list x)))) env store lenv))) 

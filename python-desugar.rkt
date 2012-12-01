@@ -2,7 +2,8 @@
 
 (require "python-syntax.rkt"
          "python-core-syntax.rkt"
-         "python-objects.rkt")
+         "python-objects.rkt"
+         "python-lib.rkt")
 
 (define (desugar (expr : PyExpr)) : CExp
   (type-case PyExpr expr
@@ -73,7 +74,7 @@
     [PyRaise (cause exc) (CRaise (desugar cause) (desugar exc))]
     
     ;; Loop
-    ;[PyFor (target iter body orelse) (desugar-for target iter body orelse)]
+    [PyFor (target iter body orelse) (desugar-for target iter body orelse)]
     [PyWhile (test body orelse) (desugar-while test body orelse)]
     
     [else (CNum 10)]))
@@ -87,7 +88,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for loops ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+#|(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
   (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
     (CIf (desugar test)
          (CLet 'while-var dummy-fun
@@ -99,9 +100,9 @@
                                                    (desugar orelse)))))
                      (CSeq (CSet 'while-var (CId 'while-fun))
                            (CApp (CId 'while-var) (list) (list)))))
-         (desugar orelse))))
+         (desugar orelse))))|#
 
-#|(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
+(define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
   (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
     (CLet 'while-var dummy-fun
           (CLet 'while-fun
@@ -113,37 +114,23 @@
                 (CSeq (CSet 'while-var (CId 'while-fun))
                       (CApp (CId 'while-var) (list) (list)))))
     ))
-|#
 
 (define (desugar-for (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
-  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))])
-    (CLet 'forvar dummy-fun
-          (CLet 'for-var
-                ($to-object (CFunc (list) (list) (list)
-                                   (CEmpty)))
-                (CSeq (CSet 'for-var (CId 'for-fun))
-                      (CApp (CId 'for-var) (list) (list)))))))
-    
-#|(define (desugar-for (init : ExprP) (test : ExprP) (update : ExprP) (body : ExprP)) : ExprC
-  ;; dummy-fun will tell us it was called if we do so accidentally
-  (local ([define dummy-fun (FuncC (list) (desugar-error "Dummy function"))])
-    (LetC 'v1 (desugar init)
-          (IfC (desugar test)
-               ;; for-var will hold the actual function once we tie
-               ;; everything together
-               (LetC 'for-var dummy-fun
-                     (LetC 'for-fun
-                           (FuncC (list)
-                                  (LetC 'v3 (desugar body)
-                                       (SeqC (desugar update)
-                                             (IfC (desugar test)
-                                                  (AppC (IdC 'for-var) (list))
-                                                  (IdC 'v3)))))
-                           
-                           ;; 
-                           (SeqC (Set!C 'for-var (IdC 'for-fun))
-                                 (AppC (IdC 'for-var) (list)))))
-               (IdC 'v1)))))|#
+  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))]
+        [targetId (PyId-x target)])
+    (CLet targetId (CId 'None)
+          (CLet 'for-iterobj (CApp (CGetfield (desugar iter) "__iter__") (list) (list))
+                (CLet 'for-var dummy-fun
+                      (CLet 'for-fun
+                            ($to-object (CFunc (list) (list) (list)
+                                               (CTryExn (CLet 'temp-target (CApp (CGetfield (CId 'for-iterobj) "__next__") (list) (list))
+                                                              (CSeq (CSet targetId (CId 'temp-target))
+                                                                    (CLet 'forbody (desugar body)
+                                                                          (CApp (CId 'for-var) (list) (list)))))
+                                                        (CExceptHandler (CId 'None) (desugar orelse) (CId 'StopIteration))
+                                                        (CId 'None))))
+                            (CSeq (CSet 'for-var (CId 'for-fun))
+                                  (CApp (CId 'for-var) (list) (list)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for compare ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

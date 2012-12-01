@@ -199,7 +199,7 @@ primitives here.
 (define (python-prim1 [op : symbol] [arg : CAns]) : CExp
   (let ([obj (AVal-val arg)])
     (case op
-      [(print) (begin  (set! curstore (AVal-sto arg)) (print obj) (CStr "Print Return Value"))]
+      [(print) (begin  (set! curstore (AVal-sto arg)) (print obj) ($to-object (CStr "Print Return Value")))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]
