@@ -124,6 +124,8 @@
                                                         [VDict (dict) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
                                                                                                (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys dict)))]
                                                         [VRange (from to step es) (VList es)]
+                                                        [VSet (es) (VList (map (lambda(x) (let ([t (AVal-val (interp-env ($to-object (valueToObjectCExp x)) env store lenv))])
+                                                                                            (VObject (VObject-type t) x (VObject-loc t) (VObject-field t)))) (hash-keys es)))]
                                                         ;; TODO [VIter]
                                                         [VIter (at es) (begin
                                                                          (let ([updateIter (VObject "Iter" (VIter (length es) es) (VObject-loc obj) (VObject-field obj))])
