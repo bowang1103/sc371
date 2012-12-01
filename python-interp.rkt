@@ -553,6 +553,14 @@
                                                                          (VList rst)
                                                                          (VObject-loc v-o)
                                                                          (VObject-field v-o))])
+                                                    (AVal ret e-o (hash-set s-o (VObject-loc v-o) ret) le-o))]
+                                        [(extend) (letrec ([applst (AVal-val (interp-env (first args) e-o s-o le-o))]
+                                                           [tolist (VObject-value (AVal-val (interp-env (CWrap "List" applst) e-o s-o le-o)))]
+                                                           [rst (append (VList-es (VObject-value v-o)) (VList-es tolist))]
+                                                           [ret (VObject (VObject-type v-o)
+                                                                         (VList rst)
+                                                                         (VObject-loc v-o)
+                                                                         (VObject-field v-o))])
                                                     (AVal ret e-o (hash-set s-o (VObject-loc v-o) ret) le-o))])]
                               [(Range) (case (string->symbol op)
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
