@@ -417,7 +417,7 @@ primitives here.
 (define (getObjVal (obj : CVal)) : CVal
   (type-case CVal obj
     [VObject (type value loc flds) value]
-    [else (error 'getObjVal "input not an object")]))
+    [else (begin (display (to-string obj)) (error 'getObjVal "input not an object"))]))
 
 ;; get object type from an Ans
 (define (getObjType (obj : CVal)) : string

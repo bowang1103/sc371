@@ -182,14 +182,13 @@
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)])
                                   (type-case CAns bindAns
                              [AVal (v-bind e-bind s-bind le-bind)
-                                   (begin #| (display "In CLet: \n") (display (to-string id)) (display (to-string (hash-keys s-bind))) (display "\n") |#
+                                   (begin ;(display "In CLet: ") (display id) (display " -> ") (display (to-string v-bind)) (display "\n")
                                      (let ([where (VObject-loc v-bind)])
                                        (interp-env body
                                                    (envSet id where e-bind le-bind)
                                                    (hash-set s-bind where v-bind)
                                                    lenv)))]
                                     [else bindAns]))]
-    
     [CSet (id value) (let ([vans (interp-env value env store lenv)])
                        (type-case CAns vans
                          [AVal (v-v e-v s-v le-v) 
@@ -197,7 +196,7 @@
                                  (if (isImmutable (VObject-type v-v))
                                      (AVal (VObject (VObject-type v-v) (VObject-value v-v) where (VObject-field v-v)) 
                                            (envSet id where e-v le-v)
-                                           (begin #| (display "in CSet : ") (display (to-string id)) (display (to-string (hash-keys s-v))) |# (hash-set s-v where v-v))
+                                           (begin #|(display "CSet: ") (display id) (display " -> ") (display (to-string v-v)) (display "\n")|# (hash-set s-v where v-v))
                                            (add-lenv id le-v))
                                      (AVal v-v 
                                            (envSet id (VObject-loc v-v) e-v le-v)
@@ -478,13 +477,12 @@
     
     [CFunc (args varargs defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
                                           (let ([where (newLoc)])
-                                            (cond [(empty? dftAns) (AVal (VClosure args varargs (list) body where) env (begin #| (display "The Location: ") (display (to-string where)) |#
-                                                                                                                         (let ([tstven (hash-set store where (VEnv (mergeNAndL env)))])
-                                                                                                                           (begin #| (display (to-string (hash-keys tstven))) |# tstven))) lenv)]
+                                            (cond [(empty? dftAns) (AVal (VClosure args varargs (list) body where) env (hash-set store where (VEnv (mergeNAndL env))) lenv)]
                                                   [else (let ([lastAns (first (reverse dftAns))])
+                                                          (begin ;(display (to-string (AVal-val lastAns))) (display "\n##########################\n")
                                                           (type-case CAns (first (reverse dftAns))
-                                                            [AVal (v e s le) (AVal (VClosure args varargs (map AVal-val dftAns) body where) e (hash-set s where (VEnv (mergeNAndL env))) le)]
-                                                            [else lastAns]))])))]
+                                                            [AVal (v e s le) (AVal (VClosure args varargs (map (lambda (ans) (VObject-loc (AVal-val ans))) dftAns) body where) e (hash-set s where (VEnv (mergeNAndL env))) le)]
+                                                            [else lastAns])))])))]
     
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
                          (type-case CAns argAns
@@ -573,10 +571,11 @@
                                         [(next) (letrec ([iter (VObject-value v-o)]
                                                          [itat (VIter-at iter)]
                                                          [ites (VIter-es iter)])
-                                                  (if (>= itat (length ites))
+                                                  (begin ;(display "Next: ") (display (to-string (list-ref ites itat))) (display "\n####################\n") 
+                                                         (if (>= itat (length ites))
                                                       (interp-env (raise-error "StopIteration" "iterator end") e-o s-o le-o)
                                                       (let ([updateObj (VObject (VObject-type v-o) (VIter (add1 itat) ites) (VObject-loc v-o) (VObject-field v-o))])
-                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateObj) le-o))))])]
+                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateObj) le-o)))))])]
                               [(Dict) (case (string->symbol op)
                                         [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)]
                                         [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
@@ -802,7 +801,7 @@
               [else (cons argAns empty)]))]
               ))
 
-(define (bind-args (args : (listof symbol)) (varargs : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof CVal)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
+(define (bind-args (args : (listof symbol)) (varargs : (listof symbol)) (locs : (listof Location)) (anss : (listof CAns)) (dfts : (listof Location)) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (cond [(and (empty? args) (empty? anss)) (AVal (VStr "dummy") env sto lenv)]  ;if it's empty, return the original env and store 
         [(and (not (empty? anss)) (AExc? (first (reverse anss)))) (first (reverse anss))] ; last anss has exception
         [(and (not (empty? varargs))  ; if func-def has "*agrs" arguments 
@@ -825,7 +824,8 @@
                  (extendEnv args locs env lenv) ;; Use the env with closure
                  (overrideStore locs
                                 (append (map AVal-val anss)
-                                        (lastNVals (- (length args) (length anss)) dfts (list)))
+                                        (let ([defaultLastN (lastN (- (length args) (length anss)) dfts (list))])
+                                          (map (lambda (loc) (some-v (hash-ref (AVal-sto latest) loc))) defaultLastN)))
                                 (AVal-sto latest))
                  (let ([tstlen (foldl (lambda (x result) (add-lenv x result)) lenv args)])
                    (begin #| (display (to-string tstlen)) |#
@@ -839,11 +839,11 @@
       (append (reverse output) (list (VObject "Tuple" (VTuple input) -1 (hash empty))))  
       (Varargs_CVal (- n 1) (rest input) (cons (first input) output))))
                
-(define (lastNVals (n : number) (input : (listof CVal)) (output : (listof CVal))) : (listof CVal)
+(define (lastN n input output)
   (let ([revs (reverse input)])
     (if (= 0 n)
         output
-        (lastNVals (- n 1) (rest input) (cons (first revs) output)))))
+        (lastN (- n 1) (rest input) (cons (first revs) output)))))
 
 #| (define (grabValue (for : symbol) (env : Env) (sto : Store) (lenv : LocalEnv)) : CAns
   (type-case (optionof Location) (hash-ref env for)

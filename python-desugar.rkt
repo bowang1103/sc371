@@ -123,10 +123,9 @@
                 (CLet 'for-var dummy-fun
                       (CLet 'for-fun
                             ($to-object (CFunc (list) (list) (list)
-                                               (CTryExn (CLet 'temp-target (CApp (CGetfield (CId 'for-iterobj) "__next__") (list) (list))
-                                                              (CSeq (CSet targetId (CId 'temp-target))
-                                                                    (CLet 'forbody (desugar body)
-                                                                          (CApp (CId 'for-var) (list) (list)))))
+                                               (CTryExn (CSeq (CSet targetId (CApp (CGetfield (CId 'for-iterobj) "__next__") (list) (list)))
+                                                              (CLet 'forbody (desugar body)
+                                                                    (CApp (CId 'for-var) (list) (list))))
                                                         (CExceptHandler (CId 'None) (desugar orelse) (CId 'StopIteration))
                                                         (CId 'None))))
                             (CSeq (CSet 'for-var (CId 'for-fun))
