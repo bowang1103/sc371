@@ -142,10 +142,18 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "Set")
                  ('elts elts))
      (PySet (map get-structured-python elts))]
-;    [(hash-table ('nodetype "ListComp"))]
+    [(hash-table ('nodetype "ListComp")
+                 ('elt elt)
+                 ('generators generators))
+     (PyListComp (get-structured-python elt)
+                 (map get-structured-python generators))]
 ;    [(hash-table ('nodetype "SetComp"))]
 ;    [(hash-table ('nodetype "DictComp"))]
-;    [(hash-table ('nodetype "GeneratorExp"))]
+    [(hash-table ('nodetype "GeneratorExp")
+                 ('elt elt)
+                 ('generators generators))
+     (PyGenComp (get-structured-python elt)
+                 (map get-structured-python generators))]
 ;    [(hash-table ('nodetype "Yield"))]
     [(hash-table ('nodetype "Compare") 
                  ('left left) 
@@ -258,6 +266,12 @@ structure that you define in python-syntax.rkt
 	                  (if (equal? type '#\nul)
 		                  (PyEmp)
 	                      (get-structured-python type)))]
+    [(hash-table ('nodetype "comprehension")
+                 ('target target)
+                 ('iter iter)
+                 ('ifs ifs)) ;; ignore ifs
+     (PyComp (get-structured-python target)
+             (get-structured-python iter))]
     [(hash-table ('nodetype "arguments")
                  ('defaults default-list) ;; ignoring keywords for default-list 
                  ('kwargannotation kwar) ;; ignoring keywords for kwar

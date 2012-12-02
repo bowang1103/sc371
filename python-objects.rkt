@@ -87,6 +87,14 @@
                                   (hash-keys iter-hash))])
             (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
+(define (to-caliter-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "CalIter" prim (CEmpty))
+       (CLet 'self (CId id)
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref caliter-hash key))))
+                                  (hash-keys caliter-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
+
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Func" prim (CEmpty))
@@ -114,6 +122,7 @@
     [CSetV (es) (to-set-obj prim)]
     [CDict (keys values) (to-dict-obj prim)]
     [CIter (lst) (to-iter-obj prim)]
+    [CCalIter (call stn) (to-caliter-obj prim)]
     [CFunc (args varargs defaults body) (to-func-obj prim)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
@@ -221,6 +230,19 @@
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
                                            (COperation (CId 'self) "Iter" "iter" (list)))))
+                )))
+
+;; bulit-in methods for callable iter
+(define caliter-hash 
+         (hash 
+          (list (values "__next__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "CalIter" "next" (list)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "CalIter" "iter" (list)))))
                 )))
 
 ;; built-in methods for dict

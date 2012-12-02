@@ -1,7 +1,8 @@
 #lang plai-typed
 
 (require "python-core-syntax.rkt"
-         "python-objects.rkt")
+         "python-objects.rkt"
+         "python-primitives.rkt")
 
 #|
 
@@ -128,14 +129,36 @@ that calls the primitive `print`.
 ;; iter
 (define iter-lambda
   ($to-object
-   (CFunc (list 'iterable) (list) (list)
-     (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list)))))
+   (CFunc (list 'iterable 'sentinel) 
+          (list) 
+          (list (CId 'None))
+     (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
+          (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
+          ($to-object (CCalIter (CId 'iterable) (CId 'sentinel)))))))
 
 ;; next
 (define next-lambda
   ($to-object
    (CFunc (list 'iterobj) (list) (list)
      (CApp (CGetfield (CId 'iterobj) "__next__") (list) (list)))))
+
+;; all
+(define all-lambda
+  ($to-object
+   (CFunc (list 'iterable) (list) (list)
+     (CTryExn (CLet 'iterobj (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
+                    (COperation (CId 'iterobj) "Iter" "all" (list)))
+              (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
+              (CId 'None)))))
+
+;; any
+(define any-lambda
+  ($to-object
+   (CFunc (list 'iterable) (list) (list)
+     (CTryExn (CLet 'iterobj (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
+                    (COperation (CId 'iterobj) "Iter" "any" (list)))
+              (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
+              (CId 'None)))))
 
 ;; ___assertTure
 (define assert-true-lambda
@@ -267,6 +290,8 @@ ___assertRaises(TypeError, range)
         (bind 'max max-lambda)
         (bind 'iter iter-lambda)
         (bind 'next next-lambda)
+        (bind 'all all-lambda)
+        (bind 'any any-lambda)
         (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)

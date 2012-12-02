@@ -55,7 +55,8 @@ primitives here.
                                 (foldr string-append "" 
                                        (list "range(" (first prettyRange) ", " (second prettyRange) 
                                              (if (equal? "1" (third prettyRange)) "" (string-append ", " (third prettyRange))) ")")))]
-    [VIter (at es) "Iter Object"]
+    [VIter (at es) "Iterator Object"]
+    [VCalIter (stop call stn) "Callable Iterator Object"]
     [VTrue () "True"]
     [VFalse () "False"]
     [VEmpty () ""]
@@ -69,6 +70,7 @@ primitives here.
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "Range") (pretty value)]
                                      [(equal? type "Iter") (pretty value)]
+                                     [(equal? type "CalIter") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") "None"]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
@@ -451,6 +453,7 @@ primitives here.
                       (hash empty))))]
     [(Range) (VObject-value obj)]
     [(Iter) (VObject-value obj)]
+    [(CalIter) (VObject-value obj)]
     [(Set) (getObjVal obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]

@@ -56,7 +56,10 @@
   [PyStr (s : string)]
   
   [PyArgs (args : (listof symbol)) (varargs :(listof symbol)) (defaults : (listof PyExpr))]
-  
+
+  [PyListComp (elt : PyExpr) (gens : (listof PyExpr))]
+  [PyGenComp (elt : PyExpr) (gens : (listof PyExpr))]
+  [PyComp (target : PyExpr) (iter : PyExpr)]
   
   
 ;  (PyFunDef (name : symbol) (ids : listof symbol) (body : PyExpr))

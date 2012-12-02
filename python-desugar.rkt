@@ -77,6 +77,9 @@
     [PyFor (target iter body orelse) (desugar-for target iter body orelse)]
     [PyWhile (test body orelse) (desugar-while test body orelse)]
     
+    [PyListComp (elt gens) (desugar-listcomp elt gens)]
+    [PyGenComp (elt gens) (desugar-gencomp elt gens)]
+    
     [else (CNum 10)]))
 
 (define (make-ids (n : number)) : (listof symbol)
@@ -103,33 +106,59 @@
          (desugar orelse))))|#
 
 (define (desugar-while (test : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
-  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))])
-    (CLet 'while-var dummy-fun
-          (CLet 'while-fun
+  (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy while function")))]
+        [while-var (getId)]
+        [while-fun (getId)]
+        [whilebody (getId)])
+    (CLet while-var dummy-fun
+          (CLet while-fun
                 ($to-object (CFunc (list) (list) (list)
                                    (CIf (desugar test)
-                                        (CLet 'whilebody (desugar body)
-                                              (CApp (CId 'while-var) (list) (list)))
+                                        (CLet whilebody (desugar body)
+                                              (CApp (CId while-var) (list) (list)))
                                         (desugar orelse))))
-                (CSeq (CSet 'while-var (CId 'while-fun))
-                      (CApp (CId 'while-var) (list) (list)))))
+                (CSeq (CSet while-var (CId while-fun))
+                      (CApp (CId while-var) (list) (list)))))
     ))
 
 (define (desugar-for (target : PyExpr) (iter : PyExpr) (body : PyExpr) (orelse : PyExpr)) : CExp
   (let ([dummy-fun ($to-object (CFunc (list) (list) (list) (core-error "Dummy for function")))]
-        [targetId (PyId-x target)])
+        [targetId (PyId-x target)]
+        [for-iterobj (getId)]
+        [for-var (getId)]
+        [for-fun (getId)]
+        [forbody (getId)])
     (CLet targetId (CId 'None)
-          (CLet 'for-iterobj (CApp (CGetfield (desugar iter) "__iter__") (list) (list))
-                (CLet 'for-var dummy-fun
-                      (CLet 'for-fun
+          (CLet for-iterobj (CApp (CGetfield (desugar iter) "__iter__") (list) (list))
+                (CLet for-var dummy-fun
+                      (CLet for-fun
                             ($to-object (CFunc (list) (list) (list)
-                                               (CTryExn (CSeq (CSet targetId (CApp (CGetfield (CId 'for-iterobj) "__next__") (list) (list)))
-                                                              (CLet 'forbody (desugar body)
-                                                                    (CApp (CId 'for-var) (list) (list))))
+                                               (CTryExn (CSeq (CSet targetId (CApp (CGetfield (CId for-iterobj) "__next__") (list) (list)))
+                                                              (CLet forbody (desugar body)
+                                                                    (CApp (CId for-var) (list) (list))))
                                                         (CExceptHandler (CId 'None) (desugar orelse) (CId 'StopIteration))
                                                         (CId 'None))))
-                            (CSeq (CSet 'for-var (CId 'for-fun))
-                                  (CApp (CId 'for-var) (list) (list)))))))))
+                            (CSeq (CSet for-var (CId for-fun))
+                                  (CApp (CId for-var) (list) (list)))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;; desugar for Comprehension ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (desugar-listcomp (elt : PyExpr) (gens : (listof PyExpr))) : CExp
+  (let ([comb (getId)])
+    (CLet comb ($to-object (CList (list)))
+          (CSeq 
+           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) rst (PyEmp))) 
+                           (PyApp (PyAttr (PyId comb) "append") (list elt) (list)) gens))
+           (CId comb)))))
+
+(define (desugar-gencomp (elt : PyExpr) (gens : (listof PyExpr))) : CExp
+  (let ([comb (getId)])
+    (CLet comb ($to-object (CList (list)))
+          (CSeq 
+           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) rst (PyEmp))) 
+                           (PyApp (PyAttr (PyId comb) "append") (list elt) (list)) gens))
+           ($to-object (CIter (CId comb)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; desugar for compare ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
