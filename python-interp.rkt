@@ -566,7 +566,7 @@
                                                                            [else (hash-set s-clbody nonlocal-level (VEnv (some-v (hash-ref e-clbody nonlocal-level))))]) 
                                                                          (hash-set lenv 1 (some-v (hash-ref le-clbody 1)))))]))]
                                                  [AExc (v-es e-es s-es le-se) (AExc v-es env s-es lenv)]))]
-                                   [else (begin (display (to-string (VObject-value v-fobj))) (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj))]))]
+                                   [else (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj)]))]
                          [else funAns]))]
     
     [CFunc (args varargs defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
@@ -708,7 +708,7 @@
                                                                        (let ([updateIter (VObject "CalIter" 
                                                                                                   (VCalIter true (VCalIter-call caliter) (VCalIter-stn caliter)) 
                                                                                                   (VObject-loc v-o) (VObject-field v-o))])
-                                                                         (interp-env (raise-error "StopIteration" "callable iterator end") e-next s-next le-next))
+                                                                         (interp-env (raise-error "StopIteration" "callable iterator end") e-next (hash-set s-next (VObject-loc v-o) updateIter) le-next))
                                                                        nextAns)]
                                                              [else nextAns]))))])]
                               [(Set) (case (string->symbol op)

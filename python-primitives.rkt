@@ -112,7 +112,7 @@ primitives here.
                  ;; TODO: all other implicit false
                  [VMPoint (loc) (isObjTrue (some-v (hash-ref curstore loc)) sto)]
                  [VEmpty () false]
-                 [else (begin (display (to-string val)) true)]
+                 [else true]
                  ))))
 
 (define (negNumeric (obj : CVal)) : CExp
@@ -424,7 +424,7 @@ primitives here.
 (define (getObjVal (obj : CVal)) : CVal
   (type-case CVal obj
     [VObject (type value loc flds) value]
-    [else (begin (display (to-string obj)) (error 'getObjVal "input not an object"))]))
+    [else (error 'getObjVal "input not an object")]))
 
 ;; get object type from an Ans
 (define (getObjType (obj : CVal)) : string
