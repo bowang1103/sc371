@@ -145,7 +145,7 @@
                                                                                            (VObject-loc obj) updateIter))
                                                                            (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns))))]
                                                                   
-                                                        [else (VList (list (VEmpty)))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst)))
+                                                        [else (begin (display "fuck bo\n") (VList (list (VEmpty))))]) (VObject-loc (AVal-val rst)) (VObject-field (AVal-val rst)))
                                         (AVal-env rst) rstSto (AVal-lenv rst)))]
                         [(Tuple) (let ([rst (AVal-val (interp-env ($to-object (CTuple (list))) env store lenv))])
                                    (AVal (VObject type (type-case CVal (VObject-value obj)
@@ -175,7 +175,7 @@
     [CIf (i t e) (let ([ians (interp-env i env store lenv)])
                    (type-case CAns ians
                      [AVal (v-i e-i s-i le-i)
-                           (if (isObjTrue v-i)
+                           (if (isObjTrue v-i s-i)
                                (interp-env t e-i s-i le-i)
                                (interp-env e e-i s-i le-i))]
                      [else ians]))]
@@ -485,7 +485,7 @@
                                                                    (AVal (VRet-ret v-clbody) env s-clbody lenv)
                                                                    (AExc v-clbody env s-clbody lenv))]))]
                                                  [AExc (v-es e-es s-es le-se) (AExc v-es env s-es lenv)]))]
-                                   [else (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj)]))]
+                                   [else (begin (display (to-string (VObject-value v-fobj))) (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj))]))]
                          [else funAns]))]
     
     [CFunc (args varargs defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
@@ -590,7 +590,14 @@
                                                       (let ([updateIter (VObject (VObject-type v-o) (VIter (add1 itat) ites) (VObject-loc v-o) (VObject-field v-o))])
                                                         (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateIter) le-o))))]
                                         [(all) (iterAll (CGetfield obj "__next__") e-o s-o le-o)]
-                                        [(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)])]
+                                        [(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)]
+                                        [(filter) (letrec ([lstAns (iterFilter (CGetfield obj "__next__") (first args) e-o s-o le-o)]
+                                                           [last (if (empty? lstAns) (AVal (VStr "dummy") e-o s-o le-o) (first (reverse lstAns)))])
+                                                    (interp-env ($to-object (CIter 
+                                                          (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
+                                                                (AVal-env last) (AVal-sto last) (AVal-lenv last))
+                                                                )])]
+                              
                               [(CalIter) (case (string->symbol op)
                                            [(iter) o-val]
                                            [(next) (let ([caliter (VObject-value v-o)])
@@ -606,15 +613,21 @@
                                                                          (interp-env (raise-error "StopIteration" "callable iterator end") e-next s-next le-next))
                                                                        nextAns)]
                                                              [else nextAns]))))])]
-                              
+                              [(Set) (case (string->symbol op)
+                                       [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(Dict) (case (string->symbol op)
                                         [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)]
                                         [(clear) (let ([rst (VObject (VObject-type v-o) (VDict (hash empty)) (VObject-loc v-o) (VObject-field v-o))])
                                                    (AVal rst e-o (hash-set s-o (VObject-loc v-o) rst) le-o))]
-                                        [(keys) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) e-o s-o le-o))])
-                                                  (AVal (VObject (VObject-type rst) 
+                                        ;[(keys) (let ([rst (AVal-val (interp-env ($to-object (CSetV (list))) e-o s-o le-o))])
+                                         ;        (AVal (VObject (VObject-type rst) 
+                                          ;                        (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys (VDict-dict (VObject-value v-o)))))
+                                           ;                      (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
+                                        [(keys) (letrec ([rstAns (interp-env ($to-object (CSetV (list))) e-o s-o le-o)]
+                                                         [rstObj (VObject "Set"
                                                                  (VSet (foldl (lambda (x ht) (hash-set ht x true)) (hash empty) (hash-keys (VDict-dict (VObject-value v-o)))))
-                                                                 (VObject-loc rst) (VObject-field rst)) e-o s-o le-o))]
+                                                                 (VObject-loc (AVal-val rstAns)) (VObject-field (AVal-val rstAns)))])
+                                                  (AVal rstObj (AVal-env rstAns) (hash-set (AVal-sto rstAns) (VObject-loc (AVal-val rstAns)) rstObj) (AVal-lenv rstAns)))]
                                         [(pop) (let ([index (AVal-val (interp-env (first args) e-o s-o le-o))])
                                                  (AVal (VEmpty) e-o (hash-set s-o (VObject-loc v-o) 
                                                                               (VObject (VObject-type v-o) 
@@ -743,7 +756,7 @@
                                                                (hash-set store where (AVal-val value))
                                                                lenv)))
                                              ;;Didn't go inside the Except body
-                                             (AVal (VEmpty) env store lenv))))]  
+                                             (AExc (AVal-val value) env store lenv))))]  
     
     
     ;;Haven't handle "cause" yet ;
@@ -988,7 +1001,7 @@
   (let ([nextAns (interp-env (CApp nextFunc (list) (list)) env store lenv)])
     (type-case CAns nextAns
       [AVal (obj-next e-next s-next le-next)
-            (if (isObjTrue obj-next) (iterAll nextFunc e-next s-next le-next) (interp-env (CId 'False) e-next s-next le-next))]
+            (if (isObjTrue obj-next s-next) (iterAll nextFunc e-next s-next le-next) (interp-env (CId 'False) e-next s-next le-next))]
       [AExc (exc-next e-next s-next le-next)
             (interp-env (CId 'True) e-next s-next le-next)])))
 
@@ -997,9 +1010,25 @@
   (let ([nextAns (interp-env (CApp nextFunc (list) (list)) env store lenv)])
     (type-case CAns nextAns
       [AVal (obj-next e-next s-next le-next)
-            (if (isObjTrue obj-next) (interp-env (CId 'True) e-next s-next le-next) (iterAny nextFunc e-next s-next le-next))]
+            (if (isObjTrue obj-next s-next) (interp-env (CId 'True) e-next s-next le-next) (iterAny nextFunc e-next s-next le-next))]
       [AExc (exc-next e-next s-next le-next)
             (interp-env (CId 'False) e-next s-next le-next)])))
+
+; iter call next until one true appear or reach end
+(define (iterFilter (nextFunc : CExp) (filterFunc : CExp) (env : Env) (store : Store) (lenv : LocalEnv)) : (listof CAns)
+  (let ([nextAns (interp-env (CApp nextFunc (list) (list)) env store lenv)])
+    (type-case CAns nextAns
+      [AVal (obj-next e-next s-next le-next)
+            (let ([filfuncAns (interp-env filterFunc e-next s-next le-next)])
+              (if (equal? (getObjType (AVal-val filfuncAns)) "None")
+                  (if (isObjTrue obj-next s-next) (cons nextAns (iterFilter nextFunc filterFunc e-next s-next le-next)) (iterFilter nextFunc filterFunc e-next s-next le-next))
+                  (let ([filterAns (interp-env (CApp filterFunc (list (CCopy obj-next)) (list)) e-next s-next le-next)])
+                    (type-case CAns filterAns
+                      [AVal (obj-fr e-fr s-fr le-fr)
+                            (if (isObjTrue obj-fr s-fr)
+                                (cons nextAns (iterFilter nextFunc filterFunc e-fr s-fr le-fr)) (iterFilter nextFunc filterFunc e-fr s-fr le-fr))]
+                      [else (list filterAns)]))))]
+      [else empty])))
               
 (define (CValtoCAns [element : CVal] [env : Env] [sto : Store] [lenv : LocalEnv]) : CAns
   (AVal element env sto lenv))
