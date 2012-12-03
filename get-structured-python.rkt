@@ -269,9 +269,12 @@ structure that you define in python-syntax.rkt
     [(hash-table ('nodetype "comprehension")
                  ('target target)
                  ('iter iter)
-                 ('ifs ifs)) ;; ignore ifs
+                 ('ifs ifs))
      (PyComp (get-structured-python target)
-             (get-structured-python iter))]
+             (get-structured-python iter)
+			 (if (empty? ifs)
+				 (list (PyId 'True))
+				 (map get-structured-python ifs)))]
     [(hash-table ('nodetype "arguments")
                  ('defaults default-list) ;; ignoring keywords for default-list 
                  ('kwargannotation kwar) ;; ignoring keywords for kwar

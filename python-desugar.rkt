@@ -2,8 +2,7 @@
 
 (require "python-syntax.rkt"
          "python-core-syntax.rkt"
-         "python-objects.rkt"
-         "python-lib.rkt")
+         "python-objects.rkt")
 
 (define (desugar (expr : PyExpr)) : CExp
   (type-case PyExpr expr
@@ -148,7 +147,7 @@
   (let ([comb (getId)])
     (CLet comb ($to-object (CList (list)))
           (CSeq 
-           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) rst (PyEmp))) 
+           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) (PyIf (PyBoolOp 'and (PyComp-ifs el)) rst (PyEmp)) (PyEmp))) 
                            (PyApp (PyAttr (PyId comb) "append") (list elt) (list)) gens))
            (CId comb)))))
 
@@ -156,7 +155,7 @@
   (let ([comb (getId)])
     (CLet comb ($to-object (CList (list)))
           (CSeq 
-           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) rst (PyEmp))) 
+           (desugar (foldr (lambda (el rst) (PyFor (PyComp-target el) (PyComp-iter el) (PyIf (PyBoolOp 'and (PyComp-ifs el)) rst (PyEmp)) (PyEmp))) 
                            (PyApp (PyAttr (PyId comb) "append") (list elt) (list)) gens))
            ($to-object (CIter (CId comb)))))))
 

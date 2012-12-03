@@ -59,7 +59,7 @@
 
   [PyListComp (elt : PyExpr) (gens : (listof PyExpr))]
   [PyGenComp (elt : PyExpr) (gens : (listof PyExpr))]
-  [PyComp (target : PyExpr) (iter : PyExpr)]
+  [PyComp (target : PyExpr) (iter : PyExpr) (ifs : (listof PyExpr))]
   
   
 ;  (PyFunDef (name : symbol) (ids : listof symbol) (body : PyExpr))

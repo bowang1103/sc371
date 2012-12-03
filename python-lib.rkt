@@ -1,8 +1,10 @@
 #lang plai-typed
 
 (require "python-core-syntax.rkt"
+         "python-syntax.rkt"
          "python-objects.rkt"
-         "python-primitives.rkt")
+         "python-primitives.rkt"
+         "python-desugar.rkt")
 
 #|
 
@@ -62,12 +64,17 @@ that calls the primitive `print`.
    (CFunc (list 'to-len) (list) (list)
      (CPrim1 'len (CId 'to-len)))))
 
-;; list
+#|;; list
 (define list-lambda
   ($to-object
    (CFunc (list 'to-list) (list)
           (list ($to-object (CList (list)))) ;; default []
-     (CPrim1 'list (CId 'to-list)))))
+     (CPrim1 'list (CId 'to-list)))))|#
+;; list
+(define list-lambda
+  (let ([elt (getId)])
+    (desugar (PyFunc (PyArgs (list 'iterable) (list) (list (PyList (list))))
+                     (PyListComp (PyId elt) (list (PyComp (PyId elt) (PyId 'iterable) (list (PyId 'True)))))))))
 
 ;; tuple
 (define tuple-lambda
@@ -129,12 +136,12 @@ that calls the primitive `print`.
 ;; iter
 (define iter-lambda
   ($to-object
-   (CFunc (list 'iterable 'sentinel) 
+   (CFunc (list 'iterableo 'sentinel) 
           (list) 
           (list (CId 'None))
      (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
-          (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
-          ($to-object (CCalIter (CId 'iterable) (CId 'sentinel)))))))
+          (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
+          ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))
 
 ;; next
 (define next-lambda
@@ -160,6 +167,26 @@ that calls the primitive `print`.
               (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
               (CId 'None)))))
 
+#|
+;; filter
+(define filter-lambda
+  ($to-object
+   (CFunc (list 'filt-func 'iterable) (list) (list)
+     (CTryExn (CLet 'iterobj (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
+                    (COperation (CId 'iterobj) "Iter" "filter" (list(CId 'filt-func))))
+              (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
+              (CId 'None)))))
+|#
+;; filter
+(define filter-lambda
+  (desugar (PyFunc (PyArgs (list 'filt-func 'iterable) (list) (list))
+                   (PyIf (PyCompare (PyId 'filt-func) (list 'is) (list (PyId 'None)))
+                         (PyGenComp (PyId 'filt-elm)
+                                    (list (PyComp (PyId 'filt-elm) (PyId 'iterable) (list (PyId 'filt-elm)))))
+                         (PyGenComp (PyId 'filt-elm) 
+                                    (list (PyComp (PyId 'filt-elm) (PyId 'iterable) (list (PyApp (PyId 'filt-func) (list (PyId 'filt-elm)) (list))))))
+                   ))))
+  
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -292,6 +319,7 @@ ___assertRaises(TypeError, range)
         (bind 'next next-lambda)
         (bind 'all all-lambda)
         (bind 'any any-lambda)
+        (bind 'filter filter-lambda)
         (bind 'isinstance isinstance-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)

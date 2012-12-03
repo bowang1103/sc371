@@ -61,7 +61,9 @@
   (let ([id (getId)]) 
     (CLet id (CObject "Set" prim (CEmpty))
        (CLet 'self (CId id)
-             (CId id)))))
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref set-hash key))))
+                                  (hash-keys set-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
 (define (to-dict-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
@@ -202,6 +204,15 @@
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
                                            (COperation (CId 'self) "List" "iter" (list)))))
+                )))
+
+;; bulit-in methods for set
+(define set-hash 
+         (hash 
+          (list (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Set" "iter" (list)))))
                 )))
 
 ;; bulit-in methods for range

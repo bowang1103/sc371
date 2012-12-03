@@ -70,7 +70,7 @@ primitives here.
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "Range") (pretty value)]
                                      [(equal? type "Iter") (pretty value)]
-                                     [(equal? type "CalIter") (pretty value)]
+                                     [(equal? type "CalIter") (to-string arg)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") "None"]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
@@ -95,21 +95,24 @@ primitives here.
 ; None False (zero of any number type) 
 ; (empty sequence () [] "") (empty mapping {}) 
 ; (obj ___bool___ or ___len___ return false or 0)
-(define (isObjTrue (obj : CVal)) : boolean
-  (let ([val (getObjVal obj)])
-    (type-case CVal val
-      [VNum (n) (not (= 0 n))]
-      [VStr (s) (not (equal? "" s))]
-      [VList (ls) (not (empty? ls))]
-      [VTuple (ls) (not (empty? ls))]
-      [VSet (es) (not (empty? (hash-keys es)))]
-      [VDict (dict) (not (empty? (hash-keys dict)))]
-      [VTrue () true]
-      [VFalse () false]
-      ;; TODO: all other implicit false
-      [VEmpty () false]
-      [else true]
-      )))
+(define (isObjTrue (obj : CVal) (sto : Store)) : boolean
+  (begin
+    (set! curstore sto)
+    (let ([val (getObjVal obj)])
+      (type-case CVal val
+                 [VNum (n) (not (= 0 n))]
+                 [VStr (s) (not (equal? "" s))]
+                 [VList (ls) (not (empty? ls))]
+                 [VTuple (ls) (not (empty? ls))]
+                 [VSet (es) (not (empty? (hash-keys es)))]
+                 [VDict (dict) (not (empty? (hash-keys dict)))]
+                 [VTrue () true]
+                 [VFalse () false]
+                 ;; TODO: all other implicit false
+                 [VMPoint (loc) (isObjTrue (some-v (hash-ref curstore loc)) sto)]
+                 [VEmpty () false]
+                 [else (begin (display (to-string val)) true)]
+                 ))))
 
 (define (negNumeric (obj : CVal)) : CExp
   (let ([pv (getObjVal obj)])
@@ -203,8 +206,8 @@ primitives here.
     (case op
       [(print) (begin  (set! curstore (AVal-sto arg)) (print obj) ($to-object (CStr "Print Return Value")))]
       [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
-      [(bool) (if (isObjTrue obj) (CId 'True) (CId 'False))]
-      [(not) (if (isObjTrue obj) (CId 'False) (CId 'True))]
+      [(bool) (if (isObjTrue obj (AVal-sto arg)) (CId 'True) (CId 'False))]
+      [(not) (if (isObjTrue obj (AVal-sto arg)) (CId 'False) (CId 'True))]
       [(~) (invertNumeric obj)]
       [(neg) (negNumeric obj)]
       [(pos) (posNumeric obj)]
@@ -255,6 +258,7 @@ primitives here.
       [(!in) (if (isIn clean-val-l clean-val-r)
                  (CId 'False)
                  (CId 'True))]
+      [(and) (CId 'True)]
       
       ;; TODO: add all other cases
       [else (cond 
@@ -457,6 +461,7 @@ primitives here.
     [(Set) (getObjVal obj)]
     [(True) (VTrue)]
     [(False) (VFalse)]
+    [(Func) (getObjVal obj)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]
     [(Exception) (VObject-value obj)]
     [(None) (VEmpty)]))
