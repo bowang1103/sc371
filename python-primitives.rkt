@@ -74,7 +74,8 @@ primitives here.
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") "None"]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
-                                     [(equal? type "Exception") (pretty value)])]
+                                     [(equal? type "Exception") (pretty value)]
+                                     [(equal? type "Func") "No need to print"])]
     [VClosure (args varargs defaults body env) (error 'prim "Can't print closures yet")]
     [VPoint (name field) (error 'prim "VPoint")]
     [VMPoint (loc) (pretty (some-v (hash-ref curstore loc)))]
@@ -451,6 +452,7 @@ primitives here.
                       (hash-keys dict) 
                       (map (lambda (key) (getNoneObjectVal (some-v (hash-ref dict key)) store)) (hash-keys dict))
                       (hash empty))))]
+    [(Func) (VObject-value obj)]
     [(Range) (VObject-value obj)]
     [(Iter) (VObject-value obj)]
     [(CalIter) (VObject-value obj)]

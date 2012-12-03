@@ -11,21 +11,23 @@
                 (CSet name (CObject "Class" (CEmpty) (desugar obj)))]
     [PyAttr (obj attr) (CGetfield (desugar obj) attr)]
     [PyAssign (tgs val)
-              (CLet 'value (desugar val)
-                    (let ([rst 
-                           (map2 (lambda (tar newval) 
-                                   (type-case PyExpr tar
-                                    [PySubscript (obj indexs) 
-                                                 (if (equal? (length indexs) 1)
-                                                     (CSetelement (desugar obj)
-                                                                  (desugar (first indexs)) 
-                                                                  (if (equal? newval (PyEmp)) 
-                                                                      (CId 'value)
-                                                                      (desugar newval)))
-                                                     (CEmpty))]
-                                     [PyId (id) (CSet id (if (equal? newval (PyEmp)) (CId 'value) (desugar newval)))]
-                                     [else (CEmpty)])) (reverse tgs) (cons (PyEmp) (reverse (rest tgs))))])
-                      (foldl (lambda (e1 e2) (CSeq e2 e1)) (first rst) (rest rst))))]
+              (let ([value (getId)]) 
+                (CLet value (desugar val)
+                      (let ([rst 
+                             (map2 (lambda (tar newval) 
+                                     (type-case PyExpr tar
+                                       [PySubscript (obj indexs) 
+                                                    (if (equal? (length indexs) 1)
+                                                        (CSetelement (desugar obj)
+                                                                     (desugar (first indexs)) 
+                                                                     (if (equal? newval (PyEmp)) 
+                                                                         (CId value)
+                                                                         (desugar newval)))
+                                                        (CEmpty))]
+                                       [PyId (id) (CSet id (if (equal? newval (PyEmp)) (CId value) (desugar newval)))]
+                                       [PyTuple (es) (CSetMore (map (lambda (x) (PyId-x x)) es) (if (equal? newval (PyEmp)) (CId value) (desugar newval)))]
+                                       [else (CEmpty)])) (reverse tgs) (cons (PyEmp) (reverse (rest tgs))))])
+                        (foldl (lambda (e1 e2) (CSeq e2 e1)) (first rst) (rest rst)))))]
     [PyDel (targets)
            (if (equal? 1 (length targets))
                (CDel (desugar (first targets)))
@@ -55,6 +57,7 @@
             (type-case PyExpr args
               [PyArgs (args varargs defaults) ($to-object (CFunc args varargs (map desugar defaults) (desugar body)))]
               [else (core-error "shouldn't came here")])]
+    [PyGlobal (names) (CGlobal names)]
     ;[PyArgs (args defaults) (args (map desugar defaults))]
     [PyId (x) (CId x)]
     

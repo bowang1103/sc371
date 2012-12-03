@@ -27,10 +27,13 @@ ParselTongue.
   [CId (id : symbol)]
   [CLet (id : symbol) (bind : CExp) (body : CExp)]
   [CSet (id : symbol) (value : CExp)]
+  [CSetMore (ids : (listof symbol)) (value : CExp)]
   [CDel (tg : CExp)]
   [CRet (ret : CExp)]
+  [CGlobal (names : (listof symbol))]
   [CApp (fun : CExp) (args : (listof CExp)) (starargs : (listof CExp))]
   [CFunc (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof CExp)) (body : CExp)]
+  [CPrim0 (prim : symbol)]
   [CPrim1 (prim : symbol) (arg : CExp)]
   [CPrim2 (prim : symbol) (arg1 : CExp) (arg2 : CExp)] ;; arg1 and arg2 should be IdC
   [CPrim2Seq (left : CExp) (prims : (listof symbol)) (args : (listof CExp))]

@@ -114,6 +114,12 @@ that calls the primitive `print`.
    (CFunc (list 'instance 'class) (list) (list)
      (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list) (list)))))))
 
+;; locals
+(define locals-lambda
+  ($to-object
+   (CFunc (list) (list) (list)
+          (CPrim0 'locals))))
+
 ;; min
 (define min-lambda
   ($to-object
@@ -293,6 +299,7 @@ ___assertRaises(TypeError, range)
         (bind 'all all-lambda)
         (bind 'any any-lambda)
         (bind 'isinstance isinstance-lambda)
+        (bind 'locals locals-lambda)
         (bind '___assertTrue assert-true-lambda)
         (bind '___assertFalse assert-false-lambda)
         (bind '___assertIn assert-in-lambda)
@@ -315,7 +322,6 @@ ___assertRaises(TypeError, range)
         (bind 'AttributeError (exception-lambda "AttributeError"))
         (bind 'StopIteration (exception-lambda "StopIteration"))
 ))
-
 
 ;; Purpose: lookup lib-functions
 (define (lookup_lib-funcs [name : symbol] [lib-funcs : (listof LibBinding)]) : CExp
