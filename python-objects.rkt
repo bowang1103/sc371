@@ -97,6 +97,14 @@
                                   (hash-keys caliter-hash))])
             (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
+(define (to-class-obj [value : CExp] [fields : CExp]) : CExp
+  (let ([id (getId)])
+    (CLet id (CObject "Class" value fields)
+       (CLet 'self (CId id)
+             (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref class-hash key))))
+                                  (hash-keys class-hash))])
+               (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
+
 (define (to-func-obj [prim : CExp]) : CExp
   (let ([id (getId)]) 
     (CLet id (CObject "Func" prim (CEmpty))
@@ -126,6 +134,7 @@
     [CIter (lst) (to-iter-obj prim)]
     [CCalIter (call stn) (to-caliter-obj prim)]
     [CFunc (args varargs defaults body) (to-func-obj prim)]
+    [CObject (type value body) (to-class-obj value body)]
     [CException (type message) (to-exc-obj prim)]
     [CEmpty () (to-empty-obj prim)]
     ;;[VError (exn) (exn-type exn)]
@@ -255,6 +264,18 @@
                                            (list) (list)
                                            (COperation (CId 'self) "CalIter" "iter" (list)))))
                 )))
+
+;; built-in methods for class
+(define class-hash
+  (hash
+   (list (values "__init__"
+                 ($to-object (CFunc (list 'self)
+                                    (list) (list)
+                                    (COperation (CId 'self) "Class" "__init__" (list)))))
+         (values "__dict__"
+                 ($to-object (CFunc (list 'self)
+                                    (list) (list)
+                                    (COperation (CId 'self) "Class" "__dict__" (list))))))))
 
 ;; built-in methods for dict
 (define dict-hash

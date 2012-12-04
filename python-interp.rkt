@@ -586,12 +586,13 @@
     
     [CPrim0 (prim) (case prim
                      [(locals) (letrec ([ret (interp-env ($to-object (CDict (list) (list))) env store lenv)]
-                                        [rst (AVal-val ret)])
-                                 (AVal (VObject (VObject-type rst) 
+                                        [rst (AVal-val ret)]
+                                        [fin (VObject (VObject-type rst) 
                                                 (VDict 
                                                  (foldl (lambda(x result) (let ([newkey (VStr (symbol->string x))]) 
                                                                             (hash-set result newkey (AVal-val (grabValue x env store lenv)))))
-                                                        (hash empty) (get-local lenv)))(VObject-loc rst) (VObject-field rst)) env store lenv))]
+                                                        (hash empty) (get-local lenv))) (VObject-loc rst) (VObject-field rst))])
+                                 (AVal fin (AVal-env ret) (hash-set (AVal-sto ret) (VObject-loc rst) fin) (AVal-lenv ret)))]
                      [else (interp-error "There is no such built-in function" env store lenv)])]
     
     [CPrim1 (prim arg) (let ([argAns (interp-env arg env store lenv)])
@@ -677,7 +678,6 @@
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(Tuple) (case (string->symbol op)
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
-                              
                               [(Iter) (case (string->symbol op)
                                         [(iter) o-val]
                                         [(next) (letrec ([iter (VObject-value v-o)]
@@ -695,7 +695,6 @@
                                                           (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
                                                                 (AVal-env last) (AVal-sto last) (AVal-lenv last))
                                                                 )])]
-                              
                               [(CalIter) (case (string->symbol op)
                                            [(iter) o-val]
                                            [(next) (let ([caliter (VObject-value v-o)])
@@ -711,6 +710,18 @@
                                                                          (interp-env (raise-error "StopIteration" "callable iterator end") e-next (hash-set s-next (VObject-loc v-o) updateIter) le-next))
                                                                        nextAns)]
                                                              [else nextAns]))))])]
+                              [(Class) (case (string->symbol op)
+                                         [(__init__) (letrec ([where (newLoc)]
+                                                              [rst (VObject (VStr-s (VObject-value v-o))
+                                                                            (VEmpty)
+                                                                            where (VObject-field v-o))])
+                                                       (AVal rst
+                                                             e-o (hash-set s-o where rst) le-o))]
+                                         [(__dict__) (letrec ([rstAns (interp-env ($to-object (CDict (list) (list))) e-o s-o le-o)]
+                                                              [rstObj (VObject "Dict"
+                                                                               (VDict (hash empty))
+                                                                               (VObject-loc (AVal-val rstAns)) (VObject-field (AVal-val rstAns)))])
+                                                       (AVal rstObj (AVal-env rstAns) (hash-set (AVal-sto rstAns) (VObject-loc (AVal-val rstAns)) rstObj) (AVal-lenv rstAns)))])]
                               [(Set) (case (string->symbol op)
                                        [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(Dict) (case (string->symbol op)
