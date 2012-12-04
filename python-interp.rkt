@@ -200,7 +200,7 @@
                     [else rst])))]
     
     [CLet (id bind body) (let ([bindAns (interp-env bind env store lenv)])
-                                  (type-case CAns bindAns
+                           (type-case CAns bindAns
                              [AVal (v-bind e-bind s-bind le-bind)
                                    (begin ;(display "In CLet: ") (display id) (display " -> ") (display (to-string v-bind)) (display "\n")
                                      (let ([where (VObject-loc v-bind)])
@@ -208,7 +208,7 @@
                                                    (envSet id where e-bind le-bind)
                                                    (hash-set s-bind where v-bind)
                                                    le-bind)))]
-                                    [else bindAns]))]
+                             [else bindAns]))]
     [CSet (id value) (let ([vans (interp-env value env store lenv)])
                        (type-case CAns vans
                          [AVal (v-v e-v s-v le-v) 
@@ -828,8 +828,10 @@
                                                              ;; continue pass down the exception
                                                              [AExc (v-hd e-hd s-hd le-hs) (AExc v-hd e-hd s-hd le-hs)])]))))]))]
     
-    [CExceptHandler (name body type) (let ([value (grabValue 'exception_symbol env store lenv)])
-                                       (let ([ErrorType (VException-type (getObjVal (AVal-val value)))]
+    [CExceptHandler (name body type) (let ([excVal (AVal-val (grabValue 'exception_symbol env store lenv))])
+                                       (if (VRet? excVal) ; if return or break cause the exception type, return the return value with AVal
+                                           (AExc excVal env store lenv)
+                                       (let ([ErrorType (VException-type (getObjVal excVal))]
                                              [typev (if (not (CId? type))
                                                         (interp-env type env store lenv)
                                                         (interp-env (ContructExc type "") env store lenv))]
@@ -851,10 +853,10 @@
                                                  (let ([where (newLoc)])
                                                    (interp-env body
                                                                (envSet (string->symbol (VStr-s (getObjVal (AVal-val namev)))) where env lenv)
-                                                               (hash-set store where (AVal-val value))
+                                                               (hash-set store where excVal)
                                                                lenv)))
                                              ;;Didn't go inside the Except body
-                                             (AExc (AVal-val value) env store lenv))))]  
+                                             (AExc excVal env store lenv)))))]  
     
     
     ;;Haven't handle "cause" yet ;

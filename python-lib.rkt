@@ -156,22 +156,49 @@ that calls the primitive `print`.
      (CApp (CGetfield (CId 'iterobj) "__next__") (list) (list)))))
 
 ;; all
-(define all-lambda
+#|(define all-lambda
   ($to-object
    (CFunc (list 'iterable) (list) (list)
      (CTryExn (CLet 'iterobj (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
                     (COperation (CId 'iterobj) "Iter" "all" (list)))
               (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
               (CId 'None)))))
+|#
+(define all-lambda
+  (desugar (PyFunc (PyArgs (list 'iterable) (list) (list))
+                   (PyTryExcept
+                    (PyFor (PyId 'temp-elm)
+                           (PyId 'iterable)
+                           (PyIf (PyUnaryOp 'not (PyId 'temp-elm))
+                                 (PyReturn (PyId 'False))
+                                 (PyEmp))
+                           (PyId 'True))
+                    (PyExceptHandler (PyId 'None) (PyRaise (PyStr "Object Not Iterable") 
+                                                           (PyApp (PyId 'TypeError) (list (PyStr "Object Not Iterable")) (list))) 
+                                     (PyId 'AttributeError))
+                    (PyId 'None)))))
 
 ;; any
-(define any-lambda
+#|(define any-lambda
   ($to-object
    (CFunc (list 'iterable) (list) (list)
      (CTryExn (CLet 'iterobj (CApp (CGetfield (CId 'iterable) "__iter__") (list) (list))
                     (COperation (CId 'iterobj) "Iter" "any" (list)))
               (CExceptHandler (CId 'None) (raise-error "TypeError" "Object Not Iterable") (CId 'AttributeError))
-              (CId 'None)))))
+              (CId 'None)))))|#
+(define any-lambda
+  (desugar (PyFunc (PyArgs (list 'iterable) (list) (list))
+                   (PyTryExcept
+                    (PyFor (PyId 'temp-elm)
+                           (PyId 'iterable)
+                           (PyIf (PyId 'temp-elm)
+                                 (PyReturn (PyId 'True))
+                                 (PyEmp))
+                           (PyId 'False))
+                    (PyExceptHandler (PyId 'None) (PyRaise (PyStr "Object Not Iterable") 
+                                                           (PyApp (PyId 'TypeError) (list (PyStr "Object Not Iterable")) (list))) 
+                                     (PyId 'AttributeError))
+                    (PyId 'None)))))
 
 #|
 ;; filter

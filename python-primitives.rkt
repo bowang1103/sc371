@@ -70,7 +70,7 @@ primitives here.
                                      [(equal? type "Dict") (pretty value)]
                                      [(equal? type "Range") (pretty value)]
                                      [(equal? type "Iter") (pretty value)]
-                                     [(equal? type "CalIter") (to-string arg)]
+                                     [(equal? type "CalIter") (pretty value)]
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") "None"]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
