@@ -265,7 +265,8 @@ primitives here.
                  (CId 'True))]
       [(and) (CId 'True)]
       [(isinstance) (cond
-                      [(equal? "Class" type-l) (raise-error "TypeError" "class is not an instance")]
+                      [(or (equal? "Class" type-l) (equal? "Func" type-l)) (raise-error "TypeError" "lhs should be an instance")]
+                      [(or (not (equal? "Class" type-r)) (not (equal? "Func" type-r))) (raise-error "TypeError" "rhs should be a class")]
                       ;[(equal? 
                       [(equal? "Instance" type-l)
                         (if (isInstanceRecur (VBases-ids val-l) loc-r (AVal-sto arg2)) (CId 'True) (CId 'False))]
