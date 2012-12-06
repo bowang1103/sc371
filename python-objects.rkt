@@ -294,10 +294,10 @@
                  ($to-object (CFunc (list 'self)
                                     (list) (list)
                                     (COperation (CId 'self) "Class" "__new__" (list)))))
-         (values "__init__"
+         (values "__class__"
                  ($to-object (CFunc (list 'self)
                                     (list) (list)
-                                    (COperation (CId 'self) "Class" "__init__" (list)))))
+                                    (COperation (CId 'self) "Class" "__class__" (list)))))
          (values "__dict__"
                  ($to-object (CFunc (list 'self)
                                     (list) (list)

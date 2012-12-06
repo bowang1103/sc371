@@ -21,7 +21,7 @@ primitives here.
 (define (pretty [arg : CVal]) : string
   (type-case CVal arg
     [VNum (n) (to-string n)]
-    [VStr (s) (foldr string-append "" (list "'" s "'"))]
+    [VStr (s) s]
     [VList (elms) (foldr string-append  ""
                     (list "[" 
                           (if (empty? elms) ""
