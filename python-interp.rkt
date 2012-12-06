@@ -782,7 +782,11 @@
                                                                                                                             (VObject-field newkey)))) 
                                                                                                           (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
                                                                                              (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
-                                                              [(None) o-val]
+                                                              [(None) (let ([none (interp-env (CId 'None) e-a s-a le-a)])
+ 																		(if (begin (display (to-string (VObject-loc v-o))) (display (to-string (VObject-loc (AVal-val none)))) 
+																		(equal? (VObject-loc (AVal-val none)) (VObject-loc v-o)))
+																			(interp-env (raise-error "TypeError" "cannot update dict with none") e-a s-a le-a)
+																			o-val))]
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
                     [else o-val]))]
@@ -843,9 +847,10 @@
                                        (if (VRet? excVal) ; if return or break cause the exception type, return the return value with AVal
                                            (AExc excVal env store lenv)
                                        (let ([ErrorType (VException-type (getObjVal excVal))]
-                                             [typev (if (not (CId? type))
-                                                        (interp-env type env store lenv)
-                                                        (interp-env (ContructExc type "") env store lenv))]
+                                             [typev (let ([typev-val (interp-env type env store lenv)])
+                                                      (if (or (not (CId? type)) (VTuple? (getObjVal (AVal-val typev-val))))
+                                                          (interp-env type env store lenv)
+                                                          (interp-env (ContructExc type "") env store lenv)))]
                                              [namev (interp-env name env store lenv)])
                                          ;; Two condition for entering the Except body 
                                          ;; (a) except "nothing" : (b) except "certain Exception"
@@ -856,9 +861,13 @@
                                                         (VEmpty? (getObjVal (AVal-val typev))))       
                                                  (begin ;(display "Type2 :")
                                                         ;(display (VException-type (getObjVal (AVal-val typev))))
-                                                        ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
-                                                        ;(display "\n")
-                                                        (equal? ErrorType (VException-type (getObjVal (AVal-val typev))))))
+                                                   ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                                   ;(display "\n")
+                                                   (if (VTuple? (getObjVal (AVal-val typev)))
+                                                       (isInExc ErrorType 
+                                                                (map (lambda (x) (interp-env (CApp (CCopy x) (list ($to-object (CStr ""))) (list)) env store lenv)) 
+                                                                                             (VTuple-es (getObjVal (AVal-val typev)))))
+                                                       (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))))
                                              (if (VEmpty? (getObjVal (AVal-val namev)))
                                                  (interp-env body env store lenv)
                                                  (let ([where (newLoc)])
