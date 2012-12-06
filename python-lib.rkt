@@ -211,15 +211,31 @@ that calls the primitive `print`.
               (CId 'None)))))
 |#
 ;; filter
-(define filter-lambda
+#|(define filter-lambda
   (desugar (PyFunc (PyArgs (list 'filt-func 'iterable) (list) (list))
                    (PyIf (PyCompare (PyId 'filt-func) (list 'is) (list (PyId 'None)))
                          (PyGenComp (PyId 'filt-elm)
                                     (list (PyComp (PyId 'filt-elm) (PyId 'iterable) (list (PyId 'filt-elm)))))
                          (PyGenComp (PyId 'filt-elm) 
                                     (list (PyComp (PyId 'filt-elm) (PyId 'iterable) (list (PyApp (PyId 'filt-func) (list (PyId 'filt-elm)) (list))))))
-                   ))))
-  
+                   ))))|#
+;; filter
+(define filter-lambda
+  ($to-object 
+   (CFunc (list 'filt-func 'filt-iterable) (list) (list)
+     ($to-object (CFilter (CApp (CGetfield (CId 'filt-iterable) "__iter__") (list) (list))
+                          (desugar (PyFunc (PyArgs (list 'filter-iter) (list) (list))
+                                           (PyIf (PyCompare (PyId 'filt-func) (list 'is) (list (PyId 'None)))
+                                                 (PyFor (PyId 'iter-elm) (PyId 'filter-iter)
+                                                        (PyIf (PyId 'iter-elm) (PyReturn (PyId 'iter-elm)) (PyId 'None))
+                                                        (PyRaise (PyId 'None) 
+                                                           (PyApp (PyId 'StopIteration) (list (PyStr "iterator end")) (list))))
+                                                 (PyFor (PyId 'iter-elm) (PyId 'filter-iter)
+                                                        (PyIf (PyApp (PyId 'filt-func) (list (PyId 'iter-elm)) (list))
+                                                              (PyReturn (PyId 'iter-elm)) (PyId 'None))
+                                                        (PyRaise (PyId 'None) 
+                                                           (PyApp (PyId 'StopIteration) (list (PyStr "iterator end")) (list))))))))))))
+
 ;; ___assertTure
 (define assert-true-lambda
   ($to-object 
@@ -345,6 +361,7 @@ ___assertRaises(TypeError, range)
         (bind 'set set-lambda)
         (bind 'dict dict-lambda)
         (bind 'range range-lambda)
+        (bind 'filter filter-lambda)
         (bind 'abs abs-lambda)
         (bind 'min min-lambda)
         (bind 'max max-lambda)

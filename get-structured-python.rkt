@@ -26,6 +26,9 @@ structure that you define in python-syntax.rkt
                  ('bases bases)
                  ('body body))
      (PyClassDef (string->symbol name)
+                 (if (empty? bases)
+                     (PyEmp)
+                     (PyBases (map get-structured-python bases)))
                  (if (empty? body)
                      (PyEmp)
                      (PySeq (map get-structured-python body))))]

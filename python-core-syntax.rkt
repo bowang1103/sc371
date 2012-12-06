@@ -15,8 +15,10 @@ ParselTongue.
   [CRange (range : (listof CExp))]
   [CIter (lst : CExp)]
   [CCalIter (call : CExp) (stn : CExp)]
+  [CFilter (iter : CExp) (filter : CExp)]
   [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
+  [CBases (bases : (listof CExp))]
   [CTrue]
   [CFalse]
   [CCopy (obj : CVal)]
@@ -52,6 +54,7 @@ ParselTongue.
   [CGetelement (obj : CExp) (indexs : (listof CExp))]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
+  [CGetbasefld (obj : Location) (field : string)]
   [COperation (obj : CExp) (type : string) (op : string) (args : (listof CExp))]
   [CEmpty])
 
@@ -63,6 +66,7 @@ ParselTongue.
   [VRange (from : CVal) (to : CVal) (step : CVal) (es : (listof CVal))]
   [VIter (at : number) (es : (listof CVal))]
   [VCalIter (stop : boolean) (call : CExp) (stn : CVal)]
+  [VFilter (iter : Location) (filter : Location)]
   [VSet (es : (hashof CVal boolean))]
   [VDict (dict : (hashof CVal CVal))]
   [VTrue]
@@ -73,6 +77,7 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
+  [VBases (ids : (listof Location))]
   [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof Location)) (body : CExp) (env : Location)]
   [VEnv (e : LevelEnv)])
    
