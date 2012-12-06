@@ -74,6 +74,7 @@ primitives here.
                                      [(equal? type "MPoint") (pretty value)]
                                      [(equal? type "None") "None"]
                                      [(equal? type "Bool") (if (equal? "1" (pretty value)) "True" "False")]
+                                     [(equal? type "Class") "Don't address yet"]
                                      [(equal? type "Exception") (pretty value)]
                                      [(equal? type "Func") "No need to print"])]
     [VClosure (args varargs defaults body env) (error 'prim "Can't print closures yet")]
@@ -82,6 +83,7 @@ primitives here.
     [VEnv (e) "I haven't address"]
     [VException (type message) (string-append (string-append type ": ") (pretty message))]
     [VRet (ret) (pretty ret)]
+    [VBases (bases) "I haven't address VBase"]
     
     #|(cond [(VObject? excpt)
                  (let ([excv (getObjVal excpt)])
@@ -206,7 +208,7 @@ primitives here.
   (let ([obj (AVal-val arg)])
     (case op
       [(print) (begin  (set! curstore (AVal-sto arg)) (print obj) ($to-object (CStr "Print Return Value")))]
-      [(callable) (if (equal? "Func" (VObject-type obj)) (CId 'True) (CId 'False))]
+      [(callable) (if (or (equal? "Func" (VObject-type obj)) (equal? "Class" (VObject-type obj))) (CId 'True) (CId 'False))]
       [(bool) (if (isObjTrue obj (AVal-sto arg)) (CId 'True) (CId 'False))]
       [(not) (if (isObjTrue obj (AVal-sto arg)) (CId 'False) (CId 'True))]
       [(~) (invertNumeric obj)]

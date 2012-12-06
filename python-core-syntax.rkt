@@ -17,6 +17,7 @@ ParselTongue.
   [CCalIter (call : CExp) (stn : CExp)]
   [CSetV (es : (listof CExp))]
   [CDict (keys : (listof CExp)) (values : (listof CExp))]
+  [CBases (bases : (listof CExp))]
   [CTrue]
   [CFalse]
   [CCopy (obj : CVal)]
@@ -52,6 +53,7 @@ ParselTongue.
   [CGetelement (obj : CExp) (indexs : (listof CExp))]
   [CSetfield (obj : CExp) (field : string) (value : CExp)]
   [CGetfield (obj : CExp) (field : string)]
+  [CGetbasefld (obj : Location) (field : string)]
   [COperation (obj : CExp) (type : string) (op : string) (args : (listof CExp))]
   [CEmpty])
 
@@ -73,6 +75,7 @@ ParselTongue.
   [VPoint (obj : CExp) (field : string)]
   [VException (type : string) (message : CVal)]
   [VMPoint (loc : Location)]
+  [VBases (ids : (listof Location))]
   [VClosure (args : (listof symbol)) (varargs : (listof symbol)) (defaults : (listof Location)) (body : CExp) (env : Location)]
   [VEnv (e : LevelEnv)])
    

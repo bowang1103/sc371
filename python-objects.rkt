@@ -268,7 +268,11 @@
 ;; built-in methods for class
 (define class-hash
   (hash
-   (list (values "__init__"
+   (list (values "__new__"
+                 ($to-object (CFunc (list 'self)
+                                    (list) (list)
+                                    (COperation (CId 'self) "Class" "__new__" (list)))))
+         (values "__init__"
                  ($to-object (CFunc (list 'self)
                                     (list) (list)
                                     (COperation (CId 'self) "Class" "__init__" (list)))))

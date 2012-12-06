@@ -6,8 +6,9 @@
 
 (define (desugar (expr : PyExpr)) : CExp
   (type-case PyExpr expr
-    [PyClassDef (name obj) 
-                (CSet name (CObject "Class" (CStr (symbol->string name)) (desugar obj)))]
+    [PyBases (names) (CBases (map (lambda (x) (CId (PyId-x x))) names))]
+    [PyClassDef (name bases obj) 
+                (CSet name ($to-object (CObject "Class" (desugar bases) (desugar obj))))]
     [PyAttr (obj attr) (CGetfield (desugar obj) attr)]
     [PyAssign (tgs val)
               (let ([value (getId)]) 
