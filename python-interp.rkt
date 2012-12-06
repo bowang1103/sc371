@@ -562,8 +562,7 @@
                                (if (AVal? arg1Ans)
                                    (let ([arg2Ans (interp-env arg2 (AVal-env arg1Ans) (AVal-sto arg1Ans) (AVal-lenv arg1Ans))])
                                      (if (AVal? arg2Ans)
-                                         (let ([ans (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))])
-                                           (begin #| (display "\nIn CPrim2:\n") (display (to-string (AVal-lenv ans))) |# ans))
+                                         (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))
                                          arg2Ans))
                                    arg1Ans))]
      
@@ -773,13 +772,15 @@
                                                                                                                             (VObject-field newkey)))) 
                                                                                                           (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
                                                                                              (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
+                                                              
                                                               [(None) (let ([none (AVal-val (interp-env (CId 'None) e-a s-a le-a))])
                                                                         (if (= (VObject-loc none) (VObject-loc v-a))
                                                                             (interp-env (raise-error "TypeError" "dict update takes an dict object") e-a s-a le-a)
-                                                                            o-val))]
+                                                                            arg))]
+                                                              
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
-                    [else o-val]))]
+                      [else o-val]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
@@ -837,9 +838,10 @@
                                        (if (VRet? excVal) ; if return or break cause the exception type, return the return value with AVal
                                            (AExc excVal env store lenv)
                                        (let ([ErrorType (VException-type (getObjVal excVal))]
-                                             [typev (if (not (CId? type))
-                                                        (interp-env type env store lenv)
-                                                        (interp-env (ContructExc type "") env store lenv))]
+                                             [typev (let ([typev-val (interp-env type env store lenv)])
+                                                      (if (or (not (CId? type)) (VTuple? (getObjVal (AVal-val typev-val))))
+                                                          (interp-env type env store lenv)
+                                                          (interp-env (ContructExc type "") env store lenv)))]
                                              [namev (interp-env name env store lenv)])
                                          ;; Two condition for entering the Except body 
                                          ;; (a) except "nothing" : (b) except "certain Exception"
@@ -850,9 +852,13 @@
                                                         (VEmpty? (getObjVal (AVal-val typev))))       
                                                  (begin ;(display "Type2 :")
                                                         ;(display (VException-type (getObjVal (AVal-val typev))))
-                                                        ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
-                                                        ;(display "\n")
-                                                        (equal? ErrorType (VException-type (getObjVal (AVal-val typev))))))
+                                                   ;(display (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))
+                                                   ;(display "\n")
+                                                   (if (VTuple? (getObjVal (AVal-val typev)))
+                                                       (isInExc ErrorType 
+                                                                (map (lambda (x) (interp-env (CApp (CCopy x) (list ($to-object (CStr ""))) (list)) env store lenv)) 
+                                                                                             (VTuple-es (getObjVal (AVal-val typev)))))
+                                                       (equal? ErrorType (VException-type (getObjVal (AVal-val typev)))))))
                                              (if (VEmpty? (getObjVal (AVal-val namev)))
                                                  (interp-env body env store lenv)
                                                  (let ([where (newLoc)])
