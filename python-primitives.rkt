@@ -550,7 +550,6 @@ primitives here.
 (define (raise-error error-type msg)
   (CRaise ($to-object (CEmpty)) ($to-object (CException error-type ($to-object (CStr msg))))))
 
-;(CApp (CCopy (first excs)) (list ($to-object (CStr ""))) (list))
 (define (isInExc [type : string] [excs : (listof CAns)]) : boolean
   (cond [(empty? excs) false]
         [else 
