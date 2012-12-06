@@ -114,6 +114,15 @@
                              [AVal (stn-obj stn-e stn-s stn-le)
                                    (AVal (VCalIter false call (getNoneObjectVal stn-obj store)) stn-e stn-s stn-le)]
                              [else stnAns]))]
+    [CFilter (iter filter) (let ([iterAns (interp-env iter env store lenv)])
+                             (type-case CAns iterAns
+                               [AVal (it-obj it-e it-s it-le)
+                                     (let ([filterAns (interp-env filter it-e it-s it-le)])
+                                       (type-case CAns filterAns
+                                         [AVal (fil-obj fil-e fil-s fil-le)
+                                               (AVal (VFilter (VObject-loc it-obj) (VObject-loc fil-obj)) fil-e fil-s fil-le)]
+                                         [else filterAns]))]
+                               [else iterAns]))]
     
     [CCopy (obj) (AVal obj env store lenv)]
     [CTrue () (AVal (VTrue) env store lenv)]
@@ -654,6 +663,13 @@
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
                               [(Tuple) (case (string->symbol op)
                                          [(iter) (interp-env ($to-object (CIter (CWrap "List" v-o))) e-o s-o le-o)])]
+                              [(Filter) (case (string->symbol op)
+                                          [(next) (letrec ([filval (VObject-value v-o)]
+                                                           [iterobj (some-v (hash-ref s-o (VFilter-iter filval)))]
+                                                           [filterobj (some-v (hash-ref s-o (VFilter-filter filval)))])
+                                                    (interp-env (CApp (CCopy filterobj) (list (CCopy iterobj)) (list)) e-o s-o le-o))])]
+                                                    
+                                                    
                               [(Iter) (case (string->symbol op)
                                         [(iter) o-val]
                                         [(next) (letrec ([iter (VObject-value v-o)]

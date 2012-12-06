@@ -97,6 +97,14 @@
                                   (hash-keys caliter-hash))])
             (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
 
+(define (to-filter-obj [prim : CExp]) : CExp
+  (let ([id (getId)]) 
+    (CLet id (CObject "Filter" prim (CEmpty))
+       (CLet 'self (CId id)
+          (let ([builtin-lst (map (lambda (key) (CSetfield (CId id) key (some-v (hash-ref filter-hash key))))
+                                  (hash-keys filter-hash))])
+            (CSeq (foldl (lambda (e1 e2) (CSeq e2 e1)) (first builtin-lst) (rest builtin-lst)) (CId id)))))))
+
 (define (to-class-obj [value : CExp] [fields : CExp]) : CExp
   (let ([id (getId)])
     (CLet id (CObject "Class" value fields)
@@ -133,6 +141,7 @@
     [CDict (keys values) (to-dict-obj prim)]
     [CIter (lst) (to-iter-obj prim)]
     [CCalIter (call stn) (to-caliter-obj prim)]
+    [CFilter (iter filter) (to-filter-obj prim)]
     [CFunc (args varargs defaults body) (to-func-obj prim)]
     [CObject (type value body) (to-class-obj value body)]
     [CException (type message) (to-exc-obj prim)]
@@ -249,7 +258,7 @@
                 (values "__iter__"
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
-                                           (COperation (CId 'self) "Iter" "iter" (list)))))
+                                           (CId 'self))))
                 )))
 
 ;; bulit-in methods for callable iter
@@ -263,6 +272,19 @@
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
                                            (COperation (CId 'self) "CalIter" "iter" (list)))))
+                )))
+
+;; bulit-in methods for filter
+(define filter-hash 
+         (hash 
+          (list (values "__next__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (COperation (CId 'self) "Filter" "next" (list)))))
+                (values "__iter__"
+                        ($to-object (CFunc (list 'self)
+                                           (list) (list)
+                                           (CId 'self))))
                 )))
 
 ;; built-in methods for class
