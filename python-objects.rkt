@@ -271,7 +271,7 @@
                 (values "__iter__"
                         ($to-object (CFunc (list 'self)
                                            (list) (list)
-                                           (COperation (CId 'self) "CalIter" "iter" (list)))))
+                                           (CId 'self))))
                 )))
 
 ;; bulit-in methods for filter

@@ -671,24 +671,24 @@
                                                     
                                                     
                               [(Iter) (case (string->symbol op)
-                                        [(iter) o-val]
+                                        ;[(iter) o-val]
                                         [(next) (letrec ([iter (VObject-value v-o)]
                                                          [itat (VIter-at iter)]
                                                          [ites (VIter-es iter)])
                                                   (if (>= itat (length ites))
                                                       (interp-env (raise-error "StopIteration" "iterator end") e-o s-o le-o)
                                                       (let ([updateIter (VObject (VObject-type v-o) (VIter (add1 itat) ites) (VObject-loc v-o) (VObject-field v-o))])
-                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateIter) le-o))))]
-                                        [(all) (iterAll (CGetfield obj "__next__") e-o s-o le-o)]
-                                        [(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)]
-                                        [(filter) (letrec ([lstAns (iterFilter (CGetfield obj "__next__") (first args) e-o s-o le-o)]
-                                                           [last (if (empty? lstAns) (AVal (VStr "dummy") e-o s-o le-o) (first (reverse lstAns)))])
-                                                    (interp-env ($to-object (CIter 
-                                                          (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
-                                                                (AVal-env last) (AVal-sto last) (AVal-lenv last))
-                                                                )])]
+                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateIter) le-o))))])]
+                                        ;[(all) (iterAll (CGetfield obj "__next__") e-o s-o le-o)]
+                                        ;[(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)]
+                                        ;[(filter) (letrec ([lstAns (iterFilter (CGetfield obj "__next__") (first args) e-o s-o le-o)]
+                                         ;                  [last (if (empty? lstAns) (AVal (VStr "dummy") e-o s-o le-o) (first (reverse lstAns)))])
+                                          ;          (interp-env ($to-object (CIter 
+                                           ;               (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
+                                            ;                    (AVal-env last) (AVal-sto last) (AVal-lenv last))
+                                             ;                   )])]
                               [(CalIter) (case (string->symbol op)
-                                           [(iter) o-val]
+                                           ;[(iter) o-val]
                                            [(next) (let ([caliter (VObject-value v-o)])
                                                      (if (VCalIter-stop caliter)
                                                          (interp-env (raise-error "StopIteration" "callable iterator end") e-o s-o le-o)
@@ -773,7 +773,10 @@
                                                                                                                             (VObject-field newkey)))) 
                                                                                                           (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
                                                                                              (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
-                                                              [(None) o-val]
+                                                              [(None) (let ([none (AVal-val (interp-env (CId 'None) e-a s-a le-a))])
+                                                                        (if (= (VObject-loc none) (VObject-loc v-a))
+                                                                            (interp-env (raise-error "TypeError" "dict update takes an dict object") e-a s-a le-a)
+                                                                            o-val))]
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
                     [else o-val]))]
