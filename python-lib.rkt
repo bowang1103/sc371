@@ -393,12 +393,15 @@ ___assertRaises(TypeError, range)
         (bind 'ValueError (exception-lambda "ValueError"))
         (bind 'AttributeError (exception-lambda "AttributeError"))
         (bind 'StopIteration (exception-lambda "StopIteration"))
+        (bind 'UnboundLocalError (exception-lambda "UnboundLocalError"))
+        (bind 'NameError (exception-lambda "NameError"))
 ))
 
 ;; Purpose: lookup lib-functions
 (define (lookup_lib-funcs [name : symbol] [lib-funcs : (listof LibBinding)]) : CExp
   (cond
-    [(empty? lib-funcs) (core-error (string-append (symbol->string name) " : location not found in store"))]
+    [(empty? lib-funcs) (raise-error "NameError" (string-append (symbol->string name) " : location not found in store!"))]
+     ;(core-error (string-append (symbol->string name) " : location not found in store!"))]
     [else  (if (equal? name (bind-left (first lib-funcs)))
                (bind-right (first lib-funcs))
                (lookup_lib-funcs name (rest lib-funcs)))]))
