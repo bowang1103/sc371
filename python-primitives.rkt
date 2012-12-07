@@ -21,7 +21,7 @@ primitives here.
 (define (pretty [arg : CVal]) : string
   (type-case CVal arg
     [VNum (n) (to-string n)]
-    [VStr (s) (foldr string-append "" (list "'" s "'"))]
+    [VStr (s) s]
     [VList (elms) (foldr string-append  ""
                     (list "[" 
                           (if (empty? elms) ""
@@ -264,6 +264,13 @@ primitives here.
                  (CId 'False)
                  (CId 'True))]
       [(and) (CId 'True)]
+      [(isinstance) (cond
+                      [(equal? "Class" type-l) (raise-error "TypeError" "class is not an instance")]
+                      ;[(equal? 
+                      [(equal? "Instance" type-l)
+                        (if (isInstanceRecur (VBases-ids val-l) loc-r (AVal-sto arg2)) (CId 'True) (CId 'False))]
+                      [else (CPrim2 'instanceof (CPrim1 'tagof (CCopy (AVal-val arg1))) (CPrim1 'tagof (CApp (CCopy (AVal-val arg2)) (list) (list))))])]
+                        
       
       ;; TODO: add all other cases
       [else (cond 
@@ -470,6 +477,8 @@ primitives here.
     [(Func) (getObjVal obj)]
     [(MPoint) (getNoneObjectVal (some-v (hash-ref store (VMPoint-loc (VObject-value obj)))) store)]
     [(Exception) (VObject-value obj)]
+    [(Class) (VObject-value obj)]
+    [(Instance) (VObject-value obj)]
     [(None) (VEmpty)]))
 
 ;; create a hash table for dictionary given clean keys and celan vals
@@ -550,6 +559,17 @@ primitives here.
         ;; if it's a pointer get the value from the store and call the function again
         [VMPoint (loc) (isRecurImmutable (some-v (hash-ref store loc)) store)]
         [else true])))
+
+;; check if an object is a child of a target recursively
+(define (isInstanceRecur (parents : (listof Location)) (target : Location) (store : Store)) : boolean
+  (if (empty? parents)
+      false
+      (let ([parent (first parents)])
+        (if (= parent target)
+            true
+            (isInstanceRecur (append (rest parents) 
+                                     (let ([gplst (VBases-ids (VObject-value (some-v (hash-ref store parent))))])
+                                       (if (= -1 parent) (list) gplst))) target store)))))
 
 (define (raise-error error-type msg)
   (CRaise ($to-object (CEmpty)) ($to-object (CException error-type ($to-object (CStr msg))))))

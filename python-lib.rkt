@@ -116,10 +116,18 @@ that calls the primitive `print`.
      (CPrim1 'abs (CId 'to-abs)))))
 
 ;; isinstance
+#|(define isinstance-lambda
+  ($to-object
+   (CFunc (list 'instance 'class) (list) (list)
+     (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list) (list))))
+     )))|#
+
+;; isinstance
 (define isinstance-lambda
   ($to-object
    (CFunc (list 'instance 'class) (list) (list)
-     (CPrim2 'instanceof (CPrim1 'tagof (CId 'instance)) (CPrim1 'tagof (CApp (CId 'class) (list) (list)))))))
+     (CPrim2 'isinstance (CId 'instance) (CId 'class))
+     )))
 
 ;; locals
 (define locals-lambda

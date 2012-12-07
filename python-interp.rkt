@@ -495,6 +495,11 @@
                                                  [AVal (v-es e-es s-es le-es) ;(Scanfb clbody (LocalValRemove e-es le-es) le-es)
                                                        (begin 
                                                          (type-case CAns (begin (interp-env clbody (Scanfb clbody (LocalValRemove e-es le-es) le-es) s-es le-es))
+#|=======
+                                                 [AVal (v-es e-es s-es le-es)
+                                                       (begin #| (display "In CApp:\n") (display (to-string clenv)) (display "\n") |#
+                                                         (type-case CAns (begin (interp-env clbody (begin #| (display "In CApp\n") (display (to-string fun)) (display (to-string (hash-keys (some-v (hash-ref env local-level))))) (display "\n") |# e-es) s-es le-es))
+>>>>>>> 54af1cf75506d9cc2c15df0afcc05767215fb77c|#
                                                            [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody 
                                                                                                               (hash-set env global-level (some-v (hash-ref e-clbody global-level))) 
                                                                                                               (type-case CExp fun
@@ -505,26 +510,34 @@
                                                                                                               (hash-set lenv 1 (some-v (hash-ref le-clbody 1))))]
                                                            [AExc (v-clbody e-clbody s-clbody le-clbody) 
                                                                (if (VRet? v-clbody)
-                                                                   (AVal (VRet-ret v-clbody) 
-                                                                         (hash-set env global-level (some-v (hash-ref e-clbody global-level))) 
-                                                                         (type-case CExp fun
-                                                                           [CId (id) (if (checklibfun id)
-                                                                                         s-clbody
-                                                                                         (hash-set s-clbody clenv (VEnv (some-v (hash-ref e-clbody nonlocal-level)))))]
-                                                                           [else (hash-set s-clbody nonlocal-level (VEnv (some-v (hash-ref e-clbody nonlocal-level))))])
-                                                                         (hash-set lenv 1 (some-v (hash-ref le-clbody 1))))
+                                                                   (begin #| (display (to-string v-clbody)) (display "\n") |#
+                                                                          (AVal (VRet-ret v-clbody) 
+                                                                                (hash-set env global-level (some-v (hash-ref e-clbody global-level))) 
+                                                                                (type-case CExp fun
+                                                                                  [CId (id) (if (checklibfun id)
+                                                                                                s-clbody
+                                                                                                (begin (hash-set s-clbody clenv (VEnv (some-v (hash-ref e-clbody nonlocal-level))))))]
+                                                                                  [CGetfield (id fld) (hash-set s-clbody clenv (VEnv (some-v (hash-ref e-clbody nonlocal-level))))]
+                                                                                  [else (begin (hash-set s-clbody nonlocal-level (VEnv (some-v (hash-ref e-clbody nonlocal-level)))))])
+                                                                                (hash-set lenv 1 (some-v (hash-ref le-clbody 1)))))
                                                                    (AExc v-clbody 
                                                                          (hash-set env global-level (some-v (hash-ref e-clbody global-level))) 
                                                                          (type-case CExp fun
                                                                            [CId (id) (if (checklibfun id)
                                                                                          s-clbody
                                                                                          (hash-set s-clbody clenv (VEnv (some-v (hash-ref e-clbody nonlocal-level)))))]
+                                                                           [CGetfield (id fld) (hash-set s-clbody clenv (VEnv (some-v (hash-ref e-clbody nonlocal-level))))]
                                                                            [else (hash-set s-clbody nonlocal-level (VEnv (some-v (hash-ref e-clbody nonlocal-level))))]) 
                                                                          (hash-set lenv 1 (some-v (hash-ref le-clbody 1)))))]))]
                                                  [AExc (v-es e-es s-es le-se) (AExc v-es env s-es lenv)]))]
-                                   [else (if (equal? "Class" (VObject-type v-fobj))
-                                             (interp-env (CApp (CGetfield fun "__new__") (list) (list)) e-fobj s-fobj le-fobj)
-                                             (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj))]))]
+                                   [else (case (string->symbol (VObject-type v-fobj))
+                                           [(Class) (let ([rst (interp-env (CApp (CGetfield fun "__new__") (list) (list)) e-fobj s-fobj le-fobj)])
+                                                      (let ([ret (interp-env (CApp (CGetfield fun "__init__") (list) (list)) (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))])
+                                                        (if (AVal? ret)
+                                                            ret
+                                                            rst)))]
+                                           [(Instance) (interp-env (CApp (CGetfield fun "__call__") args starargs) e-fobj s-fobj le-fobj)]
+                                           [else (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj)])]))]
                          [else funAns]))]
     
     [CFunc (args varargs defaults body) (let ([dftAns (interpArgs defaults env store lenv)])
@@ -563,8 +576,7 @@
                                (if (AVal? arg1Ans)
                                    (let ([arg2Ans (interp-env arg2 (AVal-env arg1Ans) (AVal-sto arg1Ans) (AVal-lenv arg1Ans))])
                                      (if (AVal? arg2Ans)
-                                         (let ([ans (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))])
-                                           (begin #| (display "\nIn CPrim2:\n") (display (to-string (AVal-lenv ans))) |# ans))
+                                         (interp-env (python-prim2 prim arg1Ans arg2Ans) (AVal-env arg2Ans) (AVal-sto arg2Ans) (AVal-lenv arg2Ans))
                                          arg2Ans))
                                    arg1Ans))]
      
@@ -618,15 +630,28 @@
                              [where (newLoc)])
                          (type-case CAns rs
                            [AVal (v-rs e-rs s-rs le-rs) 
-                                 (begin #| (display "IN CObject: \n") (display (to-string (hash-keys s-rs))) |#
+                                 (let ([newloc (newLoc)])
                                    (AVal (VObject type (case (string->symbol type)
-                                                         [(Class) (type-case CVal v-pv
-                                                                    [VEmpty () (VBases (list -1))]
+                                                         [(Class) (type-case CVal (VObject-value v-pv)
+                                                                    [VEmpty () (begin (VBases (list -1)))]
                                                                     [else v-pv])]
-                                                         [else v-pv]) where
+                                                         [else (begin v-pv)]) where
                                                   (let ([rst (make-hash empty)])
-                                                    (begin (map (lambda (x) (hash-set! rst (symbol->string x) (AVal-val (grabValue x e-rs s-rs le-rs))))
-                                                                (some-v (hash-ref le-rs (getmaxnumber (hash-keys le-rs))))) rst))) e-rs s-rs le-pv))]
+                                                    (begin (map 
+                                                            (lambda (x) (hash-set! rst (symbol->string x) (let ([val (AVal-val (grabValue x e-rs s-rs le-rs))])
+                                                                                                            (if (equal? type "Class")
+                                                                                                                (type-case CVal (VObject-value val)
+                                                                                                                  [VClosure (a v d b e) (begin (VObject (VObject-type val)
+                                                                                                                                                        (VClosure a v d b newloc)
+                                                                                                                                                        (VObject-loc val)
+                                                                                                                                                        (VObject-field val)))]
+                                                                                                                  [else val])
+                                                                                                                val))))
+                                                            (some-v (hash-ref le-rs (getmaxnumber (hash-keys le-rs))))) rst))) e-pv ;; Check here 
+                                                                                                                               (if (equal? type "Class")
+                                                                                                                                   (begin #|(display (to-string (hash-keys (some-v (hash-ref e-rs local-level))))) (display "\n") |# (hash-set s-rs newloc (VEnv (mergeNAndL env))))
+                                                                                                                                   s-rs)
+                                                                                                                               le-pv))] ;; Check here
                            [else rs]))]
                  [else primVal]))]
     
@@ -672,24 +697,24 @@
                                                     
                                                     
                               [(Iter) (case (string->symbol op)
-                                        [(iter) o-val]
+                                        ;[(iter) o-val]
                                         [(next) (letrec ([iter (VObject-value v-o)]
                                                          [itat (VIter-at iter)]
                                                          [ites (VIter-es iter)])
                                                   (if (>= itat (length ites))
                                                       (interp-env (raise-error "StopIteration" "iterator end") e-o s-o le-o)
                                                       (let ([updateIter (VObject (VObject-type v-o) (VIter (add1 itat) ites) (VObject-loc v-o) (VObject-field v-o))])
-                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateIter) le-o))))]
-                                        [(all) (iterAll (CGetfield obj "__next__") e-o s-o le-o)]
-                                        [(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)]
-                                        [(filter) (letrec ([lstAns (iterFilter (CGetfield obj "__next__") (first args) e-o s-o le-o)]
-                                                           [last (if (empty? lstAns) (AVal (VStr "dummy") e-o s-o le-o) (first (reverse lstAns)))])
-                                                    (interp-env ($to-object (CIter 
-                                                          (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
-                                                                (AVal-env last) (AVal-sto last) (AVal-lenv last))
-                                                                )])]
+                                                        (AVal (list-ref ites itat) e-o (hash-set s-o (VObject-loc v-o) updateIter) le-o))))])]
+                                        ;[(all) (iterAll (CGetfield obj "__next__") e-o s-o le-o)]
+                                        ;[(any) (iterAny (CGetfield obj "__next__") e-o s-o le-o)]
+                                        ;[(filter) (letrec ([lstAns (iterFilter (CGetfield obj "__next__") (first args) e-o s-o le-o)]
+                                         ;                  [last (if (empty? lstAns) (AVal (VStr "dummy") e-o s-o le-o) (first (reverse lstAns)))])
+                                          ;          (interp-env ($to-object (CIter 
+                                           ;               (CCopy (VObject "List" (VList (foldr (lambda (ans rst) (cons (AVal-val ans) rst)) (list) lstAns)) -1 (hash empty)))))
+                                            ;                    (AVal-env last) (AVal-sto last) (AVal-lenv last))
+                                             ;                   )])]
                               [(CalIter) (case (string->symbol op)
-                                           [(iter) o-val]
+                                           ;[(iter) o-val]
                                            [(next) (let ([caliter (VObject-value v-o)])
                                                      (if (VCalIter-stop caliter)
                                                          (interp-env (raise-error "StopIteration" "callable iterator end") e-o s-o le-o)
@@ -709,6 +734,7 @@
                                                                            (VBases (list (VObject-loc v-o)))
                                                                            where (hash empty))])
                                                       (AVal rst e-o (hash-set s-o where rst) le-o))]
+                                         [(__class__) (AVal (some-v (hash-ref s-o (first (VBases-ids (VObject-value v-o))))) e-o s-o le-o)]
                                          [(__dict__) (letrec ([rstAns (interp-env ($to-object (CDict (list) (list))) e-o s-o le-o)]
                                                               [rstObj (VObject "Dict"
                                                                                (VDict (hash empty))
@@ -774,14 +800,15 @@
                                                                                                                             (VObject-field newkey)))) 
                                                                                                           (CCopy (some-v (hash-ref (VDict-dict (VObject-value v-a)) x))))
                                                                                              (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))) o-val keys))]
-                                                              [(None) (let ([none (interp-env (CId 'None) e-a s-a le-a)])
- 																		(if (begin (display (to-string (VObject-loc v-o))) (display (to-string (VObject-loc (AVal-val none)))) 
-																		(equal? (VObject-loc (AVal-val none)) (VObject-loc v-o)))
-																			(interp-env (raise-error "TypeError" "cannot update dict with none") e-a s-a le-a)
-																			o-val))]
+                                                              
+                                                              [(None) (let ([none (AVal-val (interp-env (CId 'None) e-a s-a le-a))])
+                                                                        (if (= (VObject-loc none) (VObject-loc v-a))
+                                                                            (interp-env (raise-error "TypeError" "dict update takes an dict object") e-a s-a le-a)
+                                                                            arg))]
+                                                              
                                                               [else (interp-error "argument must be dict or empty" e-a s-a le-a)])]
                                                       [else arg]))])])]
-                    [else o-val]))]
+                      [else o-val]))]
 
     [CTryExn (body hdlers els) (let ([bodyv (interp-env body env store lenv)])
                                  (type-case CAns bodyv
@@ -892,7 +919,6 @@
     [else (begin (display expr)
                  (error 'interp "no case"))]))
 
-
 ;; Scan for local Variable
 (define (Scanfb [expr : CExp] [env : Env] [lenv : LocalEnv]) : Env
   (type-case CExp expr
@@ -905,8 +931,13 @@
 ;; Remove unbound local variable flag in scan_var level                                           
 (define (LocalValRemove [env : Env] [lenv : LocalEnv]) : Env
   (hash-set env scan_var (hash empty)))
-                  
-                   
+
+(define (update-venv (before : LevelEnv) (later : LevelEnv)) : CVal
+  (let ([newenv (hash empty)])
+    (VEnv (foldl (lambda(x result) (hash-set result x (if (none? (hash-ref later x))
+                                                          (some-v (hash-ref before x))
+                                                          (some-v (hash-ref later x))))) newenv (hash-keys before)))))
+
 ;; return the first result is not excpetion
 (define (get-first-nonexception (anss : (listof CAns))) : CAns
   (if (equal? 1 (length anss))
