@@ -569,10 +569,10 @@ primitives here.
         (if (= parent target)
             true
             (isInstanceRecur (append (rest parents)
-                                     ;(let ([gparents (VBases-ids (VObject-value (some-v (hash-ref store parent))))])
-                                      ; (if (= -1 (first gparents)) (list) gparents)))
-                                     (let ([gparents (VObject-value (some-v (hash-ref store parent)))])
-                                       (if (or (not (VBases? gparents)) (= -1 (first (VBases-ids gparents)))) (list) (VBases-ids gparents)))) 
+                                     (let ([gparents (VBases-ids (VObject-value (some-v (hash-ref store parent))))])
+                                       (if (= -1 (first gparents)) (list) gparents)))
+                                     ;(let ([gparents (VObject-value (some-v (hash-ref store parent)))])
+                                      ; (if (or (not (VBases? gparents)) (= -1 (first (VBases-ids gparents)))) (list) (VBases-ids gparents)))) 
                              target store)))))
 
 (define (raise-error error-type msg)

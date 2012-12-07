@@ -625,9 +625,9 @@
                            [AVal (v-rs e-rs s-rs le-rs) 
                                  (let ([newloc (newLoc)])
                                    (AVal (VObject type (case (string->symbol type)
-                                                         [(Class) (type-case CVal (VObject-value v-pv)
-                                                                    [VEmpty () (begin (VBases (list -1)))]
-                                                                    [else v-pv])]
+                                                         [(Class) (if (VObject? v-pv)
+                                                                      (VBases (list -1))
+                                                                      v-pv)]
                                                          [else (begin v-pv)]) where
                                                   (let ([rst (make-hash empty)])
                                                     (begin (map 

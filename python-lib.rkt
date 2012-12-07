@@ -148,24 +148,38 @@ that calls the primitive `print`.
      (CPrim1 'max (CId 'sequence)))))
 
 ;; iter
-(define iter-lambda
-  ($to-object
-   (CFunc (list 'iterableo 'sentinel) 
-          (list) 
-          (list (CId 'None))
-     (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
-          (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
-          ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))
-;; iter
 #|(define iter-lambda
   ($to-object
    (CFunc (list 'iterableo 'sentinel) 
           (list) 
           (list (CId 'None))
      (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
-          (CTryExn (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
-                   (CExceptHandler (CId 'None) (TODO:body) (CId 'AttributeError)
+          (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
           ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))|#
+;; iter
+(define iter-lambda
+  ($to-object
+   (CFunc (list 'iterableo 'sentinel) 
+          (list) 
+          (list (CId 'None))
+     (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
+          (CTryExn (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
+                   (CExceptHandler (CId 'None) 
+                                   (desugar (PySeq (list (PyAssign (list (PyId 'rstlst)) (PyList (list)))
+                                                         (PyTryExcept (PySeq (list (PyAssign (list (PyId 'tempIndex)) (PyNum 0))
+                                                                                   (PyWhile (PyId 'True)
+                                                                                            (PySeq (list 
+                                                                                                    (PyApp (PyAttr (PyId 'rstlst) "append") 
+                                                                                                           (list (PyApp (PyAttr (PyId 'iterableo) "__getitem__") 
+                                                                                                                        (list (PyId 'tempIndex)) (list)))
+                                                                                                           (list))
+                                                                                                    (PyAugAssign '+ (PyId 'tempIndex) (PyNum 1))))
+                                                                                            (PyId 'None))))
+                                                                      (PyExceptHandler (PyId 'None) (PyReturn (PyId 'rstlst)) (PyId 'IndexError))
+                                                                      (PyId 'None)))))
+                                   (CId 'AttributeError))
+                   (CId 'None))
+          ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))
 
 ;; next
 (define next-lambda
