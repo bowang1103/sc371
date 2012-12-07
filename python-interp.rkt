@@ -7,12 +7,14 @@
 
 ;; define the number to represent the level of different scope
 ;; 3 for global, 2 for nonlocal, 1 for local
+(define scan_var 4)
 (define local-level 3)
 (define nonlocal-level 2)
 (define global-level 1)
+(define unbound-local-val-loc -404)
 
 (define (getEmptyEnv) : Env
-  (hash-set (hash-set (hash-set (hash empty) global-level (hash empty)) nonlocal-level (hash empty)) local-level (hash empty)))
+  (hash-set (hash-set (hash-set (hash-set (hash empty) global-level (hash empty)) nonlocal-level (hash empty)) local-level (hash empty)) scan_var (hash empty)))
 
 (define (interp [expr : CExp]) : CVal
   (type-case CAns (interp-env expr (getEmptyEnv) (hash empty) (hash (list (values 1 (list)))))
@@ -490,9 +492,14 @@
                                                                             [else (hash-set e-fobj nonlocal-level (VEnv-e (some-v (hash-ref s-fobj clenv))))])
                                                                           s-fobj (hash-set le-fobj (+ 1 (getmaxnumber (hash-keys lenv))) (list)))]) ;; extend closure-env (if no arguments)
                                                (type-case CAns bind-es
+                                                 [AVal (v-es e-es s-es le-es) ;(Scanfb clbody (LocalValRemove e-es le-es) le-es)
+                                                       (begin 
+                                                         (type-case CAns (begin (interp-env clbody (Scanfb clbody (LocalValRemove e-es le-es) le-es) s-es le-es))
+#|=======
                                                  [AVal (v-es e-es s-es le-es)
                                                        (begin #| (display "In CApp:\n") (display (to-string clenv)) (display "\n") |#
                                                          (type-case CAns (begin (interp-env clbody (begin #| (display "In CApp\n") (display (to-string fun)) (display (to-string (hash-keys (some-v (hash-ref env local-level))))) (display "\n") |# e-es) s-es le-es))
+>>>>>>> 54af1cf75506d9cc2c15df0afcc05767215fb77c|#
                                                            [AVal (v-clbody e-clbody s-clbody le-clbody) (AVal v-clbody 
                                                                                                               (hash-set env global-level (some-v (hash-ref e-clbody global-level))) 
                                                                                                               (type-case CExp fun
@@ -912,6 +919,19 @@
     [else (begin (display expr)
                  (error 'interp "no case"))]))
 
+;; Scan for local Variable
+(define (Scanfb [expr : CExp] [env : Env] [lenv : LocalEnv]) : Env
+  (type-case CExp expr
+    [CSeq (e1 e2) (let ([elenv (Scanfb e1 env lenv)])
+                    (Scanfb e2 elenv lenv))]
+    [CSet (id value) (envSetScanVar id unbound-local-val-loc env)]
+    [CLet (id bind body) (Scanfb body env lenv)]
+    [else env]))
+          
+;; Remove unbound local variable flag in scan_var level                                           
+(define (LocalValRemove [env : Env] [lenv : LocalEnv]) : Env
+  (hash-set env scan_var (hash empty)))
+
 (define (update-venv (before : LevelEnv) (later : LevelEnv)) : CVal
   (let ([newenv (hash empty)])
     (VEnv (foldl (lambda(x result) (hash-set result x (if (none? (hash-ref later x))
@@ -1079,6 +1099,7 @@
                    (begin #| (display (to-string tstlen)) |#
                           tstlen))))]
         [else (begin #| (display (to-string args)) (display (to-string (length anss))) |# (interp-env (raise-error "TypeError" "Arity mismatch") env sto lenv))]))
+
  ; case :
  ; Varargs (3,(1,2,3,4,5),() )  
  ; return : 1,2,3,(4,5)<-tuple  
@@ -1119,7 +1140,9 @@
              (display "")) |#
          (let ([loc (findTheLoc for env local-level)])
            (if (equal? -1 loc)
-               (interp-env (lookup_lib-funcs for lib-functions) env sto lenv)
+               (if (equal? (findTheLoc for env scan_var) unbound-local-val-loc)
+                   (interp-env (raise-error "UnboundLocalError" (string-append (symbol->string for) " : unbound local variable")) env sto lenv)
+                   (interp-env (lookup_lib-funcs for lib-functions) env sto lenv))
                (type-case (optionof CVal) (hash-ref sto loc)
                  [some (v) (AVal v env sto lenv)]
                  [none () (interp-error "Unbound value" env sto lenv)])))))
@@ -1157,6 +1180,11 @@
 
 (define (envSetGlobal (id : symbol) (loc : Location) (env : Env)) : Env
   (hash-set env global-level (hash-set (some-v (hash-ref env global-level)) id loc)))
+
+
+(define (envSetScanVar (id : symbol) (loc : Location) (env : Env)) : Env
+  (hash-set env scan_var (hash-set (some-v (hash-ref env scan_var)) id loc)))
+
 
 ;; due to the env is levelified, I have to update the hash-remove
 (define (envRemove (id : symbol) (env : Env) (lenv : LocalEnv)) : Env
