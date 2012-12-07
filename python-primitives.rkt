@@ -266,7 +266,7 @@ primitives here.
       [(and) (CId 'True)]
       [(isinstance) (cond
                       [(or (equal? "Class" type-l) (equal? "Func" type-l)) (raise-error "TypeError" "lhs should be an instance")]
-                      [(or (not (equal? "Class" type-r)) (not (equal? "Func" type-r))) (raise-error "TypeError" "rhs should be a class")]
+                      [(and (not (equal? "Class" type-r)) (not (equal? "Func" type-r))) (raise-error "TypeError" "rhs should be a class")]
                       ;[(equal? 
                       [(equal? "Instance" type-l)
                         (if (isInstanceRecur (VBases-ids val-l) loc-r (AVal-sto arg2)) (CId 'True) (CId 'False))]
@@ -568,9 +568,12 @@ primitives here.
       (let ([parent (first parents)])
         (if (= parent target)
             true
-            (isInstanceRecur (append (rest parents) 
-                                     (let ([gplst (VBases-ids (VObject-value (some-v (hash-ref store parent))))])
-                                       (if (= -1 parent) (list) gplst))) target store)))))
+            (isInstanceRecur (append (rest parents)
+                                     ;(let ([gparents (VBases-ids (VObject-value (some-v (hash-ref store parent))))])
+                                      ; (if (= -1 (first gparents)) (list) gparents)))
+                                     (let ([gparents (VObject-value (some-v (hash-ref store parent)))])
+                                       (if (or (not (VBases? gparents)) (= -1 (first (VBases-ids gparents)))) (list) (VBases-ids gparents)))) 
+                             target store)))))
 
 (define (raise-error error-type msg)
   (CRaise ($to-object (CEmpty)) ($to-object (CException error-type ($to-object (CStr msg))))))

@@ -156,6 +156,16 @@ that calls the primitive `print`.
      (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
           (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
           ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))
+;; iter
+#|(define iter-lambda
+  ($to-object
+   (CFunc (list 'iterableo 'sentinel) 
+          (list) 
+          (list (CId 'None))
+     (CIf (CPrim2 'is (CId 'sentinel) (CId 'None))
+          (CTryExn (CApp (CGetfield (CId 'iterableo) "__iter__") (list) (list))
+                   (CExceptHandler (CId 'None) (TODO:body) (CId 'AttributeError)
+          ($to-object (CCalIter (CId 'iterableo) (CId 'sentinel)))))))|#
 
 ;; next
 (define next-lambda
