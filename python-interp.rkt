@@ -524,7 +524,11 @@
                                                                          (hash-set lenv 1 (some-v (hash-ref le-clbody 1)))))]))]
                                                  [AExc (v-es e-es s-es le-se) (AExc v-es env s-es lenv)]))]
                                    [else (case (string->symbol (VObject-type v-fobj))
-                                           [(Class) (interp-env (CApp (CGetfield fun "__new__") (list) (list)) e-fobj s-fobj le-fobj)]
+                                           [(Class) (let ([rst (interp-env (CApp (CGetfield fun "__new__") (list) (list)) e-fobj s-fobj le-fobj)])
+                                                      (let ([ret (interp-env (CApp (CGetfield fun "__init__") (list) (list)) (AVal-env rst) (AVal-sto rst) (AVal-lenv rst))])
+                                                        (if (AVal? ret)
+                                                            ret
+                                                            rst)))]
                                            [(Instance) (interp-env (CApp (CGetfield fun "__call__") args starargs) e-fobj s-fobj le-fobj)]
                                            [else (interp-env (raise-error "TypeError" "Not callable") e-fobj s-fobj le-fobj)])]))]
                          [else funAns]))]
@@ -621,10 +625,10 @@
                            [AVal (v-rs e-rs s-rs le-rs) 
                                  (let ([newloc (newLoc)])
                                    (AVal (VObject type (case (string->symbol type)
-                                                         [(Class) (type-case CVal v-pv
-                                                                    [VEmpty () (VBases (list -1))]
+                                                         [(Class) (type-case CVal (VObject-value v-pv)
+                                                                    [VEmpty () (begin (VBases (list -1)))]
                                                                     [else v-pv])]
-                                                         [else v-pv]) where
+                                                         [else (begin v-pv)]) where
                                                   (let ([rst (make-hash empty)])
                                                     (begin (map 
                                                             (lambda (x) (hash-set! rst (symbol->string x) (let ([val (AVal-val (grabValue x e-rs s-rs le-rs))])
@@ -638,7 +642,7 @@
                                                                                                                 val))))
                                                             (some-v (hash-ref le-rs (getmaxnumber (hash-keys le-rs))))) rst))) e-pv ;; Check here 
                                                                                                                                (if (equal? type "Class")
-                                                                                                                                   (begin #| (display "In Class") (display (hash-keys (mergeNAndL env))) (display "\n") |# (hash-set s-rs newloc (VEnv (mergeNAndL env))))
+                                                                                                                                   (begin #|(display (to-string (hash-keys (some-v (hash-ref e-rs local-level))))) (display "\n") |# (hash-set s-rs newloc (VEnv (mergeNAndL env))))
                                                                                                                                    s-rs)
                                                                                                                                le-pv))] ;; Check here
                            [else rs]))]
@@ -907,6 +911,12 @@
     
     [else (begin (display expr)
                  (error 'interp "no case"))]))
+
+(define (update-venv (before : LevelEnv) (later : LevelEnv)) : CVal
+  (let ([newenv (hash empty)])
+    (VEnv (foldl (lambda(x result) (hash-set result x (if (none? (hash-ref later x))
+                                                          (some-v (hash-ref before x))
+                                                          (some-v (hash-ref later x))))) newenv (hash-keys before)))))
 
 ;; return the first result is not excpetion
 (define (get-first-nonexception (anss : (listof CAns))) : CAns
